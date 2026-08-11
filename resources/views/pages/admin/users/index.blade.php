@@ -34,12 +34,12 @@
         </form>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                <thead><tr class="text-left text-xs uppercase text-gray-500"><th class="px-4 py-3">S.N.</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"><input type="checkbox" class="rounded border-gray-300 text-brand-500" @change="selected = $event.target.checked ? @js($users->pluck('id')->map(fn ($id) => (string) $id)->values()) : []" :checked="selected.length === {{ $users->count() }} && selected.length > 0" aria-label="Select all users"></th><th class="px-4 py-3">User</th><th class="px-4 py-3">Roles</th><th class="px-4 py-3 text-right">Actions</th></tr></thead>
+                <thead><tr class="text-left text-xs uppercase text-gray-500"><th class="px-2 py-3">S.N.</th><th class="px-2 py-3">Status</th><th class="px-2 py-3"><input type="checkbox" class="rounded border-gray-300 text-brand-500" @change="selected = $event.target.checked ? @js($users->pluck('id')->map(fn ($id) => (string) $id)->values()) : []" :checked="selected.length === {{ $users->count() }} && selected.length > 0" aria-label="Select all users"></th><th class="px-4 py-3">User</th><th class="px-4 py-3">Roles</th><th class="px-4 py-3 text-right">Actions</th></tr></thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                 @forelse($users as $user)
                     <tr>
-                        <td class="px-4 py-4 text-sm text-gray-500">{{ $users->firstItem() + $loop->index }}</td>
-                        <td class="px-4 py-4">
+                        <td class="px-2 py-4 text-sm text-gray-500">{{ $users->firstItem() + $loop->index }}</td>
+                        <td class="px-2 py-4">
                             @can('users.change-status')
                                 <form method="POST" action="{{ route('admin.users.status', $user) }}">
                                     @csrf
@@ -57,7 +57,7 @@
                                 </span>
                             @endcan
                         </td>
-                        <td class="px-4 py-4"><input type="checkbox" value="{{ $user->id }}" x-model="selected" class="rounded border-gray-300 text-brand-500" aria-label="Select {{ $user->name }}"></td><td class="px-4 py-4"><p class="font-medium text-gray-800 dark:text-white">{{ $user->name }}</p><p class="text-sm text-gray-500">{{ $user->email }}</p></td>
+                        <td class="px-2 py-4"><input type="checkbox" value="{{ $user->id }}" x-model="selected" class="rounded border-gray-300 text-brand-500" aria-label="Select {{ $user->name }}"></td><td class="px-4 py-4"><p class="font-medium text-gray-800 dark:text-white">{{ $user->name }}</p><p class="text-sm text-gray-500">{{ $user->email }}</p></td>
                         <td class="px-4 py-4"><div class="flex flex-wrap gap-1">@foreach($user->roles as $role)<x-ui.badge color="primary">{{ $role->name }}</x-ui.badge>@endforeach</div></td>
                         <td class="px-4 py-4"><div class="flex justify-end gap-2">
                             @can('users.show')<a href="{{ route('admin.users.show', $user) }}" class="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-brand-500 dark:border-gray-700" title="View user"><x-common.menu-icon name="view" class="h-4 w-4" />View</a>@endcan

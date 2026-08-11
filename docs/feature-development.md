@@ -78,7 +78,20 @@ The normal CRUD surface has four Blade files under `resources/views/pages/admin/
 3. `edit.blade.php` — validated edit form posting to the named update route.
 4. `show.blade.php` — read-only detail view with an authorized Edit action when applicable.
 
-An optional `_form.blade.php` partial may be shared by create and edit. Keep filtering in the repository and preserve query parameters in pagination links. Use TailAdmin layout/components, render validation errors, and never mutate state from Blade.
+An optional `_form.blade.php` partial may be shared by create and edit. Keep filtering in the repository and preserve query parameters in pagination links. Use TailAdmin layout/components, render validation errors, and never mutate state in Blade. Build form fields from the reusable components documented in `docs/ui-components.md` (`x-form.input`, `x-form.select`, `x-form.searchable-select`, `x-form.textarea`, `x-form.date-picker`, `x-form.multiselect`, `x-form.toggle`, `x-form.checkbox`, `x-form.file-upload`, and `x-form.editor`). Add a reusable component before introducing repeated field markup. File-upload forms must use `multipart/form-data`, and upload rules belong in the FormRequest.
+
+### CRUD table layout
+
+Keep every CRUD index table consistent with the users table pattern:
+
+- Start with the page breadcrumb and an authorized create action.
+- Place the GET filter form directly above the table inside the component card.
+- Wrap the table in `overflow-x-auto` and use `min-w-full divide-y divide-gray-200 dark:divide-gray-800`.
+- Use uppercase, muted table headers and `divide-y divide-gray-100 dark:divide-gray-800` for the body.
+- Use compact horizontal padding (`px-2`) for serial-number, status, and selection columns; use `px-4` for remaining data and action columns.
+- Use `py-4` for body cells, keep row actions right-aligned, gate each action with its specific permission, and include a paginated empty state.
+
+When a resource does not have status or selection controls, keep the same structure and apply compact spacing only to the serial-number column.
 
 ### Activity tracking
 

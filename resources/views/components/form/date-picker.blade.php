@@ -1,60 +1,62 @@
 @props([
-    'id' => 'datepicker-' . uniqid(),
-    'mode' => 'single', // 'single', 'multiple', 'range', 'time'
-    'defaultDate' => null,
+    'name',
     'label' => null,
-    'placeholder' => 'Select date',
-    'name' => null,
+    'id' => null,
+    'value' => null,
+    'mode' => 'single',
     'dateFormat' => 'Y-m-d',
+    'placeholder' => 'Select date',
+    'help' => null,
+    'error' => null,
+    'required' => false,
+    'disabled' => false,
 ])
 
-<div x-data="{
-    flatpickrInstance: null,
-    init() {
-        this.$nextTick(() => {
-            this.flatpickrInstance = flatpickr(this.$refs.dateInput, {
-                mode: '{{ $mode }}',
-                static: true,
-                monthSelectorType: 'static',
-                dateFormat: '{{ $dateFormat }}',
-                defaultDate: {{ $defaultDate ? (is_array($defaultDate) ? json_encode($defaultDate) : "'" . $defaultDate . "'") : 'null' }},
-                onChange: (selectedDates, dateStr, instance) => {
-                    this.$dispatch('date-change', {
-                        selectedDates,
-                        dateStr,
-                        instance
-                    });
-                }
-            });
-        });
-    },
-    destroy() {
-        if (this.flatpickrInstance) {
-            this.flatpickrInstance.destroy();
-            this.flatpickrInstance = null;
-        }
-    }
-}" x-init="init()" x-destroy="destroy()">
-    @if($label)
-        <label for="{{ $id }}" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            {{ $label }}
-        </label>
-    @endif
+@php
+    $id ??= str_replace(['[]', '[', ']', '.'], ['', '-', '', '-'], $name);
+    $currentValue = old($name, $value);
+    $flatpickrValue = is_array($currentValue) ? $currentValue : ($currentValue ?: null);
+    $inputClasses = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800';
+@endphp
 
-    <div class="relative custom-datepicker">
+<x-form.field :name="$name" :label="$label" :id="$id" :required="$required" :error="$error" :help="$help">
+    <div
+        x-data="{
+            flatpickrInstance: null,
+            init() {
+                this.flatpickrInstance = flatpickr(this.$refs.dateInput, {
+                    mode: @js($mode),
+                    static: true,
+                    monthSelectorType: 'static',
+                    dateFormat: @js($dateFormat),
+                    defaultDate: @js($flatpickrValue),
+                    onChange: (selectedDates, dateStr, instance) => {
+                        this.$dispatch('date-change', { selectedDates, dateStr, instance });
+                    }
+                });
+            },
+            destroy() {
+                this.flatpickrInstance?.destroy();
+            }
+        }"
+        x-init="init()"
+        x-on:destroy="destroy()"
+        class="relative custom-datepicker"
+    >
         <input
             x-ref="dateInput"
             type="text"
             id="{{ $id }}"
             name="{{ $name }}"
+            value="{{ is_array($currentValue) ? '' : $currentValue }}"
             placeholder="{{ $placeholder }}"
-            class="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:focus:border-brand-800"
             autocomplete="off"
-        />
-        <span class="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" class="size-6">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M8 2C8.41421 2 8.75 2.33579 8.75 2.75V3.75H15.25V2.75C15.25 2.33579 15.5858 2 16 2C16.4142 2 16.75 2.33579 16.75 2.75V3.75H18.5C19.7426 3.75 20.75 4.75736 20.75 6V9V19C20.75 20.2426 19.7426 21.25 18.5 21.25H5.5C4.25736 21.25 3.25 20.2426 3.25 19V9V6C3.25 4.75736 4.25736 3.75 5.5 3.75H7.25V2.75C7.25 2.33579 7.58579 2 8 2ZM8 5.25H5.5C5.08579 5.25 4.75 5.58579 4.75 6V8.25H19.25V6C19.25 5.58579 18.9142 5.25 18.5 5.25H16H8ZM19.25 9.75H4.75V19C4.75 19.4142 5.08579 19.75 5.5 19.75H18.5C18.9142 19.75 19.25 19.4142 19.25 19V9.75Z" fill="currentColor"></path>
-            </svg>
+            @required($required)
+            @disabled($disabled)
+            {{ $attributes->merge(['class' => $inputClasses]) }}
+        >
+        <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" aria-hidden="true">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M7.25 3.75v2m9.5-2v2M5.5 4.75h13A1.75 1.75 0 0 1 20.25 6.5v12A1.75 1.75 0 0 1 18.5 20.25h-13A1.75 1.75 0 0 1 3.75 18.5v-12A1.75 1.75 0 0 1 5.5 4.75Zm-1.75 4h16.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
         </span>
     </div>
-</div>
+</x-form.field>
