@@ -1,106 +1,45 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\PasswordController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UiKitController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\Route;
 
-// dashboard pages
-Route::get('/', function () {
-    return view('pages.dashboard.ecommerce', ['title' => 'E-commerce Dashboard']);
-})->name('dashboard');
+Route::redirect('/', '/admin');
 
-// calender pages
-Route::get('/calendar', function () {
-    return view('pages.calender', ['title' => 'Calendar']);
-})->name('calendar');
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'active'])->group(function (): void {
+    Route::get('/password/change', [PasswordController::class, 'edit'])->name('password.edit');
+    Route::put('/password/change', [PasswordController::class, 'update'])->name('password.update');
 
-// profile pages
-Route::get('/profile', function () {
-    return view('pages.profile', ['title' => 'Profile']);
-})->name('profile');
+    Route::get('/', DashboardController::class)->middleware('can:dashboard.view')->name('dashboard');
 
-// form pages
-Route::get('/form-elements', function () {
-    return view('pages.form.form-elements', ['title' => 'Form Elements']);
-})->name('form-elements');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-// tables pages
-Route::get('/basic-tables', function () {
-    return view('pages.tables.basic-tables', ['title' => 'Basic Tables']);
-})->name('basic-tables');
+    Route::get('/users', [UserController::class, 'index'])->middleware('can:users.manage')->name('users.index');
+    Route::get('/users/create', [UserController::class, 'create'])->middleware('can:users.create')->name('users.create');
+    Route::post('/users', [UserController::class, 'store'])->middleware('can:users.create')->name('users.store');
+    Route::patch('/users/bulk-status', [UserController::class, 'bulkStatus'])->middleware('can:users.change-status')->name('users.bulk-status');
+    Route::delete('/users/bulk', [UserController::class, 'bulkDestroy'])->middleware('can:users.delete')->name('users.bulk-destroy');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->middleware('can:users.edit')->name('users.edit');
+    Route::put('/users/{user}', [UserController::class, 'update'])->middleware('can:users.edit')->name('users.update');
+    Route::patch('/users/{user}/status', [UserController::class, 'status'])->middleware('can:users.change-status')->name('users.status');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('can:users.delete')->name('users.destroy');
+    Route::get('/users/{user}', [UserController::class, 'show'])->middleware('can:users.show')->name('users.show');
 
-// pages
-
-Route::get('/blank', function () {
-    return view('pages.blank', ['title' => 'Blank']);
-})->name('blank');
-
-// error pages
-Route::get('/error-404', function () {
-    return view('pages.errors.error-404', ['title' => 'Error 404']);
-})->name('error-404');
-
-// chart pages
-Route::get('/line-chart', function () {
-    return view('pages.chart.line-chart', ['title' => 'Line Chart']);
-})->name('line-chart');
-
-Route::get('/bar-chart', function () {
-    return view('pages.chart.bar-chart', ['title' => 'Bar Chart']);
-})->name('bar-chart');
-
-
-// authentication pages
-Route::get('/signin', function () {
-    return view('pages.auth.signin', ['title' => 'Sign In']);
-})->name('signin');
-
-Route::get('/signup', function () {
-    return view('pages.auth.signup', ['title' => 'Sign Up']);
-})->name('signup');
-
-// ui elements pages
-Route::get('/alerts', function () {
-    return view('pages.ui-elements.alerts', ['title' => 'Alerts']);
-})->name('alerts');
-
-Route::get('/avatars', function () {
-    return view('pages.ui-elements.avatars', ['title' => 'Avatars']);
-})->name('avatars');
-
-Route::get('/badge', function () {
-    return view('pages.ui-elements.badges', ['title' => 'Badges']);
-})->name('badges');
-
-Route::get('/buttons', function () {
-    return view('pages.ui-elements.buttons', ['title' => 'Buttons']);
-})->name('buttons');
-
-Route::get('/image', function () {
-    return view('pages.ui-elements.images', ['title' => 'Images']);
-})->name('images');
-
-Route::get('/videos', function () {
-    return view('pages.ui-elements.videos', ['title' => 'Videos']);
-})->name('videos');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    Route::get('/roles', [RoleController::class, 'index'])->middleware('can:roles.manage')->name('roles.index');
+    Route::get('/roles/create', [RoleController::class, 'create'])->middleware('can:roles.create')->name('roles.create');
+    Route::post('/roles', [RoleController::class, 'store'])->middleware('can:roles.create')->name('roles.store');
+    Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->middleware('can:roles.edit')->name('roles.edit');
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('can:roles.edit')->name('roles.update');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware('can:roles.delete')->name('roles.destroy');
+    Route::get('/roles/{role}', [RoleController::class, 'show'])->middleware('can:roles.show')->name('roles.show');
+    Route::get('/permissions', PermissionController::class)->name('permissions.index');
+    Route::get('/activity-log', ActivityLogController::class)->name('activity.index');
+    Route::get('/ui-kit', UiKitController::class)->name('ui-kit');
+});

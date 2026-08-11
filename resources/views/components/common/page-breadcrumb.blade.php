@@ -1,11 +1,12 @@
 @props(['pageTitle' => 'Page'])
 
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
-        {{ $pageTitle }}
-    </h2>
-    <nav>
-        <ol class="flex items-center gap-1.5">
+<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div class="flex flex-col gap-1.5">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+            {{ $pageTitle }}
+        </h2>
+        <nav aria-label="Breadcrumb">
+            <ol class="flex items-center gap-1.5 whitespace-nowrap">
             <li>
                 <a
                     class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
@@ -33,6 +34,10 @@
             <li class="text-sm text-gray-800 dark:text-white/90">
                 {{ $pageTitle }}
             </li>
-        </ol>
-    </nav>
-</div>
+            </ol>
+        </nav>
+    </div>
+    @isset($actions)
+        <div class="flex items-center gap-2">{{ $actions }}</div>
+    @endisset
+    </div>

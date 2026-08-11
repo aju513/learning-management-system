@@ -1,25 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
-  <div class="grid grid-cols-12 gap-4 md:gap-6">
-    <div class="col-span-12 space-y-6 xl:col-span-7">
-      <x-ecommerce.ecommerce-metrics />
-      <x-ecommerce.monthly-sale />
-    </div>
-    <div class="col-span-12 xl:col-span-5">
-        <x-ecommerce.monthly-target />
-    </div>
-
-    <div class="col-span-12">
-      <x-ecommerce.statistics-chart />
-    </div>
-
-    <div class="col-span-12 xl:col-span-5">
-      <x-ecommerce.customer-demographic />
-    </div>
-
-    <div class="col-span-12 xl:col-span-7">
-      <x-ecommerce.recent-orders />
-    </div>
-  </div>
+<x-common.page-breadcrumb pageTitle="Dashboard" />
+<div class="grid gap-6 md:grid-cols-3">
+    <x-common.component-card title="Welcome back" class="md:col-span-2">
+        <p class="text-sm text-gray-600 dark:text-gray-400">Signed in as <strong class="text-gray-800 dark:text-white">{{ auth()->user()->name }}</strong>. The administration foundation is ready for application modules.</p>
+    </x-common.component-card>
+    <x-common.component-card title="Your access">
+        <div class="flex flex-wrap gap-2">@foreach(auth()->user()->roles as $role)<x-ui.badge color="primary">{{ $role->name }}</x-ui.badge>@endforeach</div>
+    </x-common.component-card>
+</div>
 @endsection

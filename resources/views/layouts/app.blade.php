@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Dashboard' }} | TailAdmin - Laravel Tailwind CSS Admin Dashboard Template</title>
+    <title>{{ $title ?? 'Dashboard' }} | {{ config('app.name') }}</title>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -125,6 +125,18 @@
             @include('layouts.app-header')
             <!-- app header end -->
             <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+                @if (session('success'))
+                    <div class="mb-6 rounded-xl border border-success-500/30 bg-success-50 px-4 py-3 text-sm text-success-700 dark:bg-success-500/15 dark:text-success-400">
+                        {{ session('success') }}
+                    </div>
+                @endif
+                @if ($errors->any())
+                    <div class="mb-6 rounded-xl border border-error-500/30 bg-error-50 px-4 py-3 text-sm text-error-700 dark:bg-error-500/15 dark:text-error-400">
+                        <ul class="list-disc space-y-1 pl-5">
+                            @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                        </ul>
+                    </div>
+                @endif
                 @yield('content')
             </div>
         </div>

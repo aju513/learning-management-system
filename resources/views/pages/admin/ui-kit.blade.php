@@ -1,0 +1,11 @@
+@extends('layouts.app')
+
+@section('content')
+<x-common.page-breadcrumb pageTitle="UI Kit" />
+<div class="grid gap-6 lg:grid-cols-2">
+    <x-common.component-card title="Buttons" desc="Use x-ui.button with semantic variants and sm/md sizes."><div class="flex flex-wrap gap-3"><x-ui.button variant="primary">Primary</x-ui.button><x-ui.button variant="secondary">Secondary</x-ui.button><x-ui.button variant="success">Success</x-ui.button><x-ui.button variant="danger">Danger</x-ui.button><x-ui.button variant="warning">Warning</x-ui.button><x-ui.button variant="info">Info</x-ui.button><x-ui.button variant="outline">Outline</x-ui.button><x-ui.button variant="primary" disabled>Disabled</x-ui.button></div></x-common.component-card>
+    <x-common.component-card title="Badges" desc="Status and categorization labels."><div class="flex flex-wrap gap-2"><x-ui.badge color="primary">Primary</x-ui.badge><x-ui.badge color="success">Active</x-ui.badge><x-ui.badge color="warning">Pending</x-ui.badge><x-ui.badge color="error">Inactive</x-ui.badge></div></x-common.component-card>
+    <x-common.component-card title="Alerts" desc="Feedback variants with optional custom slot content."><div class="space-y-3"><x-ui.alert variant="success" title="Saved" message="The operation completed successfully." /><x-ui.alert variant="warning" title="Review required" message="Check the supplied values before continuing." /><x-ui.alert variant="error" title="Unable to save" message="Correct the validation errors and try again." /></div></x-common.component-card>
+    <x-common.component-card title="Form controls" desc="Use these TailAdmin classes for fields until a dedicated component is introduced."><div class="space-y-4"><input placeholder="Text input" class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:text-white"><select class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"><option>Select option</option></select><textarea rows="3" placeholder="Textarea" class="w-full rounded-lg border border-gray-300 bg-transparent p-4 text-sm dark:border-gray-700 dark:text-white"></textarea></div></x-common.component-card>
+</div>
+@endsection
