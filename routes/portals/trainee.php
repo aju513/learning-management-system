@@ -10,9 +10,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('learning')->name('learning.')->middleware(['auth', 'active', 'can:portals.trainee.access'])->group(function (): void {
     Route::get('/', DashboardController::class)->name('dashboard');
-    Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index'); Route::get('/catalog/{course}', [CatalogController::class, 'show'])->name('catalog.show');
-    Route::get('/applications', [ApplicationController::class, 'index'])->name('applications.index'); Route::post('/applications/{course}', [ApplicationController::class, 'store'])->name('applications.store');
-    Route::get('/courses', [LearningController::class, 'index'])->name('courses.index'); Route::get('/courses/{enrollment}/materials/{learning_material}', [LearningController::class, 'show'])->name('courses.materials.show'); Route::post('/courses/{enrollment}/materials/{learning_material}/complete', [LearningController::class, 'complete'])->name('courses.materials.complete'); Route::get('/courses/{enrollment}/materials/{learning_material}/download', [LearningController::class, 'download'])->name('courses.materials.download');
-    Route::get('/assessments', [AssessmentPlayerController::class, 'index'])->name('assessments.index'); Route::post('/assessments/{assessment}/start', [AssessmentPlayerController::class, 'start'])->name('assessments.start'); Route::get('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'show'])->name('assessments.attempts.show'); Route::post('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'submit'])->name('assessments.attempts.submit');
-    Route::get('/results', [ResultController::class, 'index'])->name('results.index'); Route::get('/results/{assessment_attempt}', [ResultController::class, 'show'])->name('results.show');
+    Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
+    Route::get('/catalog/{course}', [CatalogController::class, 'show'])->name('catalog.show');
+    Route::get('/applications', [ApplicationController::class, 'index'])->name('applications.index');
+    Route::post('/applications/{course}', [ApplicationController::class, 'store'])->name('applications.store');
+    Route::get('/courses', [LearningController::class, 'index'])->name('courses.index');
+    Route::get('/courses/{enrollment}/materials/{learning_material}', [LearningController::class, 'show'])->name('courses.materials.show');
+    Route::post('/courses/{enrollment}/materials/{learning_material}/complete', [LearningController::class, 'complete'])->name('courses.materials.complete');
+    Route::get('/courses/{enrollment}/materials/{learning_material}/download', [LearningController::class, 'download'])->name('courses.materials.download');
+    Route::get('/assessments', [AssessmentPlayerController::class, 'index'])->name('assessments.index');
+    Route::post('/assessments/{assessment}/start', [AssessmentPlayerController::class, 'start'])->name('assessments.start');
+    Route::get('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'show'])->name('assessments.attempts.show');
+    Route::post('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'submit'])->name('assessments.attempts.submit');
+    Route::get('/results', [ResultController::class, 'index'])->name('results.index');
+    Route::get('/results/{assessment_attempt}', [ResultController::class, 'show'])->name('results.show');
 });

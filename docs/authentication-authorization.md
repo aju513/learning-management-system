@@ -14,12 +14,14 @@ Local environments also expose four guest-accessible demo-login buttons for the 
 
 If users already exist, the command assigns `super-admin` to user ID 1. If ID 1 does not exist, it reports a warning and does not promote another user.
 
-## User lifecycle
+## Fixed roles and portal resolution
 
-User forms contain name, email, password/confirmation, active/inactive status, and roles. Users are hard-deleted; there are no soft deletes. The last super administrator cannot be deleted, demoted, or deactivated. Authorized self-deletion is permitted when another super administrator exists and invalidates the current session.
+Every user has exactly one of four code-owned roles: `super-admin`, `admin`, `instructor`, or `trainee`. `/portal` rejects roleless, multi-role, and unsupported-role accounts rather than guessing a destination. The resolved portal dashboards are `/super-admin`, `/admin`, `/instructor`, and `/learning`, respectively. Portal-entry permissions are mutually exclusive, including for Super Admin; the Super Admin override continues to grant non-portal oversight abilities.
 
-Permissions are never assigned directly to users. Users receive roles, and roles receive permissions from the code-owned catalog. `super-admin` cannot be renamed or deleted, and roles with assigned users cannot be deleted. The LMS adds code-owned `admin`, `instructor`, and `trainee` roles whose default permission matrices are exact-synchronized from `config/lms.php`. Non-super administrators can only assign role types covered by their explicit `users.manage-*` permissions and can never grant `super-admin`.
+There is no custom-role CRUD or role picker. Super Admin creates fixed Admin, Instructor, and Trainee accounts from separate screens. Admin creates fixed Instructor and Trainee accounts. User forms contain name, email, password/confirmation, and active/inactive status. Users are hard-deleted; there are no soft deletes. The last super administrator cannot be deleted, demoted, or deactivated.
+
+Permissions are never assigned directly to users. The four roles receive exact, code-owned permission matrices from `config/lms.php`. `admin:permissions-sync` refuses to mutate data when users have multiple roles, no role outside the bootstrap exception, or an assigned unsupported role. This prevents role combinations from accumulating menus or crossing portal boundaries.
 
 ## Activity log
 
-Spatie Activitylog records login/logout/failure, demo login, password reset/change, profile changes, user/role administration, permission synchronization, and menu regeneration. Passwords, tokens, and session values are excluded. `/admin/activity-log` is read-only and permission-protected. Retention defaults to 365 days through `ACTIVITY_LOG_RETENTION_DAYS`.
+Spatie Activitylog records login/logout/failure, demo login, password reset/change, profile changes, user administration, course applications and reviews, permission synchronization, and menu regeneration. Passwords, tokens, and session values are excluded. `/super-admin/activity-log` is read-only and permission-protected. Retention defaults to 365 days through `ACTIVITY_LOG_RETENTION_DAYS`.

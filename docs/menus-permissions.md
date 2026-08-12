@@ -39,19 +39,19 @@ Run:
 php artisan admin:permissions-sync
 ```
 
-The command validates duplicate names and all menu references, then performs an exact transaction: missing permissions are inserted and database permissions absent from configuration are deleted. It synchronizes all configured permissions to the protected `super-admin` role. A validation failure leaves the database unchanged.
+The command validates duplicate names and all menu references, then performs an exact transaction: missing permissions are inserted and database permissions absent from configuration are deleted. It synchronizes the code-owned matrices for all four fixed roles. Super Admin receives every non-portal permission plus only `portals.super-admin.access`; the other roles each receive only their own portal permission. The command refuses unsupported assigned roles, multi-role users, and non-bootstrap roleless users. A validation failure leaves the database unchanged.
 
 ## Menu catalog
 
-`config/admin-menu.php` defines ordered items with these keys:
+`config/admin-menu.php` defines four independent manifests keyed by `super-admin`, `admin`, `instructor`, and `trainee`. Each manifest contains ordered items with these keys:
 
 ```php
     [
         'key' => 'users',
         'label' => 'Users',
         'icon' => 'users',
-        'route' => 'admin.users.index',
-        'permission' => 'users.manage',
+        'route' => 'admin.instructors.index',
+        'permission' => 'users.manage-instructors',
         'order' => 10,
 ]
 ```
@@ -64,4 +64,4 @@ Run:
 php artisan admin:menu-regenerate
 ```
 
-The command validates the definition and atomically replaces `bootstrap/cache/admin-menu.php`. The navigation service filters this compiled manifest at request time with `$user->can(...)` and removes empty groups. Route authorization remains mandatory even when an item is hidden.
+The command validates every manifest and atomically replaces `bootstrap/cache/admin-menu.php`. The navigation service first selects the manifest for the user's exact fixed role, then filters it at request time with `$user->can(...)` and removes empty groups. It never merges menus from multiple roles. Route authorization remains mandatory even when an item is hidden.

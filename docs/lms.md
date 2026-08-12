@@ -2,14 +2,14 @@
 
 ## Delivered MVP
 
-The application now includes a complete server-rendered LMS workflow under the existing `/admin` Fortify boundary. All users authenticate through the same login and receive a permission-filtered dashboard and sidebar.
+The application includes a complete server-rendered LMS workflow with one shared Fortify login and four separate portals. Each user has exactly one fixed system role and receives that portal's dashboard, route namespace, and menu instead of a combined feature list.
 
 The code-owned system roles are:
 
-- `super-admin`: all configured permissions through the existing Gate override.
-- `admin`: trainee/instructor account administration, enrollment assignment, global course and assessment visibility, results, and reports.
-- `instructor`: owned course/curriculum authoring, assessment authoring, publishing, assignment, and owned results.
-- `trainee`: assigned learning, material completion/downloads, assessment attempts, and own results.
+- `super-admin` (`/super-admin`): system oversight, fixed-role account administration, global academic override, reports, access matrix, and activity log. It does not expose learner functions.
+- `admin` (`/admin`): Instructor/Trainee account administration, course application review, direct enrollment, read-only global academic visibility, results, and reports.
+- `instructor` (`/instructor`): owned course/curriculum and assessment authoring, owned-course application review, related trainee progress, assignment, and owned results.
+- `trainee` (`/learning`): published course catalog and applications, approved learning, material completion/downloads, assessment attempts, and own results.
 
 Run `php artisan admin:permissions-sync` whenever permissions or the default matrices in `config/lms.php` change. The command exact-syncs permission definitions and resets the three non-super system roles to their code-owned defaults. Run `php artisan admin:menu-regenerate` after route or menu changes.
 
@@ -23,6 +23,9 @@ CourseCategory
                  -> optional Assessment
 
 User -> Enrollment -> MaterialProgress
+
+Enrollment pending -> active/completed
+                   -> rejected -> pending on reapplication
 
 Assessment
   -> AssessmentQuestion
@@ -42,9 +45,11 @@ Modules and materials use persisted integer positions. The current UI exposes mo
 
 Supported materials are article, video URL/upload, PDF, PPT/PPTX, DOC/DOCX, external link, downloadable file, and assessment. Uploaded learning files are stored on the private local disk and are served only through an authorized enrollment download route. Thumbnail images use the public disk. Article HTML is reduced to a small safe tag set and stripped of attributes before storage.
 
-## Enrollment and learning
+## Applications, enrollment, and learning
 
-The MVP uses administrator assignment. Assignment is idempotent for each trainee/course pair and reactivates a cancelled record. Trainees only see their own non-cancelled enrollments.
+Published courses appear in the Trainee catalog. Applying creates a pending enrollment record but does not grant course materials or linked-assessment access. An Admin can review any pending application; an Instructor can review only applications for courses they own. Approval activates the enrollment, while rejection stores an optional review note. A rejected or cancelled application can be submitted again. Duplicate pending applications and applications for already active/completed enrollment are rejected.
+
+Admin and Super Admin retain direct assignment. Assignment is idempotent for each trainee/course pair and supersedes pending, rejected, or cancelled state. Trainees see only active and completed enrollments in My Learning; pending/rejected/cancelled records remain in My Applications.
 
 Opening a material records the last view and starts the enrollment. Completing required materials recalculates progress as:
 
@@ -62,11 +67,12 @@ Starting a test creates or resumes one in-progress attempt and records its expir
 
 ## Reporting
 
-The dashboard adapts to effective permissions:
+Each portal has a separate dashboard query and view:
 
-- administrators see users, courses, enrollment, completion, and graded-attempt metrics;
-- instructors see owned courses, enrollment, assessments, and recent results;
-- trainees see assigned learning, completion, and passed-test metrics.
+- Super Admin sees system-wide users, courses, applications, enrollments, completion, and recent activity;
+- Admin sees operational users, pending applications, active learning, completion, and assessment results;
+- Instructor sees owned courses, owned-course applications, related trainees, assessments, and recent results;
+- Trainee sees pending applications, approved learning, completion, and passed-test metrics.
 
 The reports page contains basic course completion, trainee completion, and assessment pass/fail/average-score reports.
 

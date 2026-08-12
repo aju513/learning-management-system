@@ -2,13 +2,13 @@
 
 ## Stack and boundary
 
-The admin application is a server-rendered Laravel monolith under `/admin`. Blade renders TailAdmin views, Alpine.js provides local UI state, and Tailwind CSS 4 provides design tokens. The root URL currently redirects to the admin boundary and remains available for a future public application.
+The LMS is a server-rendered Laravel monolith with four role-specific portal boundaries: `/super-admin`, `/admin`, `/instructor`, and `/learning`. Blade renders TailAdmin views, Alpine.js provides local UI state, and Tailwind CSS 4 provides design tokens. Authentication remains shared under Fortify's `/admin` endpoints; `/` and `/portal` resolve an authenticated user to the dashboard for their one fixed system role.
 
 ## Request flow
 
 Non-trivial features follow `Route -> FormRequest -> Controller -> Service -> Repository -> Model`.
 
-- Routes use stable `admin.*` names and authentication/authorization middleware.
+- Routes use stable `super-admin.*`, `admin.*`, `instructor.*`, and `learning.*` names with authentication, active-user, and portal authorization middleware.
 - FormRequests validate and authorize input.
 - Controllers contain transport concerns only.
 - Services coordinate workflows, database transactions, state changes, and activity records.
@@ -19,15 +19,15 @@ Fortify owns login, logout, and password-reset controllers. The application prov
 
 ## Authorization
 
-The sidebar and Blade `@can` directives improve usability, but route middleware, FormRequest authorization, and Gate checks enforce security. The `super-admin` role receives a `Gate::before` allow result. Other application code checks permissions rather than role names.
+The sidebar and Blade `@can` directives improve usability, but route middleware, FormRequest authorization, and Gate checks enforce security. The `super-admin` Gate override grants operational permissions while explicitly denying entry to the Admin, Instructor, and Trainee portals. Other application code checks permissions rather than role names.
 
 ## Data ownership
 
 - `config/permissions.php` owns permission names.
-- `config/admin-menu.php` owns navigation metadata.
+- `config/admin-menu.php` owns the four independent portal navigation manifests.
 - Services own role synchronization and audit event properties.
 - Repositories own filtering and pagination.
 
 ## LMS modules
 
-The LMS extends the same request flow across course categories, courses, curriculum, enrollment, learning progress, assessments, results, dashboards, and reports. Assessments remain independent and are optionally linked to courses/modules or attached as learning materials. Uploaded learning files use authorized download routes rather than public storage. See `docs/lms.md` for the domain model and operational details.
+The portals use separate routes, portal transport controllers, dashboards, and menu manifests while sharing domain services, repository contracts, Eloquent repositories, and models. This keeps role experiences independent without duplicating course, enrollment, assessment, and reporting rules. Assessments remain independent and are optionally linked to courses/modules or attached as learning materials. Uploaded learning files use authorized download routes rather than public storage. See `docs/lms.md` for the domain model and operational details.
