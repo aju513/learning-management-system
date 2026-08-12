@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Contracts;
 
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Role;
@@ -16,7 +17,7 @@ interface RoleRepositoryInterface
     public function findForEdit(Role $role): Role;
 
     /** @return Collection<int, Role> */
-    public function allForAssignment(): Collection;
+    public function allForAssignment(User $actor): Collection;
 
     public function hasUsers(Role $role): bool;
 

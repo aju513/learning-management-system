@@ -5,7 +5,7 @@
     <div class="w-full max-w-md">
         <div class="mb-8 text-center">
             <img src="/images/logo/logo-icon.svg" class="mx-auto mb-4" width="44" height="44" alt="{{ config('app.name') }}">
-            <h1 class="text-title-sm font-semibold text-gray-800 dark:text-white/90">Admin sign in</h1>
+            <h1 class="text-title-sm font-semibold text-gray-800 dark:text-white/90">LMS sign in</h1>
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Enter your account credentials to continue.</p>
         </div>
         <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03] sm:p-8">
@@ -14,6 +14,31 @@
             @endif
             @if (session('status'))
                 <div class="mb-5 rounded-lg border border-success-500/30 bg-success-50 p-3 text-sm text-success-600 dark:bg-success-500/10">{{ session('status') }}</div>
+            @endif
+            @if ($demoLoginEnabled)
+                <div class="mb-6">
+                    <div class="mb-3 text-center">
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Quick demo access</p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose a seeded account to sign in instantly.</p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        @foreach ($demoAccounts as $account => $details)
+                            <form method="POST" action="{{ route('admin.demo-login') }}">
+                                @csrf
+                                <input type="hidden" name="account" value="{{ $account }}">
+                                <button type="submit" class="flex w-full flex-col items-center rounded-lg border border-brand-200 bg-brand-50 px-3 py-3 text-center transition hover:border-brand-300 hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:hover:bg-brand-500/20">
+                                    <span class="text-sm font-semibold text-brand-600 dark:text-brand-400">{{ $details['label'] }}</span>
+                                    <span class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ $details['email'] }}</span>
+                                </button>
+                            </form>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="mb-6 flex items-center gap-3">
+                    <span class="h-px flex-1 bg-gray-200 dark:bg-gray-800"></span>
+                    <span class="text-xs uppercase tracking-wide text-gray-400">or use credentials</span>
+                    <span class="h-px flex-1 bg-gray-200 dark:bg-gray-800"></span>
+                </div>
             @endif
             <form method="POST" action="{{ route('login') }}" class="space-y-5">
                 @csrf

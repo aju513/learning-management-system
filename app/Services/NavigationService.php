@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SystemRole;
 use App\Models\User;
 use Illuminate\Support\Arr;
 
@@ -10,7 +11,8 @@ class NavigationService
     /** @return array<int, array<string, mixed>> */
     public function forUser(User $user): array
     {
-        $items = $this->manifest();
+        $role = app(PortalService::class)->roleFor($user);
+        $items = $this->manifest($role);
 
         return array_values(array_filter(array_map(function (array $item) use ($user): ?array {
             if (isset($item['children'])) {
@@ -27,18 +29,21 @@ class NavigationService
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function manifest(): array
+    public function manifest(SystemRole $role): array
     {
         $cache = base_path('bootstrap/cache/admin-menu.php');
-        $items = is_file($cache) ? require $cache : config('admin-menu', []);
+        $manifests = is_file($cache) ? require $cache : config('admin-menu', []);
+        $items = $manifests[$role->value] ?? [];
 
         return $this->sort($items);
     }
 
-    /** @return array<int, array<string, mixed>> */
-    public function configuredManifest(): array
+    /** @return array<string, array<int, array<string, mixed>>> */
+    public function configuredManifests(): array
     {
-        return $this->sort(config('admin-menu', []));
+        return collect(config('admin-menu', []))
+            ->map(fn (array $items): array => $this->sort($items))
+            ->all();
     }
 
     /** @param array<int, array<string, mixed>> $items
@@ -62,7 +67,8 @@ class NavigationService
     /** @return list<string> */
     public function permissionReferences(): array
     {
-        return collect($this->flatten(config('admin-menu', [])))
+        return collect(config('admin-menu', []))
+            ->flatMap(fn (array $items): array => $this->flatten($items))
             ->pluck('permission')
             ->filter()
             ->unique()

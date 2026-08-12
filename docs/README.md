@@ -18,3 +18,4 @@ The bootstrap credential is intentionally predictable and must never remain unch
 - [UI components](ui-components.md): layouts and TailAdmin component conventions.
 - [Feature development](feature-development.md): required implementation workflow.
 - [Testing and operations](testing-operations.md): verification, deployment, and maintenance commands.
+- [Learning Management System](lms.md): roles, course delivery, assessments, progress, reporting, demo accounts, and future boundaries.

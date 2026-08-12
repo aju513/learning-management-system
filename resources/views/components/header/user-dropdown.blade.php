@@ -14,8 +14,8 @@
             <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ auth()->user()->name }}</p>
             <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
         </div>
-        <a href="{{ route('admin.profile.edit') }}" class="mt-2 flex rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">My profile</a>
-        <a href="{{ route('admin.password.edit') }}" class="flex rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">Change password</a>
+        <a href="{{ route('account.profile.edit') }}" class="mt-2 flex rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">My profile</a>
+        <a href="{{ route('account.password.edit') }}" class="flex rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">Change password</a>
         <form method="POST" action="{{ route('logout') }}" class="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
             @csrf
             <button type="submit" class="flex w-full rounded-lg px-3 py-2 text-sm text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10">Sign out</button>

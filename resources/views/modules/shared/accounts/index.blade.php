@@ -1,0 +1,14 @@
+@extends('layouts.app')
+
+@section('content')
+<x-common.page-breadcrumb :pageTitle="$role->label().' Accounts'">
+    <x-slot:actions><a href="{{ route($routeBase.'.create') }}" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">Create {{ $role->label() }}</a></x-slot:actions>
+</x-common.page-breadcrumb>
+<x-common.component-card :title="$role->label().' management'" desc="Accounts in this portal always receive exactly one fixed system role.">
+    <form method="GET" class="mb-6 grid gap-3 sm:grid-cols-[1fr_180px_auto]"><input name="search" value="{{ request('search') }}" placeholder="Search name or email" class="h-11 rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:text-white"><x-form.select name="status" :options="['active' => 'Active', 'inactive' => 'Inactive']" :value="request('status')" placeholder="All statuses" /><button class="rounded-lg border border-gray-300 px-4 text-sm dark:border-gray-700 dark:text-white">Filter</button></form>
+    <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800"><thead><tr class="text-left text-xs uppercase text-gray-500"><th class="px-4 py-3">Name</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Actions</th></tr></thead><tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+        @forelse ($users as $account)<tr><td class="px-4 py-4 font-medium text-gray-800 dark:text-white">{{ $account->name }}</td><td class="px-4 py-4 text-sm text-gray-500">{{ $account->email }}</td><td class="px-4 py-4"><x-ui.badge :color="$account->isActive() ? 'success' : 'error'">{{ ucfirst($account->status->value) }}</x-ui.badge></td><td class="px-4 py-4"><div class="flex justify-end gap-2"><form method="POST" action="{{ route($routeBase.'.status', $account) }}">@csrf @method('PATCH')<input type="hidden" name="status" value="{{ $account->isActive() ? 'inactive' : 'active' }}"><button class="rounded-lg border border-gray-300 px-3 py-2 text-xs dark:border-gray-700 dark:text-white">{{ $account->isActive() ? 'Deactivate' : 'Activate' }}</button></form><a href="{{ route($routeBase.'.edit', $account) }}" class="rounded-lg border border-gray-300 px-3 py-2 text-xs dark:border-gray-700 dark:text-white">Edit</a><form method="POST" action="{{ route($routeBase.'.destroy', $account) }}" onsubmit="return confirm('Permanently delete this account?')">@csrf @method('DELETE')<button class="rounded-lg bg-error-50 px-3 py-2 text-xs text-error-600">Delete</button></form></div></td></tr>
+        @empty<tr><td colspan="4" class="px-4 py-10 text-center text-sm text-gray-500">No {{ Str::lower($role->label()) }} accounts found.</td></tr>@endforelse
+    </tbody></table></div><div class="mt-6">{{ $users->links() }}</div>
+</x-common.component-card>
+@endsection

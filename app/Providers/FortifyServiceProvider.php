@@ -35,7 +35,11 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
-        Fortify::loginView(fn () => view('pages.auth.signin', ['title' => 'Sign In']));
+        Fortify::loginView(fn () => view('pages.auth.signin', [
+            'title' => 'Sign In',
+            'demoLoginEnabled' => (bool) config('lms.demo_login.enabled'),
+            'demoAccounts' => config('lms.demo_login.accounts', []),
+        ]));
         Fortify::requestPasswordResetLinkView(fn () => view('pages.auth.forgot-password', ['title' => 'Forgot Password']));
         Fortify::resetPasswordView(fn (Request $request) => view('pages.auth.reset-password', [
             'request' => $request,
@@ -56,5 +60,6 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($throttleKey);
         });
 
+        RateLimiter::for('demo-login', fn (Request $request) => Limit::perMinute(12)->by($request->ip()));
     }
 }

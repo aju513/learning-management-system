@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Services\NavigationService;
 use App\Support\PermissionCatalog;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Activitylog\Models\Activity;
@@ -12,9 +13,13 @@ test('public registration and email verification are disabled', function () {
     $this->get('/admin/email/verify')->assertNotFound();
 });
 
-test('guests are redirected to the prefixed admin login', function () {
+test('guests are redirected to the Fortify login', function () {
+    $this->get('/portal')->assertRedirect('/admin/login');
+    $this->get('/super-admin')->assertRedirect('/admin/login');
     $this->get('/admin')->assertRedirect('/admin/login');
-    $this->get('/admin/login')->assertOk()->assertSee('Admin sign in');
+    $this->get('/instructor')->assertRedirect('/admin/login');
+    $this->get('/learning')->assertRedirect('/admin/login');
+    $this->get('/admin/login')->assertOk()->assertSee('LMS sign in');
 });
 
 test('inactive users cannot sign in', function () {
@@ -25,149 +30,116 @@ test('inactive users cannot sign in', function () {
     $this->assertGuest();
 });
 
-test('the bootstrap account can access the admin without a forced password change', function () {
+test('the bootstrap account resolves to the Super Admin portal', function () {
     $this->artisan('admin:permissions-sync')->assertSuccessful();
 
     $this->post('/admin/login', ['email' => 'admin@admin.com', 'password' => 'admin'])
-        ->assertRedirect('/admin');
-    $this->get('/admin')->assertOk();
+        ->assertRedirect(route('portal.home'));
+    $this->get(route('portal.home'))->assertRedirect(route('super-admin.dashboard'));
+    $this->get(route('super-admin.dashboard'))->assertOk()->assertSee('Super Admin Dashboard');
 });
 
-test('permission synchronization is exact and assigns super admin', function () {
+test('permission synchronization is exact and owns four fixed roles', function () {
     Permission::create(['name' => 'obsolete.permission', 'guard_name' => 'web']);
 
     $this->artisan('admin:permissions-sync')->assertSuccessful();
 
     expect(Permission::where('name', 'obsolete.permission')->exists())->toBeFalse()
-        ->and(Permission::where('name', 'dashboard.view')->exists())->toBeTrue()
-        ->and(Permission::findByName('users.manage')->view_title)->toBe('Manage users')
-        ->and(Permission::findByName('users.manage')->description)->toBe('Allows access to the users index, filters, and pagination.')
-        ->and(User::find(1)->hasRole('super-admin'))->toBeTrue()
-        ->and(Role::findByName('super-admin')->permissions()->count())->toBe(PermissionCatalog::names()->count());
+        ->and(Permission::where('name', 'portals.trainee.access')->exists())->toBeTrue()
+        ->and(Role::query()->orderBy('name')->pluck('name')->all())->toBe(['admin', 'instructor', 'super-admin', 'trainee'])
+        ->and(User::find(1)->getRoleNames()->all())->toBe(['super-admin'])
+        ->and(Role::findByName('super-admin')->permissions()->count())->toBe(PermissionCatalog::names()->count() - 3)
+        ->and(Role::findByName('super-admin')->hasPermissionTo('portals.trainee.access'))->toBeFalse();
 });
 
-test('menu regeneration validates and writes the manifest', function () {
-    $this->artisan('admin:menu-regenerate')->assertSuccessful();
-    expect(file_exists(base_path('bootstrap/cache/admin-menu.php')))->toBeTrue();
-});
-
-test('authorized administrators can create a simple user account', function () {
+test('permission synchronization refuses assigned unsupported roles', function () {
     $this->artisan('admin:permissions-sync')->assertSuccessful();
-    $admin = User::findOrFail(1);
-    $role = Role::create(['name' => 'operator', 'guard_name' => 'web']);
+    $custom = Role::create(['name' => 'operator', 'guard_name' => 'web']);
+    $user = User::factory()->create();
+    $user->assignRole($custom);
 
-    $this->actingAs($admin)->post(route('admin.users.store'), [
-        'name' => 'Example Operator',
-        'email' => 'operator@example.com',
+    $this->artisan('admin:permissions-sync')->assertFailed();
+
+    expect($custom->fresh())->not->toBeNull()->and($user->fresh()->getRoleNames()->all())->toBe(['operator']);
+});
+
+test('menu regeneration validates and writes all portal manifests', function () {
+    $this->artisan('admin:permissions-sync')->assertSuccessful();
+    $this->artisan('admin:menu-regenerate')->assertSuccessful();
+
+    $manifests = require base_path('bootstrap/cache/admin-menu.php');
+
+    expect(array_keys($manifests))->toBe(['super-admin', 'admin', 'instructor', 'trainee']);
+});
+
+test('Admin creates fixed Instructor and Trainee accounts without role selection', function () {
+    $this->artisan('admin:permissions-sync')->assertSuccessful();
+    $admin = User::factory()->create();
+    $admin->syncRoles(['admin']);
+
+    $this->actingAs($admin)->post(route('admin.trainees.store'), [
+        'name' => 'Example Trainee',
+        'email' => 'trainee-account@example.com',
         'password' => 'SecurePassword1!',
         'password_confirmation' => 'SecurePassword1!',
         'status' => 'active',
-        'roles' => [$role->name],
-    ])->assertRedirect(route('admin.users.index'));
+        'roles' => ['admin'],
+    ])->assertRedirect(route('admin.trainees.index'));
 
-    $user = User::whereEmail('operator@example.com')->firstOrFail();
-    expect($user->hasRole('operator'))->toBeTrue();
+    $trainee = User::whereEmail('trainee-account@example.com')->firstOrFail();
+    expect($trainee->getRoleNames()->all())->toBe(['trainee'])
+        ->and(Activity::where('event', 'user.created')->where('causer_id', $admin->id)->exists())->toBeTrue();
+
+    $this->actingAs($admin)->get('/super-admin/admins')->assertForbidden();
 });
 
-test('the final super administrator cannot be deleted', function () {
+test('each role resolves to one dashboard and cannot enter another portal', function (string $role, string $dashboard, string $foreignPortal) {
     $this->artisan('admin:permissions-sync')->assertSuccessful();
-    $admin = User::findOrFail(1);
+    $user = User::factory()->create();
+    $user->syncRoles([$role]);
 
-    $this->actingAs($admin)->delete(route('admin.users.destroy', $admin))
-        ->assertSessionHasErrors('user');
-    expect($admin->fresh())->not->toBeNull();
+    $this->actingAs($user)->get(route('portal.home'))->assertRedirect(route($dashboard));
+    $this->actingAs($user)->get(route($dashboard))->assertOk();
+    $this->actingAs($user)->get($foreignPortal)->assertForbidden();
+})->with([
+    'super admin' => ['super-admin', 'super-admin.dashboard', '/learning'],
+    'admin' => ['admin', 'admin.dashboard', '/instructor'],
+    'instructor' => ['instructor', 'instructor.dashboard', '/admin'],
+    'trainee' => ['trainee', 'learning.dashboard', '/super-admin'],
+]);
+
+test('portal navigation is fixed per role instead of accumulating shared menu items', function () {
+    $this->artisan('admin:permissions-sync')->assertSuccessful();
+    $navigation = app(NavigationService::class);
+    $users = collect(['super-admin', 'admin', 'instructor', 'trainee'])->mapWithKeys(function (string $role): array {
+        $user = User::factory()->create();
+        $user->syncRoles([$role]);
+
+        return [$role => $user];
+    });
+
+    expect(collect($navigation->forUser($users['super-admin']))->pluck('label')->all())->toContain('User Management', 'Learning Oversight', 'Access Matrix')
+        ->and(collect($navigation->forUser($users['admin']))->pluck('label')->all())->toContain('People', 'Enrollments', 'Reports')
+        ->and(collect($navigation->forUser($users['admin']))->pluck('label')->all())->not->toContain('My Learning', 'My Courses')
+        ->and(collect($navigation->forUser($users['instructor']))->pluck('label')->all())->toContain('My Courses', 'My Trainees')
+        ->and(collect($navigation->forUser($users['trainee']))->pluck('label')->all())->toContain('Course Catalog', 'My Learning', 'My Tests')
+        ->and(collect($navigation->forUser($users['trainee']))->pluck('label')->all())->not->toContain('Enrollments', 'User Management');
 });
 
-test('the super administrator can render every foundation screen', function () {
+test('the Super Admin oversight screens render without learner features', function () {
     $this->artisan('admin:permissions-sync')->assertSuccessful();
-    $admin = User::findOrFail(1);
+    $superAdmin = User::findOrFail(1);
 
     foreach ([
-        route('admin.dashboard'),
-        route('admin.users.index'),
-        route('admin.users.show', $admin),
-        route('admin.users.create'),
-        route('admin.users.edit', $admin),
-        route('admin.roles.index'),
-        route('admin.roles.show', Role::findByName('super-admin')),
-        route('admin.roles.create'),
-        route('admin.roles.edit', Role::findByName('super-admin')),
-        route('admin.permissions.index'),
-        route('admin.activity.index'),
-        route('admin.profile.edit'),
-        route('admin.password.edit'),
-        route('admin.ui-kit'),
+        route('super-admin.dashboard'), route('super-admin.admins.index'), route('super-admin.instructors.index'),
+        route('super-admin.trainees.index'), route('super-admin.courses.index'), route('super-admin.course-categories.index'),
+        route('super-admin.applications.index'), route('super-admin.enrollments.index'), route('super-admin.assessments.index'),
+        route('super-admin.results.index'), route('super-admin.reports.index'), route('super-admin.access-matrix.index'),
+        route('super-admin.activity.index'), route('account.profile.edit'), route('account.password.edit'),
     ] as $url) {
-        $this->actingAs($admin)->get($url)->assertOk();
+        $this->actingAs($superAdmin)->get($url)->assertOk();
     }
 
-    $this->actingAs($admin)->get(route('admin.permissions.index'))
-        ->assertSee('Manage users')
-        ->assertSee('Allows access to the users index, filters, and pagination.');
-});
-
-test('crud permissions protect matching user and role actions', function () {
-    $this->artisan('admin:permissions-sync')->assertSuccessful();
-    $operator = User::factory()->create();
-    $role = Role::create(['name' => 'operator', 'guard_name' => 'web']);
-    $role->givePermissionTo(['users.manage', 'users.show', 'users.create', 'roles.manage']);
-    $operator->assignRole($role);
-    $target = User::factory()->create();
-
-    $this->actingAs($operator)->get(route('admin.users.index'))->assertOk();
-    $this->actingAs($operator)->get(route('admin.users.show', $target))->assertOk();
-    $this->actingAs($operator)->get(route('admin.users.create'))->assertOk();
-    $this->actingAs($operator)->post(route('admin.users.store'), [
-        'name' => 'Unassigned User',
-        'email' => 'unassigned@example.com',
-        'password' => 'SecurePassword1!',
-        'password_confirmation' => 'SecurePassword1!',
-        'status' => 'active',
-    ])->assertRedirect(route('admin.users.index'));
-    $this->actingAs($operator)->get(route('admin.users.edit', $target))->assertForbidden();
-    $this->actingAs($operator)->get(route('admin.roles.index'))->assertOk();
-    $this->actingAs($operator)->get(route('admin.roles.show', $role))->assertForbidden();
-    $this->actingAs($operator)->delete(route('admin.users.destroy', $target))->assertForbidden();
-});
-
-test('user and role mutations record the acting administrator', function () {
-    $this->artisan('admin:permissions-sync')->assertSuccessful();
-    $admin = User::findOrFail(1);
-    $role = Role::create(['name' => 'operator', 'guard_name' => 'web']);
-
-    $this->actingAs($admin)->post(route('admin.users.store'), [
-        'name' => 'Activity User',
-        'email' => 'activity-user@example.com',
-        'password' => 'SecurePassword1!',
-        'password_confirmation' => 'SecurePassword1!',
-        'status' => 'active',
-        'roles' => [$role->name],
-    ])->assertRedirect(route('admin.users.index'));
-
-    $this->actingAs($admin)->post(route('admin.roles.store'), [
-        'name' => 'auditor',
-        'permissions' => ['users.manage'],
-    ])->assertRedirect(route('admin.roles.index'));
-
-    expect(Activity::where('event', 'user.created')->where('causer_id', $admin->id)->exists())->toBeTrue()
-        ->and(Activity::where('event', 'role.created')->where('causer_id', $admin->id)->exists())->toBeTrue();
-});
-
-test('authorized administrators can bulk update and delete users', function () {
-    $this->artisan('admin:permissions-sync')->assertSuccessful();
-    $admin = User::findOrFail(1);
-    $users = User::factory()->count(2)->create();
-
-    $this->actingAs($admin)->patch(route('admin.users.bulk-status'), [
-        'users' => $users->pluck('id')->all(),
-        'status' => 'inactive',
-    ])->assertRedirect();
-
-    expect($users->fresh()->every(fn (User $user): bool => ! $user->isActive()))->toBeTrue();
-
-    $this->actingAs($admin)->delete(route('admin.users.bulk-destroy'), [
-        'users' => $users->pluck('id')->all(),
-    ])->assertRedirect();
-
-    expect(User::whereKey($users->pluck('id'))->count())->toBe(0);
+    $this->actingAs($superAdmin)->get(route('learning.catalog.index'))->assertForbidden();
+    expect(Route::has('admin.roles.create'))->toBeFalse();
 });

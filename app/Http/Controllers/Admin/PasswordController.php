@@ -21,6 +21,6 @@ class PasswordController extends Controller
     {
         $this->service->updatePassword($request->user(), $request->validated('password'));
 
-        return redirect()->route('admin.dashboard')->with('success', 'Password updated.');
+        return redirect()->route('portal.home')->with('success', 'Password updated.');
     }
 }

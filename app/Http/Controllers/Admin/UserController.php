@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\BulkDeleteUserRequest;
 use App\Http\Requests\User\BulkUserStatusRequest;
 use App\Http\Requests\User\DeleteUserRequest;
+use App\Http\Requests\User\EditUserRequest;
 use App\Http\Requests\User\IndexUserRequest;
 use App\Http\Requests\User\ShowUserRequest;
 use App\Http\Requests\User\StoreUserRequest;
@@ -34,7 +35,7 @@ class UserController extends Controller
 
     public function create(): View
     {
-        return view('pages.admin.users.create', ['user' => new User(['status' => UserStatus::Active]), 'roles' => $this->roles->allForAssignment(), 'title' => 'Create User']);
+        return view('pages.admin.users.create', ['user' => new User(['status' => UserStatus::Active]), 'roles' => $this->roles->allForAssignment(request()->user()), 'title' => 'Create User']);
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
@@ -44,9 +45,9 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User created.');
     }
 
-    public function edit(User $user): View
+    public function edit(EditUserRequest $request, User $user): View
     {
-        return view('pages.admin.users.edit', ['user' => $this->users->findForEdit($user), 'roles' => $this->roles->allForAssignment(), 'title' => 'Edit User']);
+        return view('pages.admin.users.edit', ['user' => $this->users->findForEdit($user), 'roles' => $this->roles->allForAssignment($request->user()), 'title' => 'Edit User']);
     }
 
     public function show(ShowUserRequest $request, User $user): View

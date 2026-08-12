@@ -1,8 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
-<x-common.page-breadcrumb pageTitle="Permissions" />
-<x-ui.alert variant="info" title="Code-owned catalog" message="Permissions are maintained in config/permissions.php. Run php artisan admin:permissions-sync after changes. The display text and descriptions below help administrators understand what each permission grants; this screen does not edit the catalog." />
+<x-common.page-breadcrumb pageTitle="Fixed Access Matrix" />
+<x-ui.alert variant="info" title="Four code-owned roles" message="Portal roles and permissions are fixed in code. This screen is read-only; run php artisan admin:permissions-sync after configuration changes." />
+<div class="mt-6 grid gap-5 xl:grid-cols-2">
+    @foreach ($roleMatrices as $role => $permissions)
+        <x-common.component-card :title="$role" :desc="count($permissions).' permissions'">
+            <div class="flex max-h-64 flex-wrap gap-2 overflow-y-auto">
+                @foreach ($permissions as $permission)<x-ui.badge color="light">{{ $permission }}</x-ui.badge>@endforeach
+            </div>
+        </x-common.component-card>
+    @endforeach
+</div>
 <div class="mt-6 grid gap-5 lg:grid-cols-2">
     @foreach($permissionGroups as $group => $permissions)
         <x-common.component-card :title="ucfirst($group)">

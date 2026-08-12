@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Http\Requests\LearningMaterial;
+
+use App\Enums\MaterialType;
+use App\Http\Requests\Concerns\AuthorizesLmsOwnership;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
+
+class StoreLearningMaterialRequest extends FormRequest
+{
+    use AuthorizesLmsOwnership;
+
+    public function authorize(): bool
+    {
+        return $this->canEditCourse($this->route('course_module')->course, 'materials.create');
+    }
+
+    public function rules(): array
+    {
+        return $this->materialRules(true);
+    }
+
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            $existingFile = $this->route('learning_material')?->file_path;
+            if ($this->input('type') === MaterialType::Video->value && blank($this->input('external_url')) && ! $this->hasFile('file') && ! $existingFile) {
+                $validator->errors()->add('external_url', 'Provide a video URL or upload a video file.');
+            }
+        }];
+    }
+
+    protected function materialRules(bool $creating): array
+    {
+        $fileTypes = ['pdf', 'ppt', 'pptx', 'doc', 'docx', 'downloadable_file'];
+
+        return [
+            'title' => ['required', 'string', 'max:255'], 'type' => ['required', Rule::enum(MaterialType::class)],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'content' => [Rule::requiredIf($this->input('type') === 'article'), 'nullable', 'string', 'max:100000'],
+            'external_url' => [Rule::requiredIf(in_array($this->input('type'), ['external_link'], true)), 'nullable', 'url:http,https', 'max:2000'],
+            'assessment_id' => [Rule::requiredIf($this->input('type') === 'assessment'), 'nullable', 'integer', 'exists:assessments,id'],
+            'file' => [Rule::requiredIf($creating && in_array($this->input('type'), $fileTypes, true)), 'nullable', 'file', 'mimes:pdf,ppt,pptx,doc,docx,zip,mp4,webm', 'max:102400'],
+            'duration_minutes' => ['nullable', 'integer', 'min:0', 'max:100000'], 'is_required' => ['required', 'boolean'],
+        ];
+    }
+}

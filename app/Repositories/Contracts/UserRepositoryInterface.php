@@ -8,8 +8,12 @@ use Illuminate\Support\Collection;
 
 interface UserRepositoryInterface
 {
+    public function findActiveByEmail(string $email): ?User;
+
     /** @param array<string, mixed> $filters */
     public function paginateForIndex(array $filters = [], int $perPage = 15): LengthAwarePaginator;
+
+    public function paginateForRole(string $role, array $filters = [], int $perPage = 15): LengthAwarePaginator;
 
     public function findForShow(User $user): User;
 

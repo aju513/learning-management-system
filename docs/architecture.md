@@ -27,3 +27,7 @@ The sidebar and Blade `@can` directives improve usability, but route middleware,
 - `config/admin-menu.php` owns navigation metadata.
 - Services own role synchronization and audit event properties.
 - Repositories own filtering and pagination.
+
+## LMS modules
+
+The LMS extends the same request flow across course categories, courses, curriculum, enrollment, learning progress, assessments, results, dashboards, and reports. Assessments remain independent and are optionally linked to courses/modules or attached as learning materials. Uploaded learning files use authorized download routes rather than public storage. See `docs/lms.md` for the domain model and operational details.

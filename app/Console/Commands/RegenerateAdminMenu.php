@@ -17,22 +17,24 @@ class RegenerateAdminMenu extends Command
 
     public function handle(NavigationService $navigation): int
     {
-        $items = config('admin-menu', []);
-        $flat = $this->flatten($items);
+        $manifests = config('admin-menu', []);
         $permissions = PermissionCatalog::names();
-        $keys = collect($flat)->pluck('key');
 
         $errors = [];
-        if ($keys->count() !== $keys->unique()->count()) {
-            $errors[] = 'Menu keys must be unique.';
-        }
-
-        foreach ($flat as $item) {
-            if (isset($item['route']) && ! Route::has($item['route'])) {
-                $errors[] = "Unknown route [{$item['route']}] for menu [{$item['key']}].";
+        foreach ($manifests as $portal => $items) {
+            $flat = $this->flatten($items);
+            $keys = collect($flat)->pluck('key');
+            if ($keys->count() !== $keys->unique()->count()) {
+                $errors[] = "Menu keys must be unique within portal [{$portal}].";
             }
-            if (isset($item['permission']) && ! $permissions->contains($item['permission'])) {
-                $errors[] = "Unknown permission [{$item['permission']}] for menu [{$item['key']}].";
+
+            foreach ($flat as $item) {
+                if (isset($item['route']) && ! Route::has($item['route'])) {
+                    $errors[] = "Unknown route [{$item['route']}] for menu [{$portal}.{$item['key']}].";
+                }
+                if (isset($item['permission']) && ! $permissions->contains($item['permission'])) {
+                    $errors[] = "Unknown permission [{$item['permission']}] for menu [{$portal}.{$item['key']}].";
+                }
             }
         }
 
@@ -47,7 +49,7 @@ class RegenerateAdminMenu extends Command
         try {
             $target = base_path('bootstrap/cache/admin-menu.php');
             File::ensureDirectoryExists(dirname($target));
-            File::replace($target, "<?php\n\nreturn ".var_export($navigation->configuredManifest(), true).";\n");
+            File::replace($target, "<?php\n\nreturn ".var_export($navigation->configuredManifests(), true).";\n");
             activity('system')->event('menu.regenerated')->log('Admin menu regenerated');
         } catch (Throwable $exception) {
             $this->error($exception->getMessage());

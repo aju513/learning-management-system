@@ -1,0 +1,17 @@
+@extends('layouts.app')
+@section('content')
+<x-common.page-breadcrumb pageTitle="Course Categories">
+    <x-slot:actions>@can('course-categories.create')<a href="{{ route(\App\Support\PortalRoute::name('course-categories.create')) }}" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">Create category</a>@endcan</x-slot:actions>
+</x-common.page-breadcrumb>
+<x-common.component-card title="Course categories" desc="Organize courses into a stable, searchable catalog.">
+    <form method="GET" class="flex gap-3"><input name="search" value="{{ request('search') }}" placeholder="Search categories" class="h-11 flex-1 rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:text-white"><button class="rounded-lg border border-gray-300 px-4 text-sm dark:border-gray-700 dark:text-white">Filter</button></form>
+    <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+        <thead><tr class="text-left text-xs uppercase text-gray-500"><th class="px-2 py-3">S.N.</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">Courses</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Actions</th></tr></thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">@forelse($categories as $category)<tr>
+            <td class="px-2 py-4 text-sm text-gray-500">{{ $categories->firstItem() + $loop->index }}</td><td class="px-4 py-4"><p class="font-medium text-gray-800 dark:text-white">{{ $category->name }}</p><p class="text-sm text-gray-500">{{ Str::limit($category->description, 80) }}</p></td>
+            <td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{{ $category->courses_count }}</td><td class="px-4 py-4"><x-ui.badge :color="$category->is_active ? 'success' : 'light'">{{ $category->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
+            <td class="px-4 py-4"><div class="flex justify-end gap-2">@can('course-categories.edit')<a href="{{ route(\App\Support\PortalRoute::name('course-categories.edit'), $category) }}" class="rounded-lg border border-gray-300 px-3 py-2 text-xs dark:border-gray-700 dark:text-white">Edit</a>@endcan @can('course-categories.delete')<form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-categories.destroy'), $category) }}" onsubmit="return confirm('Delete this empty category?')">@csrf @method('DELETE')<button class="rounded-lg bg-error-50 px-3 py-2 text-xs text-error-600">Delete</button></form>@endcan</div></td>
+        </tr>@empty<tr><td colspan="5" class="px-4 py-10 text-center text-sm text-gray-500">No categories found.</td></tr>@endforelse</tbody>
+    </table></div>{{ $categories->links() }}
+</x-common.component-card>
+@endsection

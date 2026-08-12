@@ -3,7 +3,7 @@
 @section('content')
 <x-common.page-breadcrumb pageTitle="Activity Log" />
 <x-common.component-card title="Audit trail" desc="A readable history of administrative and account security events. Sensitive values are never recorded.">
-    <form method="GET" action="{{ route('admin.activity.index') }}" class="grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_170px_170px_auto] lg:items-end">
+    <form method="GET" action="{{ route('super-admin.activity.index') }}" class="grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_170px_170px_auto] lg:items-end">
         <x-form.input name="event" label="Event" :value="request('event')" placeholder="Search events" />
         <x-form.input name="actor" label="Performed by" :value="request('actor')" placeholder="Name or email" />
         <x-form.input name="from" label="From" type="date" :value="request('from')" />
@@ -11,7 +11,7 @@
         <div class="flex items-center gap-2 lg:pb-0.5">
             <button type="submit" class="h-11 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600">Filter</button>
             @if(request()->hasAny(['event', 'actor', 'from', 'to']))
-                <a href="{{ route('admin.activity.index') }}" class="text-sm font-medium text-gray-500 hover:text-brand-500 dark:text-gray-400">Clear</a>
+                <a href="{{ route('super-admin.activity.index') }}" class="text-sm font-medium text-gray-500 hover:text-brand-500 dark:text-gray-400">Clear</a>
             @endif
         </div>
     </form>

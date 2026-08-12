@@ -14,7 +14,7 @@
     @mouseenter="if (!$store.sidebar.isExpanded) $store.sidebar.setHovered(true)"
     @mouseleave="$store.sidebar.setHovered(false)">
     <div class="flex pb-7 pt-8" :class="!$store.sidebar.isExpanded && !$store.sidebar.isHovered ? 'xl:justify-center' : 'justify-start'">
-        <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 font-semibold text-gray-900 dark:text-white">
+        <a href="{{ route('portal.home') }}" class="flex items-center gap-3 font-semibold text-gray-900 dark:text-white">
             <img src="/images/logo/logo-icon.svg" alt="{{ config('app.name') }}" width="32" height="32">
             <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">{{ config('app.name') }}</span>
         </a>

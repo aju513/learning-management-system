@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\SystemRole;
 use App\Enums\UserStatus;
 use App\Models\User;
 use App\Services\NavigationService;
@@ -23,6 +24,7 @@ class SyncAdminPermissions extends Command
     public function handle(NavigationService $navigation): int
     {
         $permissions = PermissionCatalog::names();
+        $systemRoles = SystemRole::values();
 
         if ($permissions->count() !== $permissions->unique()->count()) {
             $this->error('Duplicate permission names exist in config/permissions.php.');
@@ -33,6 +35,29 @@ class SyncAdminPermissions extends Command
         $unknownMenuPermissions = collect($navigation->permissionReferences())->diff($permissions);
         if ($unknownMenuPermissions->isNotEmpty()) {
             $this->error('Menu permissions missing from config/permissions.php: '.$unknownMenuPermissions->join(', '));
+
+            return self::FAILURE;
+        }
+
+        $unsupportedAssignedRoles = Role::query()
+            ->where('guard_name', 'web')
+            ->whereNotIn('name', $systemRoles)
+            ->whereHas('users')
+            ->pluck('name');
+        if ($unsupportedAssignedRoles->isNotEmpty()) {
+            $this->error('Users are assigned unsupported roles: '.$unsupportedAssignedRoles->join(', ').'. Resolve them before synchronizing.');
+
+            return self::FAILURE;
+        }
+
+        if (User::query()->withCount('roles')->get()->contains(fn (User $user): bool => $user->roles_count > 1)) {
+            $this->error('One or more users have multiple roles. Every account must have exactly one system role.');
+
+            return self::FAILURE;
+        }
+
+        if (User::query()->whereKeyNot(1)->doesntHave('roles')->exists()) {
+            $this->error('One or more users have no system role. Assign exactly one role before synchronizing.');
 
             return self::FAILURE;
         }
@@ -63,7 +88,21 @@ class SyncAdminPermissions extends Command
                 app(PermissionRegistrar::class)->forgetCachedPermissions();
 
                 $role = Role::findOrCreate('super-admin', 'web');
-                $role->syncPermissions($permissions->all());
+                $role->syncPermissions($permissions
+                    ->reject(fn (string $permission): bool => str_starts_with($permission, 'portals.')
+                        && $permission !== SystemRole::SuperAdmin->portalPermission())
+                    ->all());
+
+                foreach (config('lms.roles', []) as $roleName => $rolePermissions) {
+                    Role::findOrCreate($roleName, 'web')->syncPermissions($rolePermissions);
+                }
+
+                Role::query()
+                    ->where('guard_name', 'web')
+                    ->whereNotIn('name', SystemRole::values())
+                    ->whereDoesntHave('users')
+                    ->get()
+                    ->each->delete();
 
                 $user = User::query()->find(1);
                 if (User::query()->doesntExist()) {
@@ -75,7 +114,7 @@ class SyncAdminPermissions extends Command
                     ]);
                 }
 
-                $user?->assignRole($role);
+                $user?->syncRoles([$role]);
 
                 activity('system')
                     ->event('permissions.synced')

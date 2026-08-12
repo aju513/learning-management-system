@@ -6,6 +6,8 @@ Fortify is mounted under `/admin` and enables login, logout, remember-me, forgot
 
 Login is limited to active users and throttled to five attempts per minute per normalized email/IP pair. Authenticated inactive users are logged out by middleware. Passwords must have at least 12 characters with upper/lowercase letters, a number, and a symbol.
 
+Local environments also expose four guest-accessible demo-login buttons for the seeded super administrator, administrator, instructor, and trainee accounts. Each button submits a CSRF-protected, IP-throttled POST request, resolves the active account by its configured email, authenticates it on the `web` guard, and regenerates the session. The shortcuts are controlled by `LMS_DEMO_LOGIN_ENABLED`, default to enabled only when `APP_ENV=local`, and must remain disabled in exposed environments. Normal Fortify login remains available regardless of this setting.
+
 ## Bootstrap account
 
 `admin:permissions-sync` creates `admin@admin.com` with password `admin` only when there are no users and assigns `super-admin`. The bootstrap password is documented for local setup only; change it before exposing the application, but the application does not force a password-change redirect.
@@ -16,8 +18,8 @@ If users already exist, the command assigns `super-admin` to user ID 1. If ID 1 
 
 User forms contain name, email, password/confirmation, active/inactive status, and roles. Users are hard-deleted; there are no soft deletes. The last super administrator cannot be deleted, demoted, or deactivated. Authorized self-deletion is permitted when another super administrator exists and invalidates the current session.
 
-Permissions are never assigned directly to users. Users receive roles, and roles receive permissions from the code-owned catalog. `super-admin` cannot be renamed or deleted, and roles with assigned users cannot be deleted.
+Permissions are never assigned directly to users. Users receive roles, and roles receive permissions from the code-owned catalog. `super-admin` cannot be renamed or deleted, and roles with assigned users cannot be deleted. The LMS adds code-owned `admin`, `instructor`, and `trainee` roles whose default permission matrices are exact-synchronized from `config/lms.php`. Non-super administrators can only assign role types covered by their explicit `users.manage-*` permissions and can never grant `super-admin`.
 
 ## Activity log
 
-Spatie Activitylog records login/logout/failure, password reset/change, profile changes, user/role administration, permission synchronization, and menu regeneration. Passwords, tokens, and session values are excluded. `/admin/activity-log` is read-only and permission-protected. Retention defaults to 365 days through `ACTIVITY_LOG_RETENTION_DAYS`.
+Spatie Activitylog records login/logout/failure, demo login, password reset/change, profile changes, user/role administration, permission synchronization, and menu regeneration. Passwords, tokens, and session values are excluded. `/admin/activity-log` is read-only and permission-protected. Retention defaults to 365 days through `ACTIVITY_LOG_RETENTION_DAYS`.

@@ -14,5 +14,9 @@ class DatabaseSeeder extends Seeder
     {
         Artisan::call('admin:permissions-sync');
         Artisan::call('admin:menu-regenerate');
+
+        if (app()->environment('local')) {
+            $this->call(LmsDemoSeeder::class);
+        }
     }
 }

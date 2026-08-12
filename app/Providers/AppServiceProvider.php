@@ -4,9 +4,17 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Repositories\Contracts\ActivityRepositoryInterface;
+use App\Repositories\Contracts\AssessmentRepositoryInterface;
+use App\Repositories\Contracts\CourseRepositoryInterface;
+use App\Repositories\Contracts\EnrollmentRepositoryInterface;
+use App\Repositories\Contracts\ReportRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Eloquent\ActivityRepository;
+use App\Repositories\Eloquent\AssessmentRepository;
+use App\Repositories\Eloquent\CourseRepository;
+use App\Repositories\Eloquent\EnrollmentRepository;
+use App\Repositories\Eloquent\ReportRepository;
 use App\Repositories\Eloquent\RoleRepository;
 use App\Repositories\Eloquent\UserRepository;
 use Illuminate\Auth\Events\Failed;
@@ -28,6 +36,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
         $this->app->bind(ActivityRepositoryInterface::class, ActivityRepository::class);
+        $this->app->bind(CourseRepositoryInterface::class, CourseRepository::class);
+        $this->app->bind(EnrollmentRepositoryInterface::class, EnrollmentRepository::class);
+        $this->app->bind(AssessmentRepositoryInterface::class, AssessmentRepository::class);
+        $this->app->bind(ReportRepositoryInterface::class, ReportRepository::class);
     }
 
     /**
@@ -36,7 +48,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::before(function (User $user, string $ability): ?bool {
-            return $user->hasRole('super-admin') ? true : null;
+            if (! $user->hasRole('super-admin')) {
+                return null;
+            }
+
+            if (str_starts_with($ability, 'portals.')) {
+                return $ability === 'portals.super-admin.access';
+            }
+
+            return true;
         });
 
         Password::defaults(fn () => Password::min(12)->letters()->mixedCase()->numbers()->symbols());

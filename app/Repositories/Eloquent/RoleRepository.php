@@ -2,7 +2,9 @@
 
 namespace App\Repositories\Eloquent;
 
+use App\Models\User;
 use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Support\LmsRoleAccess;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Role;
@@ -31,9 +33,11 @@ class RoleRepository implements RoleRepositoryInterface
     }
 
     /** @return Collection<int, Role> */
-    public function allForAssignment(): Collection
+    public function allForAssignment(User $actor): Collection
     {
-        return Role::query()->orderBy('name')->get();
+        return Role::query()
+            ->when(! $actor->hasRole('super-admin'), fn ($query) => $query->whereIn('name', LmsRoleAccess::assignableRoleNames($actor)))
+            ->orderBy('name')->get();
     }
 
     public function hasUsers(Role $role): bool

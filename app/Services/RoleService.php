@@ -30,8 +30,8 @@ class RoleService
     /** @param array<string, mixed> $data */
     public function update(Role $role, array $data, Authenticatable $actor): Role
     {
-        if ($role->name === 'super-admin') {
-            throw ValidationException::withMessages(['role' => 'The super-admin role is managed by the permission sync command.']);
+        if ($role->name === 'super-admin' || array_key_exists($role->name, config('lms.roles', []))) {
+            throw ValidationException::withMessages(['role' => 'This system role is managed by the permission sync command.']);
         }
 
         return DB::transaction(function () use ($role, $data, $actor): Role {
@@ -47,8 +47,8 @@ class RoleService
 
     public function delete(Role $role, Authenticatable $actor): void
     {
-        if ($role->name === 'super-admin') {
-            throw ValidationException::withMessages(['role' => 'The super-admin role cannot be deleted.']);
+        if ($role->name === 'super-admin' || array_key_exists($role->name, config('lms.roles', []))) {
+            throw ValidationException::withMessages(['role' => 'System roles cannot be deleted.']);
         }
         if ($this->roles->hasUsers($role)) {
             throw ValidationException::withMessages(['role' => 'Remove all assigned users before deleting this role.']);
