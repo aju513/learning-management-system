@@ -98,6 +98,47 @@ test('only the owning Instructor can review a course application', function () {
     expect($application->fresh()->status->value)->toBe('active');
 });
 
+test('instructor applications are grouped by course and accepted trainees move to My Trainees', function () {
+    $instructor = applicationUser('instructor');
+    $firstTrainee = applicationUser('trainee');
+    $secondTrainee = applicationUser('trainee');
+    [$course] = catalogCourse($instructor);
+    $secondCourse = catalogCourse($instructor)[0];
+
+    $this->actingAs($firstTrainee)->post(route('learning.applications.store', $course));
+    $firstApplication = Enrollment::whereBelongsTo($course)->whereBelongsTo($firstTrainee, 'trainee')->firstOrFail();
+    $firstApplication->update(['requested_at' => now()->subDay()]);
+    $this->actingAs($secondTrainee)->post(route('learning.applications.store', $course));
+    $secondApplication = Enrollment::whereBelongsTo($course)->whereBelongsTo($secondTrainee, 'trainee')->firstOrFail();
+    $secondApplication->update(['requested_at' => now()]);
+
+    $response = $this->actingAs($instructor)->get(route('instructor.applications.index'));
+    $response->assertOk()
+        ->assertSee($course->title)
+        ->assertSee('Applied 2')
+        ->assertSee('Accepted 0')
+        ->assertSee('bi-plus', false)
+        ->assertSee('bi-dash', false);
+    expect($response->getContent())->toContain($firstTrainee->name);
+    expect(strpos($response->getContent(), $firstTrainee->name))->toBeLessThan(strpos($response->getContent(), $secondTrainee->name));
+
+    $this->actingAs($instructor)->patch(route('instructor.applications.approve', $firstApplication))->assertRedirect();
+
+    $this->actingAs($instructor)->get(route('instructor.applications.index'))
+        ->assertDontSee($firstTrainee->name)
+        ->assertSee($secondTrainee->name)
+        ->assertSee('Applied 1')
+        ->assertSee('Accepted 1');
+    $this->actingAs($instructor)->get(route('instructor.trainees.index'))
+        ->assertSee($course->title)
+        ->assertSee($firstTrainee->name)
+        ->assertSee('Accepted 1')
+        ->assertSee('bi-plus', false)
+        ->assertSee('bi-dash', false);
+    $this->actingAs($instructor)->get(route('instructor.applications.index'))
+        ->assertDontSee('aria-controls="application-course-'.$secondCourse->id.'"', false);
+});
+
 test('rejected applications show the reason and can be submitted again', function () {
     $admin = applicationUser('admin');
     $instructor = applicationUser('instructor');

@@ -21,27 +21,30 @@
 
 <div class="grid gap-6 xl:grid-cols-[1fr_320px]">
     <div class="space-y-6">
-        <x-common.component-card title="Curriculum" desc="Modules, chapters, and materials appear to trainees in this order.">
-            <div class="space-y-5">
+        <x-common.component-card title="Curriculum" desc="Expand modules and chapters to edit them. Drag the handle to reorder items; changes save automatically.">
+            <div class="space-y-5" x-data="curriculumReorder({ csrfToken: @js(csrf_token()) })">
+                <p x-show="statusMessage" x-cloak x-text="statusMessage" class="text-sm" :class="{
+                    'text-gray-500': statusType === 'saving',
+                    'text-success-600': statusType === 'success',
+                    'text-error-600': statusType === 'error'
+                }" role="status" aria-live="polite"></p>
+                <div x-ref="modules" data-module-list @can('modules.reorder') data-reorder-url="{{ route(\App\Support\PortalRoute::name('course-modules.reorder'), $course) }}" @endcan class="space-y-5">
                 @forelse($course->modules as $module)
-                    <section id="module-{{ $module->id }}" class="rounded-xl border border-gray-200 p-4 dark:border-gray-800" x-data="{ editing: false }">
+                    <section id="module-{{ $module->id }}" data-module-id="{{ $module->id }}" class="rounded-xl border border-gray-200 p-4 dark:border-gray-800" x-data="{ expanded: false }" x-init="expanded = window.location.hash === '#module-{{ $module->id }}' || @js($module->chapters->pluck('id')->all()).some(id => window.location.hash === '#chapter-' + id)" @focus-curriculum-module.window="expanded = $event.detail.moduleId === {{ $module->id }}" @focus-curriculum-chapter.window="expanded = $event.detail.moduleId === {{ $module->id }}">
                         <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-semibold uppercase text-brand-500">Module {{ $loop->iteration }}</p>
-                                <h3 class="font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h3>
-                                @if($module->description)<p class="text-sm text-gray-500">{{ $module->description }}</p>@endif
+                            <div class="flex min-w-0 items-start gap-3">
+                                @can('modules.reorder')<button type="button" class="handle mt-1 flex h-8 w-8 cursor-grab items-center justify-center rounded border border-gray-300 text-gray-500 active:cursor-grabbing dark:border-gray-700" title="Drag to reorder module" aria-label="Drag to reorder module"><i class="bi bi-grip-vertical" aria-hidden="true"></i></button>@endcan
+                                <div class="text-left">
+                                    <p data-module-number class="text-xs font-semibold uppercase text-brand-500">Module {{ $loop->iteration }}</p>
+                                    <h3 class="font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h3>
+                                    @if($module->description)<p class="text-sm text-gray-500">{{ $module->description }}</p>@endif
+                                </div>
                             </div>
                             <div class="flex gap-1">
-                                @can('modules.reorder')
-                                    @foreach(['up' => '&uarr;', 'down' => '&darr;'] as $direction => $symbol)
-                                        <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-modules.move'), $module) }}">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="direction" value="{{ $direction }}">
-                                            <button class="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:text-white" title="Move {{ $direction }}">{!! $symbol !!}</button>
-                                        </form>
-                                    @endforeach
-                                @endcan
-                                @can('modules.edit')<button type="button" @click="editing = !editing" class="rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-700 dark:text-white">Edit</button>@endcan
+                                <button type="button" class="rounded border border-gray-300 px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/[0.03]" @click.stop="expanded ? expanded = false : $dispatch('focus-curriculum-module', { moduleId: {{ $module->id }} })" :aria-expanded="expanded.toString()" aria-controls="module-panel-{{ $module->id }}" title="Toggle module" aria-label="Toggle module">
+                                    <i class="bi text-sm transition-transform duration-300" :class="expanded ? 'bi-dash' : 'bi-plus'" aria-hidden="true"></i>
+                                </button>
+                                @can('modules.edit')<button type="button" @click="$dispatch('focus-curriculum-module', { moduleId: {{ $module->id }} }); $dispatch('open-module-edit-modal', { moduleId: {{ $module->id }} })" class="rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-700 dark:text-white">Edit</button>@endcan
                                 @can('modules.delete')
                                     <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-modules.destroy'), $module) }}" onsubmit="return confirm('Delete this module, its chapters, and all materials?')">
                                         @csrf @method('DELETE')
@@ -51,35 +54,25 @@
                             </div>
                         </div>
 
-                        @can('modules.edit')
-                            <form x-show="editing" x-cloak method="POST" action="{{ route(\App\Support\PortalRoute::name('course-modules.update'), $module) }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                                @csrf @method('PUT')
-                                <x-form.input :id="'module-title-'.$module->id" name="title" label="Module title" :value="$module->title" required />
-                                <x-form.input :id="'module-description-'.$module->id" name="description" label="Description" :value="$module->description" />
-                                <button class="mt-7 h-11 rounded-lg bg-brand-500 px-4 text-sm text-white">Save</button>
-                            </form>
-                        @endcan
-
+                        <div id="module-panel-{{ $module->id }}" x-show="expanded" x-collapse.duration.300ms x-cloak class="mt-4">
                         <div class="mt-5 space-y-4">
+                            <div data-chapter-list @can('chapters.reorder') data-reorder-url="{{ route(\App\Support\PortalRoute::name('course-chapters.reorder'), $module) }}" @endcan class="space-y-4">
                             @forelse($module->chapters as $chapter)
-                                <section id="chapter-{{ $chapter->id }}" class="rounded-xl bg-gray-50 p-4 dark:bg-white/[0.02]" x-data="{ editingChapter: false }">
+                                <section id="chapter-{{ $chapter->id }}" data-chapter-id="{{ $chapter->id }}" class="rounded-xl bg-gray-50 p-4 dark:bg-white/[0.02]" x-data="{ expanded: false }" x-init="expanded = window.location.hash === '#chapter-{{ $chapter->id }}'" @focus-curriculum-module.window="expanded = false" @focus-curriculum-chapter.window="expanded = $event.detail.chapterId === {{ $chapter->id }}">
                                     <div class="flex flex-wrap items-start justify-between gap-3">
-                                        <div>
-                                            <p class="text-xs font-semibold uppercase text-gray-500">Chapter {{ $loop->iteration }}</p>
-                                            <h4 class="font-medium text-gray-800 dark:text-white">{{ $chapter->title }}</h4>
-                                            @if($chapter->description)<p class="text-sm text-gray-500">{{ $chapter->description }}</p>@endif
+                                        <div class="flex min-w-0 items-start gap-3">
+                                            @can('chapters.reorder')<button type="button" class="handle mt-1 flex h-8 w-8 cursor-grab items-center justify-center rounded border border-gray-300 bg-white text-gray-500 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-900" title="Drag to reorder chapter" aria-label="Drag to reorder chapter"><i class="bi bi-grip-vertical" aria-hidden="true"></i></button>@endcan
+                                            <div class="text-left">
+                                                <p data-chapter-number class="text-xs font-semibold uppercase text-gray-500">Chapter {{ $loop->iteration }}</p>
+                                                <h4 class="font-medium text-gray-800 dark:text-white">{{ $chapter->title }}</h4>
+                                                @if($chapter->description)<p class="text-sm text-gray-500">{{ $chapter->description }}</p>@endif
+                                            </div>
                                         </div>
                                         <div class="flex gap-1">
-                                            @can('chapters.reorder')
-                                                @foreach(['up' => '&uarr;', 'down' => '&darr;'] as $direction => $symbol)
-                                                    <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-chapters.move'), $chapter) }}">
-                                                        @csrf @method('PATCH')
-                                                        <input type="hidden" name="direction" value="{{ $direction }}">
-                                                        <button class="rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white" title="Move chapter {{ $direction }}">{!! $symbol !!}</button>
-                                                    </form>
-                                                @endforeach
-                                            @endcan
-                                            @can('chapters.edit')<button type="button" @click="editingChapter = !editingChapter" class="rounded border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white">Edit</button>@endcan
+                                            <button type="button" class="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.03]" @click.stop="expanded ? expanded = false : $dispatch('focus-curriculum-chapter', { moduleId: {{ $module->id }}, chapterId: {{ $chapter->id }} })" :aria-expanded="expanded.toString()" aria-controls="chapter-panel-{{ $chapter->id }}" title="Toggle chapter" aria-label="Toggle chapter">
+                                                <i class="bi text-sm transition-transform duration-300" :class="expanded ? 'bi-dash' : 'bi-plus'" aria-hidden="true"></i>
+                                            </button>
+                                            @can('chapters.edit')<button type="button" @click="$dispatch('focus-curriculum-chapter', { moduleId: {{ $module->id }}, chapterId: {{ $chapter->id }} }); $dispatch('open-chapter-edit-modal', { chapterId: {{ $chapter->id }} })" class="rounded border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white">Edit</button>@endcan
                                             @can('chapters.delete')
                                                 <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-chapters.destroy'), $chapter) }}" onsubmit="return confirm('Delete this empty chapter?')">
                                                     @csrf @method('DELETE')
@@ -89,35 +82,35 @@
                                         </div>
                                     </div>
 
-                                    @can('chapters.edit')
-                                        <form x-show="editingChapter" x-cloak method="POST" action="{{ route(\App\Support\PortalRoute::name('course-chapters.update'), $chapter) }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                                            @csrf @method('PUT')
-                                            <x-form.input :id="'chapter-title-'.$chapter->id" name="title" label="Chapter title" :value="$chapter->title" required />
-                                            <x-form.input :id="'chapter-description-'.$chapter->id" name="description" label="Description" :value="$chapter->description" />
-                                            <button class="mt-7 h-11 rounded-lg bg-brand-500 px-4 text-sm text-white">Save</button>
-                                        </form>
-                                    @endcan
-
-                                    <div class="mt-3 divide-y divide-gray-200 dark:divide-gray-800">
+                                    <div id="chapter-panel-{{ $chapter->id }}" x-show="expanded" x-collapse.duration.300ms x-cloak>
+                                    <div data-material-list @can('materials.reorder') data-reorder-url="{{ route(\App\Support\PortalRoute::name('learning-materials.reorder'), $chapter) }}" @endcan class="mt-3 space-y-2">
                                         @forelse($chapter->materials as $material)
-                                            <div class="flex flex-wrap items-center justify-between gap-3 py-3">
-                                                <div class="flex items-center gap-3">
-                                                    <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-xs font-bold uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-300">{{ Str::substr($material->type->value, 0, 3) }}</span>
+                                            @php
+                                                $materialIcon = match ($material->type) {
+                                                    \App\Enums\MaterialType::Article => 'bi-file-earmark-text',
+                                                    \App\Enums\MaterialType::Video => 'bi-camera-video',
+                                                    \App\Enums\MaterialType::Pdf => 'bi-file-earmark-pdf',
+                                                    \App\Enums\MaterialType::Ppt, \App\Enums\MaterialType::Pptx => 'bi-file-earmark-slides',
+                                                    \App\Enums\MaterialType::Doc, \App\Enums\MaterialType::Docx => 'bi-file-earmark-word',
+                                                    \App\Enums\MaterialType::ExternalLink => 'bi-link-45deg',
+                                                    \App\Enums\MaterialType::DownloadableFile => 'bi-download',
+                                                    \App\Enums\MaterialType::Assessment => 'bi-clipboard-check',
+                                                    default => 'bi-file-earmark',
+                                                };
+                                            @endphp
+                                            <div data-material-id="{{ $material->id }}" class="group flex flex-wrap items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3 transition-all duration-200 hover:border-brand-200 hover:bg-brand-50/60 hover:shadow-sm dark:hover:border-brand-500/30 dark:hover:bg-brand-500/5">
+                                                <div class="flex min-w-0 items-center gap-3">
+                                                    @can('materials.reorder')<button type="button" class="handle flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white hover:text-brand-500 active:cursor-grabbing dark:hover:bg-gray-900" title="Drag to reorder material" aria-label="Drag to reorder material"><i class="bi bi-grip-vertical" aria-hidden="true"></i></button>@endcan
+                                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-lg text-brand-500 shadow-sm transition-transform duration-200 group-hover:scale-105 dark:bg-gray-800"><i class="bi {{ $materialIcon }}" aria-hidden="true"></i></span>
                                                     <div>
-                                                        <p class="text-sm font-medium text-gray-800 dark:text-white">{{ $material->title }}</p>
-                                                        <p class="text-xs text-gray-500">{{ $material->type->label() }} · {{ $material->is_required ? 'Required' : 'Optional' }}</p>
+                                                        <div class="flex flex-wrap items-center gap-2">
+                                                            <span data-material-number class="text-xs font-semibold uppercase tracking-wide text-brand-500">Page {{ $loop->iteration }}</span>
+                                                            <p class="text-sm font-medium text-gray-800 transition-colors group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-400">{{ $material->title }}</p>
+                                                        </div>
+                                                        <p class="text-xs text-gray-500">{{ $material->type->label() }} &middot; {{ $material->is_required ? 'Required' : 'Optional' }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="flex gap-1">
-                                                    @can('materials.reorder')
-                                                        @foreach(['up' => '&uarr;', 'down' => '&darr;'] as $direction => $symbol)
-                                                            <form method="POST" action="{{ route(\App\Support\PortalRoute::name('learning-materials.move'), $material) }}">
-                                                                @csrf @method('PATCH')
-                                                                <input type="hidden" name="direction" value="{{ $direction }}">
-                                                                <button class="rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white">{!! $symbol !!}</button>
-                                                            </form>
-                                                        @endforeach
-                                                    @endcan
                                                     @can('materials.edit')<a href="{{ route(\App\Support\PortalRoute::name('learning-materials.edit'), $material) }}" class="rounded border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white">Edit</a>@endcan
                                                     @can('materials.delete')
                                                         <form method="POST" action="{{ route(\App\Support\PortalRoute::name('learning-materials.destroy'), $material) }}" onsubmit="return confirm('Delete this material?')">
@@ -135,32 +128,94 @@
                                     @can('materials.create')
                                         <a href="{{ route(\App\Support\PortalRoute::name('learning-materials.create'), $chapter) }}" class="mt-2 inline-flex text-sm font-medium text-brand-500">+ Add learning material</a>
                                     @endcan
+                                    </div>
+
+                                    @can('chapters.edit')
+                                        <x-ui.modal @open-chapter-edit-modal.window="if ($event.detail.chapterId === {{ $chapter->id }}) open = true" :isOpen="false" class="max-w-[640px]">
+                                            <div class="p-6 pr-14">
+                                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Edit Chapter</h4>
+                                                <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-chapters.update'), $chapter) }}" class="mt-5 space-y-4">
+                                                    @csrf @method('PUT')
+                                                    <x-form.input :id="'chapter-title-'.$chapter->id" name="title" label="Chapter title" :value="$chapter->title" required />
+                                                    <x-form.textarea :id="'chapter-description-'.$chapter->id" name="description" label="Description" :value="$chapter->description" rows="3" />
+                                                    <div class="flex justify-end gap-2">
+                                                        <button type="button" @click="open = false" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Cancel</button>
+                                                        <button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Save</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </x-ui.modal>
+                                    @endcan
                                 </section>
                             @empty
                                 <p class="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 dark:border-gray-700">No chapters yet.</p>
                             @endforelse
+                            </div>
 
                             @can('chapters.create')
-                                <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-chapters.store'), $module) }}" class="grid gap-3 rounded-xl border border-dashed border-gray-300 p-4 sm:grid-cols-[1fr_1fr_auto] dark:border-gray-700">
-                                    @csrf
-                                    <x-form.input :id="'new-chapter-title-'.$module->id" name="title" label="New chapter title" required />
-                                    <x-form.input :id="'new-chapter-description-'.$module->id" name="description" label="Description" />
-                                    <button class="mt-7 h-11 rounded-lg bg-brand-500 px-4 text-sm text-white">Add chapter</button>
-                                </form>
+                                <button type="button" @click="$dispatch('open-chapter-create-modal', { moduleId: {{ $module->id }} })" class="inline-flex items-center rounded-lg border border-dashed border-brand-300 px-4 py-2.5 text-sm font-medium text-brand-600 transition-colors hover:border-brand-500 hover:bg-brand-50 dark:border-brand-500/40 dark:text-brand-400 dark:hover:bg-brand-500/10">
+                                    <i class="bi bi-plus-lg mr-2" aria-hidden="true"></i>Add chapter
+                                </button>
+
+                                <x-ui.modal @open-chapter-create-modal.window="if ($event.detail.moduleId === {{ $module->id }}) open = true" :isOpen="false" class="max-w-[640px]">
+                                    <div class="p-6 pr-14">
+                                        <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Add Chapter</h4>
+                                        <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-chapters.store'), $module) }}" class="mt-5 space-y-4">
+                                            @csrf
+                                            <x-form.input :id="'create-chapter-title-'.$module->id" name="title" label="Chapter title" required />
+                                            <x-form.textarea :id="'create-chapter-description-'.$module->id" name="description" label="Description" rows="3" />
+                                            <div class="flex justify-end gap-2">
+                                                <button type="button" @click="open = false" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Cancel</button>
+                                                <button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Add chapter</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </x-ui.modal>
                             @endcan
                         </div>
+                        </div>
+
+                        @can('modules.edit')
+                            <x-ui.modal @open-module-edit-modal.window="if ($event.detail.moduleId === {{ $module->id }}) open = true" :isOpen="false" class="max-w-[640px]">
+                                <div class="p-6 pr-14">
+                                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Edit Module</h4>
+                                    <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-modules.update'), $module) }}" class="mt-5 space-y-4">
+                                        @csrf @method('PUT')
+                                        <x-form.input :id="'module-title-'.$module->id" name="title" label="Module title" :value="$module->title" required />
+                                        <x-form.textarea :id="'module-description-'.$module->id" name="description" label="Description" :value="$module->description" rows="3" />
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" @click="open = false" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Cancel</button>
+                                            <button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Save</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </x-ui.modal>
+                        @endcan
                     </section>
                 @empty
                     <p class="py-8 text-center text-sm text-gray-500">No modules yet. Add the first module below.</p>
                 @endforelse
+                </div>
 
                 @can('modules.create')
-                    <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-modules.store'), $course) }}" class="grid gap-3 rounded-xl border border-dashed border-gray-300 p-4 sm:grid-cols-[1fr_1fr_auto] dark:border-gray-700">
-                        @csrf
-                        <x-form.input name="title" label="New module title" required />
-                        <x-form.input name="description" label="Description" />
-                        <button class="mt-7 h-11 rounded-lg bg-brand-500 px-4 text-sm text-white">Add module</button>
-                    </form>
+                    <button type="button" @click="$dispatch('open-module-create-modal')" class="inline-flex items-center rounded-lg border border-dashed border-brand-300 px-4 py-2.5 text-sm font-medium text-brand-600 transition-colors hover:border-brand-500 hover:bg-brand-50 dark:border-brand-500/40 dark:text-brand-400 dark:hover:bg-brand-500/10">
+                        <i class="bi bi-plus-lg mr-2" aria-hidden="true"></i>Add module
+                    </button>
+
+                    <x-ui.modal @open-module-create-modal.window="open = true" :isOpen="false" class="max-w-[640px]">
+                        <div class="p-6 pr-14">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Add Module</h4>
+                            <form method="POST" action="{{ route(\App\Support\PortalRoute::name('course-modules.store'), $course) }}" class="mt-5 space-y-4">
+                                @csrf
+                                <x-form.input name="title" label="Module title" required />
+                                <x-form.textarea name="description" label="Description" rows="3" />
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" @click="open = false" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Cancel</button>
+                                    <button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Add module</button>
+                                </div>
+                            </form>
+                        </div>
+                    </x-ui.modal>
                 @endcan
             </div>
         </x-common.component-card>

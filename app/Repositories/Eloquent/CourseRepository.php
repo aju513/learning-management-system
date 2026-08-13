@@ -108,9 +108,14 @@ class CourseRepository implements CourseRepositoryInterface
     public function coursesForApplicationReview(User $actor): Collection
     {
         return Course::query()
+            ->select(['id', 'title'])
+            ->withCount([
+                'enrollments as applied_count' => fn ($query) => $query->whereIn('status', ['pending', 'rejected']),
+                'enrollments as accepted_count' => fn ($query) => $query->whereIn('status', ['active', 'completed']),
+            ])
             ->when(! $actor->can('course-applications.review-all'), fn ($query) => $query->where('instructor_id', $actor->id))
             ->orderBy('title')
-            ->get(['id', 'title']);
+            ->get();
     }
 
     public function courseSlugExists(string $slug, ?Course $ignore = null): bool
@@ -196,6 +201,18 @@ class CourseRepository implements CourseRepositoryInterface
             ->orderBy('position', $direction === 'up' ? 'desc' : 'asc')->first();
     }
 
+    public function moduleIds(Course $course): array
+    {
+        return $course->modules()->orderBy('position')->pluck('id')->map(fn ($id): int => (int) $id)->all();
+    }
+
+    public function reorderModules(Course $course, array $moduleIds): void
+    {
+        foreach (array_values($moduleIds) as $position => $moduleId) {
+            $course->modules()->whereKey($moduleId)->update(['position' => $position + 1]);
+        }
+    }
+
     public function findChapterDetails(CourseChapter $chapter): CourseChapter
     {
         return $chapter->load(['module.course', 'materials.assessment']);
@@ -235,6 +252,18 @@ class CourseRepository implements CourseRepositoryInterface
             ->orderBy('position', $direction === 'up' ? 'desc' : 'asc')->first();
     }
 
+    public function chapterIds(CourseModule $module): array
+    {
+        return $module->chapters()->orderBy('position')->pluck('id')->map(fn ($id): int => (int) $id)->all();
+    }
+
+    public function reorderChapters(CourseModule $module, array $chapterIds): void
+    {
+        foreach (array_values($chapterIds) as $position => $chapterId) {
+            $module->chapters()->whereKey($chapterId)->update(['position' => $position + 1]);
+        }
+    }
+
     public function findMaterialDetails(LearningMaterial $material): LearningMaterial
     {
         return $material->load(['chapter.module.course', 'assessment']);
@@ -267,5 +296,17 @@ class CourseRepository implements CourseRepositoryInterface
         return LearningMaterial::query()->where('course_chapter_id', $material->course_chapter_id)
             ->where('position', $direction === 'up' ? '<' : '>', $material->position)
             ->orderBy('position', $direction === 'up' ? 'desc' : 'asc')->first();
+    }
+
+    public function materialIds(CourseChapter $chapter): array
+    {
+        return $chapter->materials()->orderBy('position')->pluck('id')->map(fn ($id): int => (int) $id)->all();
+    }
+
+    public function reorderMaterials(CourseChapter $chapter, array $materialIds): void
+    {
+        foreach (array_values($materialIds) as $position => $materialId) {
+            $chapter->materials()->whereKey($materialId)->update(['position' => $position + 1]);
+        }
     }
 }

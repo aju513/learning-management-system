@@ -69,6 +69,10 @@ interface CourseRepositoryInterface
 
     public function adjacentModule(CourseModule $module, string $direction): ?CourseModule;
 
+    public function moduleIds(Course $course): array;
+
+    public function reorderModules(Course $course, array $moduleIds): void;
+
     public function findChapterDetails(CourseChapter $chapter): CourseChapter;
 
     public function createChapter(array $attributes): CourseChapter;
@@ -83,6 +87,10 @@ interface CourseRepositoryInterface
 
     public function adjacentChapter(CourseChapter $chapter, string $direction): ?CourseChapter;
 
+    public function chapterIds(CourseModule $module): array;
+
+    public function reorderChapters(CourseModule $module, array $chapterIds): void;
+
     public function findMaterialDetails(LearningMaterial $material): LearningMaterial;
 
     public function createMaterial(array $attributes): LearningMaterial;
@@ -94,4 +102,8 @@ interface CourseRepositoryInterface
     public function nextMaterialPosition(CourseChapter $chapter): int;
 
     public function adjacentMaterial(LearningMaterial $material, string $direction): ?LearningMaterial;
+
+    public function materialIds(CourseChapter $chapter): array;
+
+    public function reorderMaterials(CourseChapter $chapter, array $materialIds): void;
 }

@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CourseChapter\DeleteCourseChapterRequest;
 use App\Http\Requests\CourseChapter\MoveCourseChapterRequest;
+use App\Http\Requests\CourseChapter\ReorderCourseChaptersRequest;
 use App\Http\Requests\CourseChapter\StoreCourseChapterRequest;
 use App\Http\Requests\CourseChapter\UpdateCourseChapterRequest;
 use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Services\CourseService;
+use App\Support\PortalRoute;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 
 class CourseChapterController extends Controller
@@ -18,16 +21,18 @@ class CourseChapterController extends Controller
 
     public function store(StoreCourseChapterRequest $request, CourseModule $courseModule): RedirectResponse
     {
-        $this->service->createChapter($courseModule, $request->validated(), $request->user());
+        $chapter = $this->service->createChapter($courseModule, $request->validated(), $request->user());
 
-        return back()->with('success', 'Chapter added.');
+        return redirect()->to(route(PortalRoute::name('courses.show'), $courseModule->course).'#chapter-'.$chapter->id)
+            ->with('success', 'Chapter added.');
     }
 
     public function update(UpdateCourseChapterRequest $request, CourseChapter $courseChapter): RedirectResponse
     {
         $this->service->updateChapter($courseChapter, $request->validated(), $request->user());
 
-        return back()->with('success', 'Chapter updated.');
+        return redirect()->to(route(PortalRoute::name('courses.show'), $courseChapter->module->course).'#chapter-'.$courseChapter->id)
+            ->with('success', 'Chapter updated.');
     }
 
     public function move(MoveCourseChapterRequest $request, CourseChapter $courseChapter): RedirectResponse
@@ -35,6 +40,13 @@ class CourseChapterController extends Controller
         $this->service->moveChapter($courseChapter, $request->validated('direction'), $request->user());
 
         return back()->with('success', 'Chapter reordered.');
+    }
+
+    public function reorder(ReorderCourseChaptersRequest $request, CourseModule $courseModule): JsonResponse
+    {
+        $this->service->reorderChapters($courseModule, $request->validated('chapter_ids'), $request->user());
+
+        return response()->json(['message' => 'Chapter order updated.']);
     }
 
     public function destroy(DeleteCourseChapterRequest $request, CourseChapter $courseChapter): RedirectResponse

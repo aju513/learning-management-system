@@ -1,13 +1,16 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
+import collapse from '@alpinejs/collapse';
 import ApexCharts from 'apexcharts';
 
 // flatpickr
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 // FullCalendar
 import { Calendar } from '@fullcalendar/core';
 import learningMaterialEditor from './components/learning-material-editor';
+import curriculumReorder from './components/curriculum-reorder';
 
 
 
@@ -16,7 +19,9 @@ window.ApexCharts = ApexCharts;
 window.flatpickr = flatpickr;
 window.FullCalendar = Calendar;
 
+Alpine.plugin(collapse);
 Alpine.data('learningMaterialEditor', learningMaterialEditor);
+Alpine.data('curriculumReorder', curriculumReorder);
 Alpine.start();
 
 // Initialize components on DOM ready

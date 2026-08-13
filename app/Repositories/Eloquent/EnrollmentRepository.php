@@ -31,7 +31,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
             ->when($filters['search'] ?? null, fn ($query, string $search) => $query->whereHas('trainee', fn ($trainee) => $trainee->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
             ->when($filters['course_id'] ?? null, fn ($query, int|string $course) => $query->where('course_id', $course))
             ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
-            ->latest('requested_at')
+            ->orderBy('requested_at')
             ->paginate($perPage)
             ->withQueryString();
     }
@@ -44,7 +44,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
             ->with(['course', 'trainee'])
             ->when($filters['search'] ?? null, fn ($query, string $search) => $query->whereHas('trainee', fn ($trainee) => $trainee->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
             ->when($filters['course_id'] ?? null, fn ($query, int|string $course) => $query->where('course_id', $course))
-            ->latest('enrolled_at')
+            ->orderBy('enrolled_at')
             ->paginate($perPage)
             ->withQueryString();
     }

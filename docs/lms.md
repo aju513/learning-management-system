@@ -42,7 +42,7 @@ Assessments are independent records. They may remain standalone, link to a cours
 
 Courses support draft, published, and archived states; beginner/intermediate/advanced difficulty; estimated duration; thumbnail; category; instructor ownership; and free or sequential navigation. Before publication, a course must have at least one module, every module must have a chapter, and every chapter must contain learning material.
 
-Modules, chapters, and materials use persisted integer positions. New modules receive an editable `Chapter 1`, every published module and chapter must contain content, and non-empty chapters cannot be deleted. The current UI exposes move-up/move-down controls. Drag-and-drop can later call the same service/repository boundary.
+Modules, chapters, and materials use persisted integer positions. New modules receive an editable `Chapter 1`, every published module and chapter must contain content, and non-empty chapters cannot be deleted. Module and chapter creation uses dedicated modal forms triggered by the bottom Add buttons; the shared modal backdrop dims the page without blur and closes on outside click or Escape. The authoring UI presents modules and chapters as independently collapsible accordions; focusing a target module or chapter closes sibling panels, and URL anchors reopen the relevant panel after material or modal edits. Authorized authors can drag modules within a course, chapters within their current module, and materials within their chapter; all drops autosave through validated service/repository boundaries. Materials display dynamic `Page 1`, `Page 2`, and similar labels that update after reordering.
 
 Learning materials are created and edited on dedicated authoring pages. The form shows only fields relevant to the selected material type and provides a live, read-only trainee-style preview beside the form. The enrolled learning player displays the full Module -> Chapter -> Material hierarchy; the public catalog keeps its compact module-level material list.
 
@@ -51,6 +51,8 @@ Supported materials are article, video URL/upload, PDF, PPT/PPTX, DOC/DOCX, exte
 ## Applications, enrollment, and learning
 
 Published courses appear in the Trainee catalog. Applying creates a pending enrollment record but does not grant course materials or linked-assessment access. An Admin can review any pending application; an Instructor can review only applications for courses they own. Approval activates the enrollment, while rejection stores an optional review note. A rejected or cancelled application can be submitted again. Duplicate pending applications and applications for already active/completed enrollment are rejected.
+
+Instructor and Admin application review groups requests inside course-level collapsible panels with plus/dash controls, applied and accepted totals, hover states, and ascending request dates. Approved requests leave the review list and appear in the Instructor My Trainees view, grouped by course with the same collapsible presentation.
 
 Admin and Super Admin retain direct assignment. Assignment is idempotent for each trainee/course pair and supersedes pending, rejected, or cancelled state. Trainees see only active and completed enrollments in My Learning; pending/rejected/cancelled records remain in My Applications.
 

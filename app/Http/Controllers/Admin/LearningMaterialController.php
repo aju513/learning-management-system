@@ -8,6 +8,7 @@ use App\Http\Requests\LearningMaterial\CreateLearningMaterialRequest;
 use App\Http\Requests\LearningMaterial\DeleteLearningMaterialRequest;
 use App\Http\Requests\LearningMaterial\EditLearningMaterialRequest;
 use App\Http\Requests\LearningMaterial\MoveLearningMaterialRequest;
+use App\Http\Requests\LearningMaterial\ReorderLearningMaterialsRequest;
 use App\Http\Requests\LearningMaterial\StoreLearningMaterialRequest;
 use App\Http\Requests\LearningMaterial\UpdateLearningMaterialRequest;
 use App\Models\CourseChapter;
@@ -16,6 +17,7 @@ use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Services\CourseService;
 use App\Support\PortalRoute;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -60,6 +62,13 @@ class LearningMaterialController extends Controller
         $this->service->moveMaterial($learningMaterial, $request->validated('direction'), $request->user());
 
         return back()->with('success', 'Learning material reordered.');
+    }
+
+    public function reorder(ReorderLearningMaterialsRequest $request, CourseChapter $courseChapter): JsonResponse
+    {
+        $this->service->reorderMaterials($courseChapter, $request->validated('material_ids'), $request->user());
+
+        return response()->json(['message' => 'Learning material order updated.']);
     }
 
     public function destroy(DeleteLearningMaterialRequest $request, LearningMaterial $learningMaterial): RedirectResponse

@@ -179,6 +179,18 @@ class CourseService
         });
     }
 
+    public function reorderModules(Course $course, array $moduleIds, User $actor): void
+    {
+        $existing = $this->courses->moduleIds($course);
+        $submitted = array_map('intval', $moduleIds);
+        if (count($existing) !== count($submitted) || array_diff($existing, $submitted) || array_diff($submitted, $existing)) {
+            throw ValidationException::withMessages(['module_ids' => 'Submit every module from this course exactly once.']);
+        }
+
+        DB::transaction(fn () => $this->courses->reorderModules($course, $submitted));
+        activity('lms')->causedBy($actor)->performedOn($course)->event('course-modules.reordered')->log('Course modules reordered');
+    }
+
     public function deleteModule(CourseModule $module, User $actor): void
     {
         $module = $this->courses->findModuleDetails($module);
@@ -223,6 +235,18 @@ class CourseService
             activity('lms')->causedBy($actor)->performedOn($chapter)->event('course-chapter.reordered')
                 ->withProperties(['direction' => $direction])->log('Course chapter reordered');
         });
+    }
+
+    public function reorderChapters(CourseModule $module, array $chapterIds, User $actor): void
+    {
+        $existing = $this->courses->chapterIds($module);
+        $submitted = array_map('intval', $chapterIds);
+        if (count($existing) !== count($submitted) || array_diff($existing, $submitted) || array_diff($submitted, $existing)) {
+            throw ValidationException::withMessages(['chapter_ids' => 'Submit every chapter from this module exactly once.']);
+        }
+
+        DB::transaction(fn () => $this->courses->reorderChapters($module, $submitted));
+        activity('lms')->causedBy($actor)->performedOn($module)->event('course-chapters.reordered')->log('Course chapters reordered');
     }
 
     public function deleteChapter(CourseChapter $chapter, User $actor): void
@@ -302,6 +326,18 @@ class CourseService
             activity('lms')->causedBy($actor)->performedOn($material)->event('learning-material.reordered')
                 ->withProperties(['direction' => $direction])->log('Learning material reordered');
         });
+    }
+
+    public function reorderMaterials(CourseChapter $chapter, array $materialIds, User $actor): void
+    {
+        $existing = $this->courses->materialIds($chapter);
+        $submitted = array_map('intval', $materialIds);
+        if (count($existing) !== count($submitted) || array_diff($existing, $submitted) || array_diff($submitted, $existing)) {
+            throw ValidationException::withMessages(['material_ids' => 'Submit every learning material from this chapter exactly once.']);
+        }
+
+        DB::transaction(fn () => $this->courses->reorderMaterials($chapter, $submitted));
+        activity('lms')->causedBy($actor)->performedOn($chapter)->event('learning-materials.reordered')->log('Learning materials reordered');
     }
 
     public function deleteMaterial(LearningMaterial $material, User $actor): void

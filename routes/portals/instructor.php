@@ -24,15 +24,18 @@ Route::prefix('instructor')->name('instructor.')->middleware(['auth', 'active', 
     Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::post('/courses/{course}/modules', [CourseModuleController::class, 'store'])->name('course-modules.store');
+    Route::patch('/courses/{course}/modules/reorder', [CourseModuleController::class, 'reorder'])->name('course-modules.reorder');
     Route::put('/course-modules/{course_module}', [CourseModuleController::class, 'update'])->name('course-modules.update');
     Route::patch('/course-modules/{course_module}/move', [CourseModuleController::class, 'move'])->name('course-modules.move');
     Route::delete('/course-modules/{course_module}', [CourseModuleController::class, 'destroy'])->name('course-modules.destroy');
     Route::post('/course-modules/{course_module}/chapters', [CourseChapterController::class, 'store'])->name('course-chapters.store');
+    Route::patch('/course-modules/{course_module}/chapters/reorder', [CourseChapterController::class, 'reorder'])->name('course-chapters.reorder');
     Route::put('/course-chapters/{course_chapter}', [CourseChapterController::class, 'update'])->name('course-chapters.update');
     Route::patch('/course-chapters/{course_chapter}/move', [CourseChapterController::class, 'move'])->name('course-chapters.move');
     Route::delete('/course-chapters/{course_chapter}', [CourseChapterController::class, 'destroy'])->name('course-chapters.destroy');
     Route::get('/course-chapters/{course_chapter}/materials/create', [LearningMaterialController::class, 'create'])->name('learning-materials.create');
     Route::post('/course-chapters/{course_chapter}/materials', [LearningMaterialController::class, 'store'])->name('learning-materials.store');
+    Route::patch('/course-chapters/{course_chapter}/materials/reorder', [LearningMaterialController::class, 'reorder'])->name('learning-materials.reorder');
     Route::get('/learning-materials/{learning_material}/edit', [LearningMaterialController::class, 'edit'])->name('learning-materials.edit');
     Route::put('/learning-materials/{learning_material}', [LearningMaterialController::class, 'update'])->name('learning-materials.update');
     Route::patch('/learning-materials/{learning_material}/move', [LearningMaterialController::class, 'move'])->name('learning-materials.move');

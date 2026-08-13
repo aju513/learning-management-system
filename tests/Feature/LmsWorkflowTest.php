@@ -45,6 +45,32 @@ test('the four roles have strict portal-specific academic responsibilities', fun
         ->and(Role::findByName('trainee')->hasPermissionTo('courses.create'))->toBeFalse();
 });
 
+test('staff course cards use the compact status and metadata layout', function () {
+    $instructor = portalUser('instructor');
+    $course = Course::factory()->for($instructor, 'instructor')->create([
+        'title' => 'Staff Card Course',
+        'short_description' => 'This description should not appear on the staff card.',
+        'status' => 'published',
+    ]);
+    CourseModule::factory()->for($course)->create();
+
+    $this->actingAs($instructor)->get(route('instructor.courses.index'))
+        ->assertOk()
+        ->assertSee('Staff Card Course')
+        ->assertSee('published')
+        ->assertSee('Created '.$course->created_at->format('M j, Y'), false)
+        ->assertSee($instructor->name)
+        ->assertSee('Open')
+        ->assertSee('aspect-[3/2]', false)
+        ->assertSee('role="link"', false)
+        ->assertSee('cursor-pointer', false)
+        ->assertSee('@keydown.enter.prevent', false)
+        ->assertSee('group-hover:scale-105', false)
+        ->assertDontSee('This description should not appear on the staff card.')
+        ->assertDontSee('1 modules')
+        ->assertDontSee('0 trainees');
+});
+
 test('an Instructor builds an owned course but cannot edit another instructors course', function () {
     $instructor = portalUser('instructor');
     $otherInstructor = portalUser('instructor');
