@@ -15,7 +15,7 @@ return [
             ['key' => 'enrollments', 'label' => 'Enrollments', 'route' => 'super-admin.enrollments.index', 'permission' => 'enrollments.manage', 'order' => 40],
         ]],
         ['key' => 'assessments', 'label' => 'Assessments', 'icon' => 'permissions', 'order' => 40, 'children' => [
-            ['key' => 'tests', 'label' => 'Tests & Quizzes', 'route' => 'super-admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 10],
+            ['key' => 'tests', 'label' => 'Quizzes', 'route' => 'super-admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 10],
             ['key' => 'results', 'label' => 'Results', 'route' => 'super-admin.results.index', 'permission' => 'results.manage', 'order' => 20],
         ]],
         ['key' => 'reports', 'label' => 'Reports', 'icon' => 'activity-log', 'route' => 'super-admin.reports.index', 'permission' => 'reports.view', 'order' => 50],
@@ -32,7 +32,7 @@ return [
         ['key' => 'applications', 'label' => 'Applications', 'icon' => 'users', 'route' => 'admin.applications.index', 'permission' => 'course-applications.review-all', 'order' => 40],
         ['key' => 'enrollments', 'label' => 'Enrollments', 'icon' => 'users', 'route' => 'admin.enrollments.index', 'permission' => 'enrollments.manage', 'order' => 50],
         ['key' => 'assessments', 'label' => 'Assessments', 'icon' => 'permissions', 'order' => 60, 'children' => [
-            ['key' => 'tests', 'label' => 'Tests', 'route' => 'admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 10],
+            ['key' => 'tests', 'label' => 'Quizzes', 'route' => 'admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 10],
             ['key' => 'results', 'label' => 'Results', 'route' => 'admin.results.index', 'permission' => 'results.manage', 'order' => 20],
         ]],
         ['key' => 'reports', 'label' => 'Reports', 'icon' => 'activity-log', 'route' => 'admin.reports.index', 'permission' => 'reports.view', 'order' => 70],
@@ -42,7 +42,7 @@ return [
         ['key' => 'courses', 'label' => 'My Courses', 'icon' => 'dashboard', 'route' => 'instructor.courses.index', 'permission' => 'courses.manage', 'order' => 20],
         ['key' => 'applications', 'label' => 'Applications', 'icon' => 'users', 'route' => 'instructor.applications.index', 'permission' => 'course-applications.review-owned', 'order' => 30],
         ['key' => 'trainees', 'label' => 'My Trainees', 'icon' => 'users', 'route' => 'instructor.trainees.index', 'permission' => 'course-progress.view-owned', 'order' => 40],
-        ['key' => 'assessments', 'label' => 'My Tests', 'icon' => 'permissions', 'route' => 'instructor.assessments.index', 'permission' => 'assessments.manage', 'order' => 50],
+        ['key' => 'assessments', 'label' => 'My Quizzes', 'icon' => 'permissions', 'route' => 'instructor.assessments.index', 'permission' => 'assessments.manage', 'order' => 50],
         ['key' => 'results', 'label' => 'Results', 'icon' => 'activity-log', 'route' => 'instructor.results.index', 'permission' => 'results.manage', 'order' => 60],
     ],
     'trainee' => [

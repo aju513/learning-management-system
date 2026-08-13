@@ -19,3 +19,4 @@ The bootstrap credential is intentionally predictable and must never remain unch
 - [Feature development](feature-development.md): required implementation workflow.
 - [Testing and operations](testing-operations.md): verification, deployment, and maintenance commands.
 - [Learning Management System](lms.md): roles, course delivery, assessments, progress, reporting, demo accounts, and future boundaries.
+- [Future LMS roadmap](future-lms-roadmap.md): deferred test scheduling, history, ownership, collaboration, and scoped administration.

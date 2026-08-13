@@ -81,7 +81,7 @@ class AssessmentRepository implements AssessmentRepositoryInterface
 
     public function materialsFor(Assessment $assessment): Collection
     {
-        return LearningMaterial::query()->where('assessment_id', $assessment->id)->with('module.course')->get();
+        return LearningMaterial::query()->where('assessment_id', $assessment->id)->with('chapter.module.course')->get();
     }
 
     public function createQuestion(array $attributes): AssessmentQuestion
@@ -115,6 +115,18 @@ class AssessmentRepository implements AssessmentRepositoryInterface
     public function nextQuestionPosition(Assessment $assessment): int
     {
         return ((int) $assessment->questions()->max('position')) + 1;
+    }
+
+    public function questionIds(Assessment $assessment): array
+    {
+        return $assessment->questions()->orderBy('position')->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    public function reorderQuestions(Assessment $assessment, array $questionIds): void
+    {
+        foreach (array_values($questionIds) as $position => $questionId) {
+            $assessment->questions()->whereKey($questionId)->update(['position' => $position + 1]);
+        }
     }
 
     public function assign(Assessment $assessment, User $trainee, User $actor, ?string $dueAt): AssessmentAssignment
@@ -170,12 +182,19 @@ class AssessmentRepository implements AssessmentRepositoryInterface
 
     public function findAttemptForTaking(AssessmentAttempt $attempt): AssessmentAttempt
     {
-        return $attempt->load(['assessment.questions.options', 'answers']);
+        return $attempt->load(['assessment.questions.options', 'answers.reviewer', 'trainee']);
     }
 
     public function createAnswer(array $attributes): AttemptAnswer
     {
         return AttemptAnswer::query()->create($attributes);
+    }
+
+    public function updateAnswer(AttemptAnswer $answer, array $attributes): AttemptAnswer
+    {
+        $answer->update($attributes);
+
+        return $answer->refresh();
     }
 
     public function updateAttempt(AssessmentAttempt $attempt, array $attributes): AssessmentAttempt
@@ -187,9 +206,9 @@ class AssessmentRepository implements AssessmentRepositoryInterface
 
     public function paginateResults(array $filters, User $actor, int $perPage = 15): LengthAwarePaginator
     {
-        return AssessmentAttempt::query()->where('status', 'graded')->with(['assessment', 'trainee'])
+        return AssessmentAttempt::query()->whereIn('status', ['graded', 'pending_review'])->with(['assessment', 'trainee'])
             ->when(! $actor->can('results.view-all') && $actor->can('results.view-owned'), fn ($query) => $query->whereHas('assessment', fn ($assessment) => $assessment->where('created_by', $actor->id)))
-            ->when(! $actor->can('results.view-all') && ! $actor->can('results.view-owned'), fn ($query) => $query->where('user_id', $actor->id)->whereHas('assessment', fn ($assessment) => $assessment->where('show_results', true)))
+            ->when(! $actor->can('results.view-all') && ! $actor->can('results.view-owned'), fn ($query) => $query->where('status', 'graded')->where('user_id', $actor->id)->whereHas('assessment', fn ($assessment) => $assessment->where('show_results', true)))
             ->when($filters['assessment_id'] ?? null, fn ($query, int|string $assessment) => $query->where('assessment_id', $assessment))
             ->when(isset($filters['passed']) && $filters['passed'] !== '', fn ($query) => $query->where('passed', (bool) $filters['passed']))
             ->latest('submitted_at')->paginate($perPage)->withQueryString();

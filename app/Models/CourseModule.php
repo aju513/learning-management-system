@@ -18,9 +18,9 @@ class CourseModule extends Model
         return $this->belongsTo(Course::class);
     }
 
-    public function materials(): HasMany
+    public function chapters(): HasMany
     {
-        return $this->hasMany(LearningMaterial::class)->orderBy('position');
+        return $this->hasMany(CourseChapter::class)->orderBy('position');
     }
 
     public function assessments(): HasMany

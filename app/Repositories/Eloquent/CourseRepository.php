@@ -5,6 +5,7 @@ namespace App\Repositories\Eloquent;
 use App\Enums\UserStatus;
 use App\Models\Course;
 use App\Models\CourseCategory;
+use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\LearningMaterial;
 use App\Models\User;
@@ -87,7 +88,7 @@ class CourseRepository implements CourseRepositoryInterface
         return $course->load([
             'category',
             'instructor',
-            'modules.materials:id,course_module_id,title,type,duration_minutes,position',
+            'modules.chapters.materials:id,course_chapter_id,title,type,duration_minutes,position',
             'enrollments' => fn ($query) => $query->where('user_id', $trainee->id),
         ]);
     }
@@ -125,7 +126,7 @@ class CourseRepository implements CourseRepositoryInterface
 
     public function findCourseDetails(Course $course): Course
     {
-        return $course->load(['category', 'instructor', 'modules.materials.assessment', 'assessments'])
+        return $course->load(['category', 'instructor', 'modules.chapters.materials.assessment', 'assessments'])
             ->loadCount('enrollments');
     }
 
@@ -163,7 +164,7 @@ class CourseRepository implements CourseRepositoryInterface
 
     public function findModuleDetails(CourseModule $module): CourseModule
     {
-        return $module->load('materials');
+        return $module->load('chapters.materials');
     }
 
     public function createModule(array $attributes): CourseModule
@@ -195,6 +196,50 @@ class CourseRepository implements CourseRepositoryInterface
             ->orderBy('position', $direction === 'up' ? 'desc' : 'asc')->first();
     }
 
+    public function findChapterDetails(CourseChapter $chapter): CourseChapter
+    {
+        return $chapter->load(['module.course', 'materials.assessment']);
+    }
+
+    public function createChapter(array $attributes): CourseChapter
+    {
+        return CourseChapter::query()->create($attributes);
+    }
+
+    public function updateChapter(CourseChapter $chapter, array $attributes): CourseChapter
+    {
+        $chapter->update($attributes);
+
+        return $chapter->refresh();
+    }
+
+    public function chapterHasMaterials(CourseChapter $chapter): bool
+    {
+        return $chapter->materials()->exists();
+    }
+
+    public function deleteChapter(CourseChapter $chapter): void
+    {
+        $chapter->delete();
+    }
+
+    public function nextChapterPosition(CourseModule $module): int
+    {
+        return ((int) $module->chapters()->max('position')) + 1;
+    }
+
+    public function adjacentChapter(CourseChapter $chapter, string $direction): ?CourseChapter
+    {
+        return CourseChapter::query()->where('course_module_id', $chapter->course_module_id)
+            ->where('position', $direction === 'up' ? '<' : '>', $chapter->position)
+            ->orderBy('position', $direction === 'up' ? 'desc' : 'asc')->first();
+    }
+
+    public function findMaterialDetails(LearningMaterial $material): LearningMaterial
+    {
+        return $material->load(['chapter.module.course', 'assessment']);
+    }
+
     public function createMaterial(array $attributes): LearningMaterial
     {
         return LearningMaterial::query()->create($attributes);
@@ -212,14 +257,14 @@ class CourseRepository implements CourseRepositoryInterface
         $material->delete();
     }
 
-    public function nextMaterialPosition(CourseModule $module): int
+    public function nextMaterialPosition(CourseChapter $chapter): int
     {
-        return ((int) $module->materials()->max('position')) + 1;
+        return ((int) $chapter->materials()->max('position')) + 1;
     }
 
     public function adjacentMaterial(LearningMaterial $material, string $direction): ?LearningMaterial
     {
-        return LearningMaterial::query()->where('course_module_id', $material->course_module_id)
+        return LearningMaterial::query()->where('course_chapter_id', $material->course_chapter_id)
             ->where('position', $direction === 'up' ? '<' : '>', $material->position)
             ->orderBy('position', $direction === 'up' ? 'desc' : 'asc')->first();
     }

@@ -10,7 +10,7 @@ class UpdateLearningMaterialRequest extends StoreLearningMaterialRequest
 
     public function authorize(): bool
     {
-        return $this->canEditCourse($this->route('learning_material')->module->course, 'materials.edit');
+        return $this->canEditCourse($this->route('learning_material')->chapter->module->course, 'materials.edit');
     }
 
     public function rules(): array

@@ -11,7 +11,7 @@ class DeleteLearningMaterialRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->canEditCourse($this->route('learning_material')->module->course, 'materials.delete');
+        return $this->canEditCourse($this->route('learning_material')->chapter->module->course, 'materials.delete');
     }
 
     public function rules(): array

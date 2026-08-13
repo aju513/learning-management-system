@@ -19,8 +19,9 @@ Run `php artisan admin:permissions-sync` whenever permissions or the default mat
 CourseCategory
   -> Course
        -> CourseModule
-            -> LearningMaterial
-                 -> optional Assessment
+            -> CourseChapter
+                 -> LearningMaterial
+                      -> optional Assessment
 
 User -> Enrollment -> MaterialProgress
 
@@ -39,9 +40,11 @@ Assessments are independent records. They may remain standalone, link to a cours
 
 ## Course authoring
 
-Courses support draft, published, and archived states; beginner/intermediate/advanced difficulty; estimated duration; thumbnail; category; instructor ownership; and free or sequential navigation. A course must have at least one module containing material before publication.
+Courses support draft, published, and archived states; beginner/intermediate/advanced difficulty; estimated duration; thumbnail; category; instructor ownership; and free or sequential navigation. Before publication, a course must have at least one module, every module must have a chapter, and every chapter must contain learning material.
 
-Modules and materials use persisted integer positions. The current UI exposes move-up/move-down controls. Drag-and-drop can later call the same service/repository boundary.
+Modules, chapters, and materials use persisted integer positions. New modules receive an editable `Chapter 1`, every published module and chapter must contain content, and non-empty chapters cannot be deleted. The current UI exposes move-up/move-down controls. Drag-and-drop can later call the same service/repository boundary.
+
+Learning materials are created and edited on dedicated authoring pages. The form shows only fields relevant to the selected material type and provides a live, read-only trainee-style preview beside the form. The enrolled learning player displays the full Module -> Chapter -> Material hierarchy; the public catalog keeps its compact module-level material list.
 
 Supported materials are article, video URL/upload, PDF, PPT/PPTX, DOC/DOCX, external link, downloadable file, and assessment. Uploaded learning files are stored on the private local disk and are served only through an authorized enrollment download route. Thumbnail images use the public disk. Article HTML is reduced to a small safe tag set and stripped of attributes before storage.
 
@@ -94,5 +97,7 @@ The existing bootstrap `admin@admin.com` behavior is unchanged. Change all predi
 ## Architecture decisions and future work
 
 The root specification describes user-specific permissions, but this repository explicitly prohibits direct user permissions without a separate architecture decision. This implementation therefore uses fixed role permissions only. A future exception would require authorization documentation, override semantics, administration safeguards, and tests before enabling Spatie's direct user assignment.
+
+The agreed backlog for reusable test schedules and history, academic ownership and collaboration, and scoped Admin access is recorded in the [Future LMS Roadmap](future-lms-roadmap.md). These behaviors are documentation-only and are not part of the delivered MVP.
 
 SSO/OIDC, TMIS synchronization, certificates, notifications, SCORM/xAPI, live classes, assignments, manual grading, question banks, randomized exams, and exports remain future phases. The LMS tables reference local user IDs only at the authentication boundary, so a future stable TMIS/OIDC subject mapping can be introduced without changing course, learning, or assessment rules.

@@ -13,7 +13,7 @@ class LearningMaterial extends Model
     use HasFactory;
 
     protected $fillable = [
-        'course_module_id', 'assessment_id', 'title', 'type', 'description', 'content', 'external_url',
+        'course_chapter_id', 'assessment_id', 'title', 'type', 'description', 'content', 'external_url',
         'file_path', 'original_filename', 'mime_type', 'duration_minutes', 'position', 'is_required',
     ];
 
@@ -22,9 +22,9 @@ class LearningMaterial extends Model
         return ['type' => MaterialType::class, 'is_required' => 'boolean'];
     }
 
-    public function module(): BelongsTo
+    public function chapter(): BelongsTo
     {
-        return $this->belongsTo(CourseModule::class, 'course_module_id');
+        return $this->belongsTo(CourseChapter::class, 'course_chapter_id');
     }
 
     public function assessment(): BelongsTo

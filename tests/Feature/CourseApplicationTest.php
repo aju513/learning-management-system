@@ -2,6 +2,7 @@
 
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
 use App\Models\LearningMaterial;
@@ -24,7 +25,8 @@ function catalogCourse(User $instructor): array
 {
     $course = Course::factory()->published()->for($instructor, 'instructor')->create();
     $module = CourseModule::factory()->for($course)->create();
-    $material = LearningMaterial::factory()->for($module, 'module')->create();
+    $chapter = CourseChapter::factory()->for($module, 'module')->create();
+    $material = LearningMaterial::factory()->for($chapter, 'chapter')->create();
 
     return [$course, $material];
 }

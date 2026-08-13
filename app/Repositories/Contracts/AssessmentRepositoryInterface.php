@@ -49,6 +49,10 @@ interface AssessmentRepositoryInterface
 
     public function nextQuestionPosition(Assessment $assessment): int;
 
+    public function questionIds(Assessment $assessment): array;
+
+    public function reorderQuestions(Assessment $assessment, array $questionIds): void;
+
     public function assign(Assessment $assessment, User $trainee, User $actor, ?string $dueAt): AssessmentAssignment;
 
     public function unassign(AssessmentAssignment $assignment): void;
@@ -68,6 +72,8 @@ interface AssessmentRepositoryInterface
     public function findAttemptForTaking(AssessmentAttempt $attempt): AssessmentAttempt;
 
     public function createAnswer(array $attributes): AttemptAnswer;
+
+    public function updateAnswer(AttemptAnswer $answer, array $attributes): AttemptAnswer;
 
     public function updateAttempt(AssessmentAttempt $attempt, array $attributes): AssessmentAttempt;
 

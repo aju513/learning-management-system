@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CourseCategory;
+use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
 use App\Models\LearningMaterial;
@@ -41,8 +42,12 @@ class LmsDemoSeeder extends Seeder
                 ['course_id' => $course->id, 'position' => 1],
                 ['title' => 'Foundations', 'description' => 'Core concepts and responsibilities.'],
             );
-            LearningMaterial::query()->firstOrCreate(
+            $chapter = CourseChapter::query()->firstOrCreate(
                 ['course_module_id' => $module->id, 'position' => 1],
+                ['title' => 'Chapter 1', 'description' => 'Core concepts and responsibilities.'],
+            );
+            LearningMaterial::query()->firstOrCreate(
+                ['course_chapter_id' => $chapter->id, 'position' => 1],
                 ['title' => 'Understanding Local Governance', 'type' => 'article', 'content' => '<p>Local governance brings public decisions and services closer to citizens.</p><p>Complete this article before continuing to the module quiz.</p>', 'duration_minutes' => 10, 'is_required' => true],
             );
             $assessment = Assessment::query()->firstOrCreate(
@@ -59,7 +64,7 @@ class LmsDemoSeeder extends Seeder
                 ]);
             }
             LearningMaterial::query()->firstOrCreate(
-                ['course_module_id' => $module->id, 'position' => 2],
+                ['course_chapter_id' => $chapter->id, 'position' => 2],
                 ['assessment_id' => $assessment->id, 'title' => 'Module Knowledge Check', 'type' => 'assessment', 'description' => 'Pass the quiz to complete the module.', 'duration_minutes' => 10, 'is_required' => true],
             );
             Enrollment::query()->firstOrCreate(

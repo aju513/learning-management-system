@@ -4,6 +4,7 @@ namespace App\Repositories\Contracts;
 
 use App\Models\Course;
 use App\Models\CourseCategory;
+use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\LearningMaterial;
 use App\Models\User;
@@ -68,13 +69,29 @@ interface CourseRepositoryInterface
 
     public function adjacentModule(CourseModule $module, string $direction): ?CourseModule;
 
+    public function findChapterDetails(CourseChapter $chapter): CourseChapter;
+
+    public function createChapter(array $attributes): CourseChapter;
+
+    public function updateChapter(CourseChapter $chapter, array $attributes): CourseChapter;
+
+    public function chapterHasMaterials(CourseChapter $chapter): bool;
+
+    public function deleteChapter(CourseChapter $chapter): void;
+
+    public function nextChapterPosition(CourseModule $module): int;
+
+    public function adjacentChapter(CourseChapter $chapter, string $direction): ?CourseChapter;
+
+    public function findMaterialDetails(LearningMaterial $material): LearningMaterial;
+
     public function createMaterial(array $attributes): LearningMaterial;
 
     public function updateMaterial(LearningMaterial $material, array $attributes): LearningMaterial;
 
     public function deleteMaterial(LearningMaterial $material): void;
 
-    public function nextMaterialPosition(CourseModule $module): int;
+    public function nextMaterialPosition(CourseChapter $chapter): int;
 
     public function adjacentMaterial(LearningMaterial $material, string $direction): ?LearningMaterial;
 }

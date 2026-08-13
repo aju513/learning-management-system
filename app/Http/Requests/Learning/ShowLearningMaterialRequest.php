@@ -14,7 +14,7 @@ class ShowLearningMaterialRequest extends FormRequest
         return (bool) ($this->user()?->can('learning.view')
             && $enrollment->user_id === $this->user()->id
             && $enrollment->status->grantsLearningAccess()
-            && $material->module->course_id === $enrollment->course_id);
+            && $material->chapter->module->course_id === $enrollment->course_id);
     }
 
     public function rules(): array

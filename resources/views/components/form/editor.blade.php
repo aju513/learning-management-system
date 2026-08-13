@@ -21,6 +21,7 @@
         format(command) {
             document.execCommand(command, false, null);
             this.html = this.$refs.editor.innerHTML;
+            this.$dispatch('editor-content-changed', { html: this.html });
             this.$refs.editor.focus();
         }
     }" class="overflow-hidden rounded-lg border border-gray-300 shadow-theme-xs dark:border-gray-700">
@@ -37,7 +38,7 @@
             aria-multiline="true"
             data-placeholder="{{ $placeholder }}"
             x-init="$refs.editor.innerHTML = html"
-            @input="html = $event.target.innerHTML"
+            @input="html = $event.target.innerHTML; $dispatch('editor-content-changed', { html })"
             class="min-h-36 w-full px-4 py-3 text-sm text-gray-800 outline-none empty:before:text-gray-400 empty:before:content-[attr(data-placeholder)] dark:bg-gray-900 dark:text-white/90"
         ></div>
         <textarea name="{{ $name }}" x-model="html" class="hidden" @required($required) @disabled($disabled)></textarea>

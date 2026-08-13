@@ -33,6 +33,9 @@ class AssessmentPlayerController extends Controller
     public function show(ShowAttemptRequest $request, AssessmentAttempt $assessmentAttempt): View
     {
         $attempt = $this->assessments->findAttemptForTaking($assessmentAttempt);
+        if ($attempt->status->value === 'pending_review') {
+            return view('pages.admin.assessment-player.submitted', ['attempt' => $attempt, 'title' => 'Quiz Submitted']);
+        }
         if ($attempt->status->value === 'graded') {
             if (! $attempt->assessment->show_results && ! $request->user()->can('results.view-all') && ! $request->user()->can('results.view-owned')) {
                 return view('pages.admin.assessment-player.submitted', ['attempt' => $attempt, 'title' => 'Assessment Submitted']);
@@ -48,6 +51,6 @@ class AssessmentPlayerController extends Controller
     {
         $this->service->submit($assessmentAttempt, $request->validated('answers', []), $request->user());
 
-        return redirect()->route('learning.assessments.attempts.show', $assessmentAttempt)->with('success', 'Assessment submitted and graded.');
+        return redirect()->route('learning.assessments.attempts.show', $assessmentAttempt)->with('success', 'Quiz submitted successfully.');
     }
 }

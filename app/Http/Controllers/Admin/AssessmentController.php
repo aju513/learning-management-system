@@ -36,7 +36,7 @@ class AssessmentController extends Controller
 
     public function create(): View
     {
-        return view('pages.admin.assessments.create', ['assessment' => new Assessment(['show_results' => true]), 'courses' => $this->courses->coursesForAuthoring(request()->user()), 'title' => 'Create Assessment']);
+        return view('pages.admin.assessments.create', ['assessment' => new Assessment(['show_results' => true]), 'title' => 'Create Quiz']);
     }
 
     public function store(StoreAssessmentRequest $request): RedirectResponse
@@ -48,12 +48,12 @@ class AssessmentController extends Controller
 
     public function show(ShowAssessmentRequest $request, Assessment $assessment): View
     {
-        return view('pages.admin.assessments.show', ['assessment' => $this->assessments->findForManagement($assessment), 'trainees' => $this->enrollments->traineesForAssessmentAssignment($request->user()), 'title' => $assessment->title]);
+        return view('pages.admin.assessments.show', ['assessment' => $this->assessments->findForManagement($assessment), 'trainees' => $this->enrollments->traineesForAssessmentAssignment($request->user()), 'title' => $assessment->title, 'activeTab' => $request->string('tab')->value() ?: 'questions']);
     }
 
     public function edit(EditAssessmentRequest $request, Assessment $assessment): View
     {
-        return view('pages.admin.assessments.edit', ['assessment' => $this->assessments->findForManagement($assessment), 'courses' => $this->courses->coursesForAuthoring($request->user()), 'title' => 'Edit Assessment']);
+        return view('pages.admin.assessments.edit', ['assessment' => $this->assessments->findForManagement($assessment), 'title' => 'Edit Quiz']);
     }
 
     public function update(UpdateAssessmentRequest $request, Assessment $assessment): RedirectResponse

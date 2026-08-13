@@ -23,7 +23,7 @@ class LearningService
     public function open(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);
-        $materials = $enrollment->course->modules->flatMap->materials->values();
+        $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
         if (! $materials->contains('id', $material->id)) {
             throw new AuthorizationException('This material is not part of the enrolled course.');
         }

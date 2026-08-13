@@ -7,6 +7,7 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 // FullCalendar
 import { Calendar } from '@fullcalendar/core';
+import learningMaterialEditor from './components/learning-material-editor';
 
 
 
@@ -15,6 +16,7 @@ window.ApexCharts = ApexCharts;
 window.flatpickr = flatpickr;
 window.FullCalendar = Calendar;
 
+Alpine.data('learningMaterialEditor', learningMaterialEditor);
 Alpine.start();
 
 // Initialize components on DOM ready

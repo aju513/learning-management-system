@@ -12,7 +12,6 @@ use App\Models\AssessmentAttempt;
 use App\Models\AssessmentQuestion;
 use App\Models\User;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
-use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -25,7 +24,6 @@ class AssessmentService
     public function __construct(
         private readonly AssessmentRepositoryInterface $assessments,
         private readonly EnrollmentRepositoryInterface $enrollments,
-        private readonly CourseRepositoryInterface $courses,
         private readonly UserRepositoryInterface $users,
         private readonly LearningService $learning,
     ) {}
@@ -34,7 +32,8 @@ class AssessmentService
     {
         $data['created_by'] = $actor->id;
         $data['status'] = AssessmentStatus::Draft;
-        $data = $this->normalizeCourseLink($data, $actor);
+        $data['course_id'] = null;
+        $data['course_module_id'] = null;
         $assessment = $this->assessments->create($data);
         activity('lms')->causedBy($actor)->performedOn($assessment)->event('assessment.created')->log('Assessment created');
 
@@ -43,10 +42,8 @@ class AssessmentService
 
     public function update(Assessment $assessment, array $data, User $actor): Assessment
     {
-        if ($this->assessments->hasAttempts($assessment)) {
-            unset($data['course_id'], $data['course_module_id']);
-        } else {
-            $data = $this->normalizeCourseLink($data, $actor);
+        if ($assessment->questions()->where('type', QuestionType::QuestionAnswer->value)->exists()) {
+            $data['show_results'] = true;
         }
         $assessment = $this->assessments->update($assessment, $data);
         activity('lms')->causedBy($actor)->performedOn($assessment)->event('assessment.updated')->log('Assessment updated');
@@ -62,6 +59,12 @@ class AssessmentService
                 throw ValidationException::withMessages(['status' => 'Add at least one question before publishing.']);
             }
             foreach ($assessment->questions as $question) {
+                if ($question->type === QuestionType::QuestionAnswer) {
+                    if (blank($question->reference_answer)) {
+                        throw ValidationException::withMessages(['status' => 'Every question-and-answer item needs a reference answer.']);
+                    }
+                    continue;
+                }
                 $correctCount = $question->options->where('is_correct', true)->count();
                 if ($question->options->count() < 2 || $correctCount < 1) {
                     throw ValidationException::withMessages(['status' => 'Every question needs at least two options and a correct answer.']);
@@ -106,6 +109,9 @@ class AssessmentService
                 'position' => $this->assessments->nextQuestionPosition($assessment),
             ]);
             $this->assessments->replaceOptions($question, $options);
+            if ($question->type === QuestionType::QuestionAnswer) {
+                $this->assessments->update($assessment, ['show_results' => true]);
+            }
             activity('lms')->causedBy($actor)->performedOn($question)->event('assessment-question.created')
                 ->withProperties(['assessment_id' => $assessment->id])->log('Assessment question created');
 
@@ -139,6 +145,20 @@ class AssessmentService
         activity('lms')->causedBy($actor)->performedOn($question)->event('assessment-question.deleted')
             ->withProperties(['assessment_id' => $question->assessment_id])->log('Assessment question deleted');
         $this->assessments->deleteQuestion($question);
+    }
+
+    public function reorderQuestions(Assessment $assessment, array $questionIds, User $actor): void
+    {
+        if ($this->assessments->hasAttempts($assessment)) {
+            throw ValidationException::withMessages(['question_ids' => 'Questions cannot change after attempts have started.']);
+        }
+        $existing = $this->assessments->questionIds($assessment);
+        $submitted = array_map('intval', $questionIds);
+        if (count($existing) !== count($submitted) || array_diff($existing, $submitted) || array_diff($submitted, $existing)) {
+            throw ValidationException::withMessages(['question_ids' => 'Submit every question from this quiz exactly once.']);
+        }
+        DB::transaction(fn () => $this->assessments->reorderQuestions($assessment, $submitted));
+        activity('lms')->causedBy($actor)->performedOn($assessment)->event('assessment-questions.reordered')->log('Assessment questions reordered');
     }
 
     public function assign(Assessment $assessment, array $traineeIds, ?string $dueAt, User $actor): void
@@ -205,6 +225,17 @@ class AssessmentService
             $earned = 0.0;
             $total = (float) $attempt->assessment->questions->sum('marks');
             foreach ($attempt->assessment->questions as $question) {
+                if ($question->type === QuestionType::QuestionAnswer) {
+                    $this->assessments->createAnswer([
+                        'assessment_attempt_id' => $attempt->id,
+                        'assessment_question_id' => $question->id,
+                        'selected_option_ids' => null,
+                        'text_answer' => trim((string) ($answers[$question->id] ?? '')),
+                        'earned_marks' => 0,
+                        'is_correct' => false,
+                    ]);
+                    continue;
+                }
                 $selected = array_values(array_unique(array_map('intval', Arr::wrap($answers[$question->id] ?? []))));
                 sort($selected);
                 $validOptionIds = $question->options->pluck('id')->map(fn ($id) => (int) $id)->all();
@@ -217,24 +248,75 @@ class AssessmentService
                     'assessment_attempt_id' => $attempt->id,
                     'assessment_question_id' => $question->id,
                     'selected_option_ids' => $selected,
+                    'text_answer' => null,
                     'earned_marks' => $marks,
                     'is_correct' => $isCorrect,
                 ]);
             }
+            $requiresReview = $attempt->assessment->questions->contains(fn ($question) => $question->type === QuestionType::QuestionAnswer);
+            $score = $requiresReview ? null : ($total > 0 ? round($earned / $total * 100, 2) : 0);
+            $attempt = $this->assessments->updateAttempt($attempt, [
+                'status' => $requiresReview ? AttemptStatus::PendingReview : AttemptStatus::Graded,
+                'submitted_at' => now(),
+                'earned_marks' => $earned,
+                'total_marks' => $total,
+                'score_percentage' => $score,
+                'passed' => $requiresReview ? null : $score >= (float) $attempt->assessment->passing_percentage,
+            ]);
+            activity('lms')->causedBy($trainee)->performedOn($attempt)->event($requiresReview ? 'assessment-attempt.submitted' : 'assessment-attempt.graded')
+                ->withProperties(['assessment_id' => $attempt->assessment_id, 'status' => $attempt->status->value])->log($requiresReview ? 'Assessment attempt submitted for review' : 'Assessment attempt graded');
+
+            if ($attempt->passed) {
+                $this->completeAttachedMaterials($attempt->assessment, $trainee);
+            }
+
+            return $attempt;
+        });
+    }
+
+    public function review(AssessmentAttempt $attempt, array $reviews, User $reviewer): AssessmentAttempt
+    {
+        if ($attempt->status !== AttemptStatus::PendingReview) {
+            throw ValidationException::withMessages(['reviews' => 'Only attempts pending review can be graded.']);
+        }
+
+        return DB::transaction(function () use ($attempt, $reviews, $reviewer): AssessmentAttempt {
+            $attempt = $this->assessments->findAttemptForTaking($attempt);
+            $manualAnswers = $attempt->answers->filter(fn ($answer) => $answer->question->type === QuestionType::QuestionAnswer);
+            foreach ($manualAnswers as $answer) {
+                $review = $reviews[$answer->id] ?? null;
+                if (! is_array($review)) {
+                    throw ValidationException::withMessages(['reviews' => 'Grade every question-and-answer response.']);
+                }
+                $marks = (float) ($review['marks'] ?? -1);
+                if ($marks < 0 || $marks > (float) $answer->question->marks) {
+                    throw ValidationException::withMessages(["reviews.{$answer->id}.marks" => "Marks must be between 0 and {$answer->question->marks}."]);
+                }
+                $this->assessments->updateAnswer($answer, [
+                    'earned_marks' => $marks,
+                    'is_correct' => $marks >= (float) $answer->question->marks,
+                    'reviewer_feedback' => $review['feedback'] ?? null,
+                    'reviewed_by' => $reviewer->id,
+                    'reviewed_at' => now(),
+                ]);
+            }
+
+            $attempt = $this->assessments->findAttemptForTaking($attempt);
+            $earned = (float) $attempt->answers->sum('earned_marks');
+            $total = (float) $attempt->assessment->questions->sum('marks');
             $score = $total > 0 ? round($earned / $total * 100, 2) : 0;
             $attempt = $this->assessments->updateAttempt($attempt, [
                 'status' => AttemptStatus::Graded,
-                'submitted_at' => now(),
                 'earned_marks' => $earned,
                 'total_marks' => $total,
                 'score_percentage' => $score,
                 'passed' => $score >= (float) $attempt->assessment->passing_percentage,
             ]);
-            activity('lms')->causedBy($trainee)->performedOn($attempt)->event('assessment-attempt.graded')
-                ->withProperties(['assessment_id' => $attempt->assessment_id, 'score' => $score, 'passed' => $attempt->passed])->log('Assessment attempt graded');
+            activity('lms')->causedBy($reviewer)->performedOn($attempt)->event('assessment-attempt.reviewed')
+                ->withProperties(['score' => $score, 'passed' => $attempt->passed])->log('Assessment attempt manually reviewed');
 
             if ($attempt->passed) {
-                $this->completeAttachedMaterials($attempt->assessment, $trainee);
+                $this->completeAttachedMaterials($attempt->assessment, $attempt->trainee);
             }
 
             return $attempt;
@@ -245,29 +327,11 @@ class AssessmentService
     {
         $correct = array_map('intval', $data['correct_options'] ?? []);
 
-        return collect($data['options'])->values()->map(fn (string $text, int $index) => [
+        return collect($data['options'] ?? [])->values()->map(fn (string $text, int $index) => [
             'option_text' => $text,
             'is_correct' => in_array($index, $correct, true),
             'position' => $index + 1,
         ])->all();
-    }
-
-    private function normalizeCourseLink(array $data, User $actor): array
-    {
-        if (filled($data['course_module_id'] ?? null)) {
-            $module = $this->courses->findModule((int) $data['course_module_id']);
-            if (! $actor->can('courses.edit-any') && $module->course->instructor_id !== $actor->id) {
-                throw ValidationException::withMessages(['course_module_id' => 'You can only link assessments to your own courses.']);
-            }
-            $data['course_id'] = $module->course_id;
-        } elseif (filled($data['course_id'] ?? null)) {
-            $course = $this->courses->findCourse((int) $data['course_id']);
-            if (! $actor->can('courses.edit-any') && $course->instructor_id !== $actor->id) {
-                throw ValidationException::withMessages(['course_id' => 'You can only link assessments to your own courses.']);
-            }
-        }
-
-        return $data;
     }
 
     private function completeAttachedMaterials(Assessment $assessment, User $trainee): void
@@ -276,7 +340,7 @@ class AssessmentService
             if ($material->type !== MaterialType::Assessment) {
                 continue;
             }
-            $enrollment = $this->enrollments->findForCourseAndTrainee($material->module->course, $trainee);
+            $enrollment = $this->enrollments->findForCourseAndTrainee($material->chapter->module->course, $trainee);
             if ($enrollment) {
                 $this->enrollments->completeMaterial($enrollment, $material);
                 $this->learning->recalculate($enrollment);

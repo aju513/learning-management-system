@@ -3,6 +3,7 @@
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
 use App\Models\Course;
+use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
 use App\Models\LearningMaterial;
@@ -26,9 +27,10 @@ function publishedCourse(User $instructor, int $materialCount = 1): array
 {
     $course = Course::factory()->published()->for($instructor, 'instructor')->create(['navigation_mode' => 'sequential']);
     $module = CourseModule::factory()->for($course)->create();
+    $chapter = CourseChapter::factory()->for($module, 'module')->create();
     $materials = collect();
     foreach (range(1, $materialCount) as $position) {
-        $materials->push(LearningMaterial::factory()->for($module, 'module')->create(['position' => $position]));
+        $materials->push(LearningMaterial::factory()->for($chapter, 'chapter')->create(['position' => $position]));
     }
 
     return [$course, $module, $materials];
@@ -61,12 +63,13 @@ test('an Instructor builds an owned course but cannot edit another instructors c
 
     $this->actingAs($instructor)->post(route('instructor.course-modules.store', $course), ['title' => 'Introduction'])->assertRedirect();
     $module = $course->modules()->firstOrFail();
-    $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $module), [
+    $chapter = $module->chapters()->firstOrFail();
+    $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
         'title' => 'Welcome article', 'type' => 'article', 'content' => '<p onmouseover="alert(1)">Welcome</p><script>alert(1)</script>',
         'duration_minutes' => 5, 'is_required' => 1,
     ])->assertRedirect();
 
-    expect($module->materials()->firstOrFail()->content)->toBe('<p>Welcome</p>alert(1)');
+    expect($chapter->materials()->firstOrFail()->content)->toBe('<p>Welcome</p>alert(1)');
     $this->actingAs($instructor)->patch(route('instructor.courses.status', $course), ['status' => 'published'])->assertRedirect();
     expect($course->fresh()->status->value)->toBe('published')
         ->and(Activity::where('event', 'course.status-changed')->where('causer_id', $instructor->id)->exists())->toBeTrue();

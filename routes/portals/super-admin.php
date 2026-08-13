@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AssessmentAssignmentController;
 use App\Http\Controllers\Admin\AssessmentController;
 use App\Http\Controllers\Admin\AssessmentQuestionController;
 use App\Http\Controllers\Admin\CourseCategoryController;
+use App\Http\Controllers\Admin\CourseChapterController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\CourseModuleController;
 use App\Http\Controllers\Admin\EnrollmentController;
@@ -51,7 +52,13 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'active'
     Route::put('/course-modules/{course_module}', [CourseModuleController::class, 'update'])->name('course-modules.update');
     Route::patch('/course-modules/{course_module}/move', [CourseModuleController::class, 'move'])->name('course-modules.move');
     Route::delete('/course-modules/{course_module}', [CourseModuleController::class, 'destroy'])->name('course-modules.destroy');
-    Route::post('/course-modules/{course_module}/materials', [LearningMaterialController::class, 'store'])->name('learning-materials.store');
+    Route::post('/course-modules/{course_module}/chapters', [CourseChapterController::class, 'store'])->name('course-chapters.store');
+    Route::put('/course-chapters/{course_chapter}', [CourseChapterController::class, 'update'])->name('course-chapters.update');
+    Route::patch('/course-chapters/{course_chapter}/move', [CourseChapterController::class, 'move'])->name('course-chapters.move');
+    Route::delete('/course-chapters/{course_chapter}', [CourseChapterController::class, 'destroy'])->name('course-chapters.destroy');
+    Route::get('/course-chapters/{course_chapter}/materials/create', [LearningMaterialController::class, 'create'])->name('learning-materials.create');
+    Route::post('/course-chapters/{course_chapter}/materials', [LearningMaterialController::class, 'store'])->name('learning-materials.store');
+    Route::get('/learning-materials/{learning_material}/edit', [LearningMaterialController::class, 'edit'])->name('learning-materials.edit');
     Route::put('/learning-materials/{learning_material}', [LearningMaterialController::class, 'update'])->name('learning-materials.update');
     Route::patch('/learning-materials/{learning_material}/move', [LearningMaterialController::class, 'move'])->name('learning-materials.move');
     Route::delete('/learning-materials/{learning_material}', [LearningMaterialController::class, 'destroy'])->name('learning-materials.destroy');
@@ -65,6 +72,7 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'active'
 
     Route::get('/assessments', [AssessmentController::class, 'index'])->name('assessments.index');
     Route::get('/assessments/create', [AssessmentController::class, 'create'])->name('assessments.create');
+    Route::get('/assessments/questions/template', [AssessmentQuestionController::class, 'template'])->name('assessment-questions.template');
     Route::post('/assessments', [AssessmentController::class, 'store'])->name('assessments.store');
     Route::get('/assessments/{assessment}/edit', [AssessmentController::class, 'edit'])->name('assessments.edit');
     Route::put('/assessments/{assessment}', [AssessmentController::class, 'update'])->name('assessments.update');
@@ -72,6 +80,8 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'active'
     Route::delete('/assessments/{assessment}', [AssessmentController::class, 'destroy'])->name('assessments.destroy');
     Route::get('/assessments/{assessment}', [AssessmentController::class, 'show'])->name('assessments.show');
     Route::post('/assessments/{assessment}/questions', [AssessmentQuestionController::class, 'store'])->name('assessment-questions.store');
+    Route::post('/assessments/{assessment}/questions/import', [AssessmentQuestionController::class, 'import'])->name('assessment-questions.import');
+    Route::patch('/assessments/{assessment}/questions/reorder', [AssessmentQuestionController::class, 'reorder'])->name('assessment-questions.reorder');
     Route::get('/assessment-questions/{assessment_question}/edit', [AssessmentQuestionController::class, 'edit'])->name('assessment-questions.edit');
     Route::put('/assessment-questions/{assessment_question}', [AssessmentQuestionController::class, 'update'])->name('assessment-questions.update');
     Route::delete('/assessment-questions/{assessment_question}', [AssessmentQuestionController::class, 'destroy'])->name('assessment-questions.destroy');
@@ -79,6 +89,7 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'active'
     Route::delete('/assessment-assignments/{assessment_assignment}', [AssessmentAssignmentController::class, 'destroy'])->name('assessment-assignments.destroy');
     Route::get('/results', [ResultController::class, 'index'])->name('results.index');
     Route::get('/results/{assessment_attempt}', [ResultController::class, 'show'])->name('results.show');
+    Route::patch('/results/{assessment_attempt}/review', [ResultController::class, 'review'])->name('results.review');
     Route::get('/reports', ReportController::class)->name('reports.index');
     Route::get('/access-matrix', PermissionController::class)->name('access-matrix.index');
     Route::get('/activity-log', ActivityLogController::class)->name('activity.index');

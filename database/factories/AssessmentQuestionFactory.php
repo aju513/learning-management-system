@@ -9,6 +9,6 @@ class AssessmentQuestionFactory extends Factory
 {
     public function definition(): array
     {
-        return ['assessment_id' => Assessment::factory(), 'prompt' => fake()->sentence().'?', 'type' => 'single_choice', 'marks' => 1, 'position' => 1];
+        return ['assessment_id' => Assessment::factory(), 'prompt' => fake()->sentence().'?', 'reference_answer' => null, 'type' => 'single_choice', 'marks' => 1, 'position' => 1];
     }
 }

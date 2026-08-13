@@ -12,7 +12,7 @@ class MoveLearningMaterialRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->canEditCourse($this->route('learning_material')->module->course, 'materials.reorder');
+        return $this->canEditCourse($this->route('learning_material')->chapter->module->course, 'materials.reorder');
     }
 
     public function rules(): array

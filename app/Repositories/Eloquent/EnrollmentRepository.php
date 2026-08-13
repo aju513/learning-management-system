@@ -119,7 +119,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
     public function forTrainee(User $trainee): Collection
     {
         return Enrollment::query()->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed'])
-            ->with(['course.category', 'course.instructor', 'course.modules.materials'])->latest('enrolled_at')->get();
+            ->with(['course.category', 'course.instructor', 'course.modules.chapters.materials'])->latest('enrolled_at')->get();
     }
 
     public function applicationsForTrainee(User $trainee): Collection
@@ -134,7 +134,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
 
     public function findForLearning(Enrollment $enrollment): Enrollment
     {
-        return $enrollment->load(['course.modules.materials.assessment', 'materialProgress']);
+        return $enrollment->load(['course.modules.chapters.materials.assessment', 'materialProgress']);
     }
 
     public function findForCourseAndTrainee(Course $course, User $trainee): ?Enrollment
@@ -161,7 +161,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
 
     public function requiredMaterialCount(Enrollment $enrollment): int
     {
-        return LearningMaterial::query()->whereHas('module', fn ($query) => $query->where('course_id', $enrollment->course_id))
+        return LearningMaterial::query()->whereHas('chapter.module', fn ($query) => $query->where('course_id', $enrollment->course_id))
             ->where('is_required', true)->count();
     }
 

@@ -64,6 +64,7 @@
                     preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
                 }));
                 this.syncInput();
+                this.$dispatch('file-selection-changed', { name: this.files[0]?.name || null });
             },
             matchesAccept(file) {
                 return this.accept.split(',').map(item => item.trim().toLowerCase()).filter(Boolean).some(rule => {
@@ -82,6 +83,7 @@
                 const [removed] = this.files.splice(index, 1);
                 if (removed?.preview) URL.revokeObjectURL(removed.preview);
                 this.syncInput();
+                this.$dispatch('file-selection-changed', { name: this.files[0]?.name || null });
             },
             formatSize(bytes) {
                 if (!bytes) return '0 B';

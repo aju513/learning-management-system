@@ -12,7 +12,7 @@ class AssessmentQuestion extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['assessment_id', 'prompt', 'type', 'marks', 'position'];
+    protected $fillable = ['assessment_id', 'prompt', 'reference_answer', 'type', 'marks', 'position'];
 
     protected function casts(): array
     {
