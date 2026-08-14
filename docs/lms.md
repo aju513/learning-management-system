@@ -46,7 +46,7 @@ Modules, chapters, and materials use persisted integer positions. New modules re
 
 Learning materials are created and edited on dedicated authoring pages. The form shows only fields relevant to the selected material type and provides a live, read-only trainee-style preview beside the form. The enrolled learning player displays the full Module -> Chapter -> Material hierarchy; the public catalog keeps its compact module-level material list.
 
-Supported materials are article, video URL/upload, PDF, PPT/PPTX, DOC/DOCX, external link, downloadable file, and assessment. Uploaded learning files are stored on the private local disk and are served only through an authorized enrollment download route. Thumbnail images use the public disk. Article HTML is reduced to a small safe tag set and stripped of attributes before storage.
+Supported materials are article, video URL/upload, file, link, and assessment. File materials use PDF, DOCX, or PPTX subtypes; unsupported legacy files remain downloadable but cannot be selected for new materials. Video URLs are stored separately from external links, while rich text is available as article content or additional notes for other material types. Uploaded learning files are stored on the private local disk and are served only through an authorized enrollment download route. Thumbnail images use the public disk. Article and material-note HTML is reduced to a small safe tag set and stripped of attributes before storage.
 
 ## Applications, enrollment, and learning
 

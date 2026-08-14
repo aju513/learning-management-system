@@ -89,11 +89,13 @@
                                                 $materialIcon = match ($material->type) {
                                                     \App\Enums\MaterialType::Article => 'bi-file-earmark-text',
                                                     \App\Enums\MaterialType::Video => 'bi-camera-video',
-                                                    \App\Enums\MaterialType::Pdf => 'bi-file-earmark-pdf',
-                                                    \App\Enums\MaterialType::Ppt, \App\Enums\MaterialType::Pptx => 'bi-file-earmark-slides',
-                                                    \App\Enums\MaterialType::Doc, \App\Enums\MaterialType::Docx => 'bi-file-earmark-word',
-                                                    \App\Enums\MaterialType::ExternalLink => 'bi-link-45deg',
-                                                    \App\Enums\MaterialType::DownloadableFile => 'bi-download',
+                                                    \App\Enums\MaterialType::File => match ($material->file_type) {
+                                                        'pdf' => 'bi-file-earmark-pdf',
+                                                        'docx' => 'bi-file-earmark-word',
+                                                        'pptx' => 'bi-file-earmark-slides',
+                                                        default => 'bi-download',
+                                                    },
+                                                    \App\Enums\MaterialType::Link => 'bi-link-45deg',
                                                     \App\Enums\MaterialType::Assessment => 'bi-clipboard-check',
                                                     default => 'bi-file-earmark',
                                                 };

@@ -354,6 +354,7 @@ class CourseService
     private function prepareMaterialData(array $data, User $actor, ?LearningMaterial $material = null): array
     {
         $file = Arr::pull($data, 'file');
+        $videoSource = Arr::pull($data, 'video_source');
         $type = MaterialType::from($data['type']);
         $typeChanged = $material && $material->type !== $type;
         if ($type === MaterialType::Assessment && filled($data['assessment_id'] ?? null)) {
@@ -363,7 +364,7 @@ class CourseService
             }
         }
         $data['is_required'] = (bool) ($data['is_required'] ?? false);
-        if ($type === MaterialType::Article && filled($data['content'] ?? null)) {
+        if (filled($data['content'] ?? null)) {
             $data['content'] = $this->sanitizeArticle($data['content']);
         }
         if ($file instanceof UploadedFile) {
@@ -377,11 +378,22 @@ class CourseService
             $data['mime_type'] = null;
         }
 
-        if ($type !== MaterialType::Article) {
-            $data['content'] = null;
+        if ($type !== MaterialType::Video) {
+            $data['video_url'] = null;
         }
-        if (! in_array($type, [MaterialType::Video, MaterialType::ExternalLink], true)) {
+        if ($type === MaterialType::Video && $videoSource === 'url') {
+            $data['file_path'] = null;
+            $data['original_filename'] = null;
+            $data['mime_type'] = null;
+        }
+        if ($type === MaterialType::Video && $videoSource === 'upload') {
+            $data['video_url'] = null;
+        }
+        if ($type !== MaterialType::Link) {
             $data['external_url'] = null;
+        }
+        if ($type !== MaterialType::File) {
+            $data['file_type'] = null;
         }
         if ($type !== MaterialType::Assessment) {
             $data['assessment_id'] = null;

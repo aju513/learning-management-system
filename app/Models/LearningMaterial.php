@@ -13,7 +13,7 @@ class LearningMaterial extends Model
     use HasFactory;
 
     protected $fillable = [
-        'course_chapter_id', 'assessment_id', 'title', 'type', 'description', 'content', 'external_url',
+        'course_chapter_id', 'assessment_id', 'title', 'type', 'description', 'content', 'video_url', 'external_url', 'file_type',
         'file_path', 'original_filename', 'mime_type', 'duration_minutes', 'position', 'is_required',
     ];
 

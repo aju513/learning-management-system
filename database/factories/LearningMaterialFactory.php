@@ -14,6 +14,8 @@ class LearningMaterialFactory extends Factory
             'title' => fake()->sentence(3),
             'type' => 'article',
             'content' => '<p>'.fake()->paragraph().'</p>',
+            'file_type' => null,
+            'video_url' => null,
             'position' => 1,
             'is_required' => true,
         ];

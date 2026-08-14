@@ -39,13 +39,28 @@
                     <div class="prose max-w-none text-gray-700 dark:text-gray-300">{!! $material->content !!}</div>
                     @break
                 @case(\App\Enums\MaterialType::Video)
-                    @if($material->external_url)<a href="{{ $material->external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Open video</a>@endif
+                    @if($material->content)<div class="prose mb-5 max-w-none text-gray-700 dark:text-gray-300">{!! $material->content !!}</div>@endif
+                    @if($material->video_url)<a href="{{ $material->video_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Open video</a>@endif
                     @if($material->file_path)<a href="{{ route('learning.courses.materials.download', [$enrollment, $material]) }}" class="ml-2 inline-flex rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Download video</a>@endif
                     @break
-                @case(\App\Enums\MaterialType::ExternalLink)
+                @case(\App\Enums\MaterialType::File)
+                    @if($material->content)<div class="prose mb-5 max-w-none text-gray-700 dark:text-gray-300">{!! $material->content !!}</div>@endif
+                    @if($material->file_path)
+                        <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
+                            <p class="font-medium text-gray-800 dark:text-white">{{ $material->original_filename }}</p>
+                            <p class="mt-1 text-sm uppercase text-gray-500">{{ $material->file_type === 'legacy' ? 'File' : $material->file_type }}</p>
+                            <a href="{{ route('learning.courses.materials.download', [$enrollment, $material]) }}" class="mt-4 inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Download file</a>
+                        </div>
+                    @else
+                        <p class="text-sm text-error-500">The learning file is unavailable.</p>
+                    @endif
+                    @break
+                @case(\App\Enums\MaterialType::Link)
+                    @if($material->content)<div class="prose mb-5 max-w-none text-gray-700 dark:text-gray-300">{!! $material->content !!}</div>@endif
                     <a href="{{ $material->external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Open external resource</a>
                     @break
                 @case(\App\Enums\MaterialType::Assessment)
+                    @if($material->content)<div class="prose mb-5 max-w-none text-gray-700 dark:text-gray-300">{!! $material->content !!}</div>@endif
                     @if($material->assessment)
                         <div class="rounded-xl bg-gray-50 p-5 dark:bg-white/[0.03]">
                             <h3 class="font-semibold text-gray-800 dark:text-white">{{ $material->assessment->title }}</h3>
@@ -57,14 +72,7 @@
                     @endif
                     @break
                 @default
-                    @if($material->file_path)
-                        <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
-                            <p class="font-medium text-gray-800 dark:text-white">{{ $material->original_filename }}</p>
-                            <a href="{{ route('learning.courses.materials.download', [$enrollment, $material]) }}" class="mt-4 inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Download file</a>
-                        </div>
-                    @else
-                        <p class="text-sm text-gray-500">No file is attached.</p>
-                    @endif
+                    <p class="text-sm text-gray-500">This learning material is unavailable.</p>
             @endswitch
         </x-common.component-card>
 

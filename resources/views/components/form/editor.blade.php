@@ -16,31 +16,35 @@
 @endphp
 
 <x-form.field :name="$name" :label="$label" :id="$id" :required="$required" :error="$error" :help="$help">
-    <div x-data="{
-        html: @js($currentValue),
-        format(command) {
-            document.execCommand(command, false, null);
-            this.html = this.$refs.editor.innerHTML;
-            this.$dispatch('editor-content-changed', { html: this.html });
-            this.$refs.editor.focus();
-        }
-    }" class="overflow-hidden rounded-lg border border-gray-300 shadow-theme-xs dark:border-gray-700">
-        <div class="flex flex-wrap gap-1 border-b border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-900">
-            <button type="button" @click="format('bold')" class="rounded px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-white dark:text-gray-300 dark:hover:bg-gray-800" aria-label="Bold">B</button>
-            <button type="button" @click="format('italic')" class="rounded px-2 py-1 text-xs italic text-gray-700 hover:bg-white dark:text-gray-300 dark:hover:bg-gray-800" aria-label="Italic">I</button>
-            <button type="button" @click="format('insertUnorderedList')" class="rounded px-2 py-1 text-xs text-gray-700 hover:bg-white dark:text-gray-300 dark:hover:bg-gray-800" aria-label="Bulleted list">• List</button>
+    <div
+        data-quill-editor
+        data-input-id="{{ $id }}"
+        data-placeholder="{{ $placeholder }}"
+        data-disabled="{{ $disabled ? 'true' : 'false' }}"
+        class="quill-editor overflow-hidden rounded-lg border border-gray-300 shadow-theme-xs dark:border-gray-700"
+    >
+        <div id="{{ $id }}-toolbar" class="ql-toolbar ql-snow">
+            <span class="ql-formats">
+                <select class="ql-header" aria-label="Heading">
+                    <option value="1"></option>
+                    <option value="2"></option>
+                    <option selected></option>
+                </select>
+            </span>
+            <span class="ql-formats">
+                <button class="ql-bold" type="button" aria-label="Bold"></button>
+                <button class="ql-italic" type="button" aria-label="Italic"></button>
+                <button class="ql-underline" type="button" aria-label="Underline"></button>
+                <button class="ql-blockquote" type="button" aria-label="Blockquote"></button>
+            </span>
+            <span class="ql-formats">
+                <button class="ql-list" value="ordered" type="button" aria-label="Numbered list"></button>
+                <button class="ql-list" value="bullet" type="button" aria-label="Bulleted list"></button>
+                <button class="ql-link" type="button" aria-label="Insert link"></button>
+                <button class="ql-clean" type="button" aria-label="Remove formatting"></button>
+            </span>
         </div>
-        <div
-            id="{{ $id }}"
-            x-ref="editor"
-            contenteditable="{{ $disabled ? 'false' : 'true' }}"
-            role="textbox"
-            aria-multiline="true"
-            data-placeholder="{{ $placeholder }}"
-            x-init="$refs.editor.innerHTML = html"
-            @input="html = $event.target.innerHTML; $dispatch('editor-content-changed', { html })"
-            class="min-h-36 w-full px-4 py-3 text-sm text-gray-800 outline-none empty:before:text-gray-400 empty:before:content-[attr(data-placeholder)] dark:bg-gray-900 dark:text-white/90"
-        ></div>
-        <textarea name="{{ $name }}" x-model="html" class="hidden" @required($required) @disabled($disabled)></textarea>
+        <div id="{{ $id }}-editor" class="ql-container ql-snow min-h-36 text-sm" data-placeholder="{{ $placeholder }}"></div>
+        <textarea id="{{ $id }}" name="{{ $name }}" class="hidden" @required($required) @disabled($disabled)>{{ $currentValue }}</textarea>
     </div>
 </x-form.field>

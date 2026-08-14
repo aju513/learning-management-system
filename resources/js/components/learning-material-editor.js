@@ -4,6 +4,18 @@ export default function learningMaterialEditor(initial, assessments) {
         assessments,
         selectedFileName: null,
 
+        typeLabels: {
+            article: 'Article',
+            video: 'Video',
+            file: 'File',
+            link: 'Link',
+            assessment: 'Assessment',
+        },
+
+        get typeLabel() {
+            return this.typeLabels[this.type] || 'Learning material';
+        },
+
         get selectedAssessment() {
             return this.assessments.find(item => String(item.id) === String(this.assessmentId)) || null;
         },
@@ -13,7 +25,7 @@ export default function learningMaterialEditor(initial, assessments) {
             return this.type === this.initialType ? this.currentFileName : null;
         },
 
-        get safeArticleHtml() {
+        get safeContentHtml() {
             const template = document.createElement('template');
             template.innerHTML = this.content || '';
             template.content.querySelectorAll('script,style,iframe,object,embed').forEach(node => node.remove());
@@ -29,6 +41,15 @@ export default function learningMaterialEditor(initial, assessments) {
             });
 
             return template.innerHTML;
+        },
+
+        syncContentBeforeSubmit(event) {
+            const editor = event.target.querySelector('[contenteditable="true"]');
+            const textarea = event.target.querySelector('textarea[name="content"]');
+            if (editor && textarea) {
+                textarea.value = editor.innerHTML;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         },
     };
 }

@@ -218,19 +218,24 @@ test('material creation and editing use dedicated preview pages and clean incomp
 
     $this->actingAs($instructor)->get(route('instructor.learning-materials.create', $chapter))
         ->assertOk()
+        ->assertSee('Preview material')
+        ->assertSee('animate-pulse')
+        ->assertSee('open-material-preview')
         ->assertSee('Trainee preview')
         ->assertSee('Documents');
 
     $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
         'title' => 'Missing guide',
-        'type' => 'pdf',
+        'type' => 'file',
+        'file_type' => 'pdf',
         'duration_minutes' => 5,
         'is_required' => 1,
     ])->assertSessionHasErrors('file');
 
     $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
         'title' => 'Policy guide',
-        'type' => 'pdf',
+        'type' => 'file',
+        'file_type' => 'pdf',
         'file' => UploadedFile::fake()->create('policy.pdf', 100, 'application/pdf'),
         'duration_minutes' => 15,
         'is_required' => 1,
@@ -274,6 +279,49 @@ test('publishing requires every module and chapter to contain learning material'
     LearningMaterial::factory()->for($chapter, 'chapter')->create();
     $this->actingAs($instructor)->patch(route('instructor.courses.status', $course), ['status' => 'published'])->assertRedirect();
     expect($course->fresh()->status->value)->toBe('published');
+});
+
+test('owners can create the canonical material types and assessment materials', function () {
+    Storage::fake('local');
+    $instructor = chapterAuthor();
+    $course = Course::factory()->for($instructor, 'instructor')->create();
+    $module = CourseModule::factory()->for($course)->create();
+    $chapter = CourseChapter::factory()->for($module, 'module')->create();
+    $assessment = \App\Models\Assessment::factory()->for($instructor, 'creator')->create();
+
+    $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
+        'title' => 'Routing article', 'type' => 'article', 'content' => '<p>Read this article.</p>', 'is_required' => 1,
+    ])->assertRedirect();
+
+    $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
+        'title' => 'Video lesson', 'type' => 'video', 'video_url' => 'https://www.youtube.com/watch?v=abc123',
+        'content' => '<p>Watch the lesson.</p><script>alert(1)</script>', 'is_required' => 1,
+    ])->assertRedirect();
+
+    $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
+        'title' => 'Reference PDF', 'type' => 'file', 'file_type' => 'pdf',
+        'file' => UploadedFile::fake()->create('reference.pdf', 100, 'application/pdf'), 'is_required' => 1,
+    ])->assertRedirect();
+
+    $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
+        'title' => 'Official documentation', 'type' => 'link', 'external_url' => 'https://laravel.com/docs',
+        'content' => '<p>Read the documentation.</p>', 'is_required' => 0,
+    ])->assertRedirect();
+
+    $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
+        'title' => 'Knowledge check', 'type' => 'assessment', 'assessment_id' => $assessment->id,
+        'content' => '<p>Complete the quiz.</p>', 'is_required' => 1,
+    ])->assertRedirect();
+
+    $materials = $chapter->materials()->orderBy('position')->get();
+    expect($materials->pluck('type')->map(fn ($type) => $type->value)->all())->toBe(['article', 'video', 'file', 'link', 'assessment'])
+        ->and($materials[0]->content)->toBe('<p>Read this article.</p>')
+        ->and($materials[1]->video_url)->toBe('https://www.youtube.com/watch?v=abc123')
+        ->and($materials[1]->content)->toBe('<p>Watch the lesson.</p>alert(1)')
+        ->and($materials[2]->file_type)->toBe('pdf')
+        ->and($materials[2]->file_path)->not->toBeNull()
+        ->and($materials[3]->external_url)->toBe('https://laravel.com/docs')
+        ->and($materials[4]->assessment_id)->toBe($assessment->id);
 });
 
 test('trainee navigation shows chapters while the catalog keeps a flat module preview', function () {
