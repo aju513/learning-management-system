@@ -1,28 +1,56 @@
-export default function learningMaterialEditor(initial, assessments) {
+export default function learningMaterialEditor(initial) {
     return {
         ...initial,
-        assessments,
         selectedFileName: null,
+        selectedFilePreview: null,
 
         typeLabels: {
             article: 'Article',
             video: 'Video',
             file: 'File',
             link: 'Link',
-            assessment: 'Assessment',
+            course_assessment: 'Course assessment',
         },
 
         get typeLabel() {
             return this.typeLabels[this.type] || 'Learning material';
         },
 
-        get selectedAssessment() {
-            return this.assessments.find(item => String(item.id) === String(this.assessmentId)) || null;
-        },
-
         get previewFileName() {
             if (this.selectedFileName) return this.selectedFileName;
             return this.type === this.initialType ? this.currentFileName : null;
+        },
+
+        get videoPreviewUrl() {
+            return this.videoSource === 'upload' ? this.selectedFilePreview || '' : this.videoUrl || '';
+        },
+
+        get videoEmbedUrl() {
+            if (this.videoSource !== 'url' || !this.videoUrl) return '';
+
+            try {
+                const url = new URL(this.videoUrl);
+                const host = url.hostname.toLowerCase().replace(/^www\./, '');
+                let videoId = '';
+
+                if (host === 'youtu.be') {
+                    videoId = url.pathname.split('/').filter(Boolean)[0] || '';
+                } else if (host === 'youtube.com' || host === 'm.youtube.com') {
+                    videoId = url.searchParams.get('v') || url.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/)?.[1] || '';
+                } else if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+                    videoId = url.pathname.match(/\/(\d+)(?:$|\/)/)?.[1] || '';
+                    if (host === 'player.vimeo.com' && url.pathname.startsWith('/video/')) {
+                        videoId = url.pathname.match(/^\/video\/(\d+)/)?.[1] || '';
+                    }
+                }
+
+                if (host.includes('youtube.com') && videoId) return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}`;
+                if ((host === 'vimeo.com' || host === 'player.vimeo.com') && videoId) return `https://player.vimeo.com/video/${encodeURIComponent(videoId)}`;
+            } catch (error) {
+                return '';
+            }
+
+            return '';
         },
 
         get safeContentHtml() {

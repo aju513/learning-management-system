@@ -33,7 +33,7 @@
                     <section id="module-{{ $module->id }}" data-module-id="{{ $module->id }}" class="rounded-xl border border-gray-200 p-4 dark:border-gray-800" x-data="{ expanded: false }" x-init="expanded = window.location.hash === '#module-{{ $module->id }}' || @js($module->chapters->pluck('id')->all()).some(id => window.location.hash === '#chapter-' + id)" @focus-curriculum-module.window="expanded = $event.detail.moduleId === {{ $module->id }}" @focus-curriculum-chapter.window="expanded = $event.detail.moduleId === {{ $module->id }}">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="flex min-w-0 items-start gap-3">
-                                @can('modules.reorder')<button type="button" class="handle mt-1 flex h-8 w-8 cursor-grab items-center justify-center rounded border border-gray-300 text-gray-500 active:cursor-grabbing dark:border-gray-700" title="Drag to reorder module" aria-label="Drag to reorder module"><i class="bi bi-grip-vertical" aria-hidden="true"></i></button>@endcan
+                                @can('modules.reorder')<button type="button" class="handle mt-1 flex h-8 w-8 cursor-grab items-center justify-center rounded border border-gray-300 text-gray-500 active:cursor-grabbing dark:border-gray-700" title="Drag to reorder module" aria-label="Drag to reorder module"><i class="bi bi-arrows-move" aria-hidden="true"></i></button>@endcan
                                 <div class="text-left">
                                     <p data-module-number class="text-xs font-semibold uppercase text-brand-500">Module {{ $loop->iteration }}</p>
                                     <h3 class="font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h3>
@@ -61,7 +61,7 @@
                                 <section id="chapter-{{ $chapter->id }}" data-chapter-id="{{ $chapter->id }}" class="rounded-xl bg-gray-50 p-4 dark:bg-white/[0.02]" x-data="{ expanded: false }" x-init="expanded = window.location.hash === '#chapter-{{ $chapter->id }}'" @focus-curriculum-module.window="expanded = false" @focus-curriculum-chapter.window="expanded = $event.detail.chapterId === {{ $chapter->id }}">
                                     <div class="flex flex-wrap items-start justify-between gap-3">
                                         <div class="flex min-w-0 items-start gap-3">
-                                            @can('chapters.reorder')<button type="button" class="handle mt-1 flex h-8 w-8 cursor-grab items-center justify-center rounded border border-gray-300 bg-white text-gray-500 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-900" title="Drag to reorder chapter" aria-label="Drag to reorder chapter"><i class="bi bi-grip-vertical" aria-hidden="true"></i></button>@endcan
+                                            @can('chapters.reorder')<button type="button" class="handle mt-1 flex h-8 w-8 cursor-grab items-center justify-center rounded border border-gray-300 bg-white text-gray-500 active:cursor-grabbing dark:border-gray-700 dark:bg-gray-900" title="Drag to reorder chapter" aria-label="Drag to reorder chapter"><i class="bi bi-arrows-move" aria-hidden="true"></i></button>@endcan
                                             <div class="text-left">
                                                 <p data-chapter-number class="text-xs font-semibold uppercase text-gray-500">Chapter {{ $loop->iteration }}</p>
                                                 <h4 class="font-medium text-gray-800 dark:text-white">{{ $chapter->title }}</h4>
@@ -96,13 +96,13 @@
                                                         default => 'bi-download',
                                                     },
                                                     \App\Enums\MaterialType::Link => 'bi-link-45deg',
-                                                    \App\Enums\MaterialType::Assessment => 'bi-clipboard-check',
+                                                    \App\Enums\MaterialType::CourseAssessment => 'bi-clipboard-check',
                                                     default => 'bi-file-earmark',
                                                 };
                                             @endphp
                                             <div data-material-id="{{ $material->id }}" class="group flex flex-wrap items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-3 transition-all duration-200 hover:border-brand-200 hover:bg-brand-50/60 hover:shadow-sm dark:hover:border-brand-500/30 dark:hover:bg-brand-500/5">
                                                 <div class="flex min-w-0 items-center gap-3">
-                                                    @can('materials.reorder')<button type="button" class="handle flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white hover:text-brand-500 active:cursor-grabbing dark:hover:bg-gray-900" title="Drag to reorder material" aria-label="Drag to reorder material"><i class="bi bi-grip-vertical" aria-hidden="true"></i></button>@endcan
+                                                    @can('materials.reorder')<button type="button" class="handle flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white hover:text-brand-500 active:cursor-grabbing dark:hover:bg-gray-900" title="Drag to reorder material" aria-label="Drag to reorder material"><i class="bi bi-arrows-move" aria-hidden="true"></i></button>@endcan
                                                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-lg text-brand-500 shadow-sm transition-transform duration-200 group-hover:scale-105 dark:bg-gray-800"><i class="bi {{ $materialIcon }}" aria-hidden="true"></i></span>
                                                     <div>
                                                         <div class="flex flex-wrap items-center gap-2">
@@ -113,6 +113,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="flex gap-1">
+                                                    @if($material->courseAssessment && request()->routeIs('instructor.*', 'super-admin.*') && auth()->user()->can('course-assessments.questions.manage'))<a href="{{ route(\App\Support\PortalRoute::name('course-assessments.show'), $material->courseAssessment) }}" class="rounded border border-brand-300 bg-brand-50 px-2 py-1 text-xs text-brand-600 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">Questions</a>@endif
                                                     @can('materials.edit')<a href="{{ route(\App\Support\PortalRoute::name('learning-materials.edit'), $material) }}" class="rounded border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white">Edit</a>@endcan
                                                     @can('materials.delete')
                                                         <form method="POST" action="{{ route(\App\Support\PortalRoute::name('learning-materials.destroy'), $material) }}" onsubmit="return confirm('Delete this material?')">

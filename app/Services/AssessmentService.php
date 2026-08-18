@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\AssessmentStatus;
 use App\Enums\AttemptStatus;
-use App\Enums\MaterialType;
 use App\Enums\QuestionType;
 use App\Models\Assessment;
 use App\Models\AssessmentAssignment;
@@ -25,15 +24,12 @@ class AssessmentService
         private readonly AssessmentRepositoryInterface $assessments,
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly UserRepositoryInterface $users,
-        private readonly LearningService $learning,
     ) {}
 
     public function create(array $data, User $actor): Assessment
     {
         $data['created_by'] = $actor->id;
         $data['status'] = AssessmentStatus::Draft;
-        $data['course_id'] = null;
-        $data['course_module_id'] = null;
         $assessment = $this->assessments->create($data);
         activity('lms')->causedBy($actor)->performedOn($assessment)->event('assessment.created')->log('Assessment created');
 
@@ -63,6 +59,7 @@ class AssessmentService
                     if (blank($question->reference_answer)) {
                         throw ValidationException::withMessages(['status' => 'Every question-and-answer item needs a reference answer.']);
                     }
+
                     continue;
                 }
                 $correctCount = $question->options->where('is_correct', true)->count();
@@ -85,9 +82,6 @@ class AssessmentService
     {
         if ($this->assessments->hasAttempts($assessment)) {
             throw ValidationException::withMessages(['assessment' => 'Close assessments with attempt history instead of deleting them.']);
-        }
-        if ($this->assessments->hasAttachedMaterials($assessment)) {
-            throw ValidationException::withMessages(['assessment' => 'Detach this assessment from learning materials before deleting it.']);
         }
         activity('lms')->causedBy($actor)->performedOn($assessment)->event('assessment.deleted')
             ->withProperties(['title' => $assessment->title])->log('Assessment deleted');
@@ -234,6 +228,7 @@ class AssessmentService
                         'earned_marks' => 0,
                         'is_correct' => false,
                     ]);
+
                     continue;
                 }
                 $selected = array_values(array_unique(array_map('intval', Arr::wrap($answers[$question->id] ?? []))));
@@ -265,10 +260,6 @@ class AssessmentService
             ]);
             activity('lms')->causedBy($trainee)->performedOn($attempt)->event($requiresReview ? 'assessment-attempt.submitted' : 'assessment-attempt.graded')
                 ->withProperties(['assessment_id' => $attempt->assessment_id, 'status' => $attempt->status->value])->log($requiresReview ? 'Assessment attempt submitted for review' : 'Assessment attempt graded');
-
-            if ($attempt->passed) {
-                $this->completeAttachedMaterials($attempt->assessment, $trainee);
-            }
 
             return $attempt;
         });
@@ -315,10 +306,6 @@ class AssessmentService
             activity('lms')->causedBy($reviewer)->performedOn($attempt)->event('assessment-attempt.reviewed')
                 ->withProperties(['score' => $score, 'passed' => $attempt->passed])->log('Assessment attempt manually reviewed');
 
-            if ($attempt->passed) {
-                $this->completeAttachedMaterials($attempt->assessment, $attempt->trainee);
-            }
-
             return $attempt;
         });
     }
@@ -332,19 +319,5 @@ class AssessmentService
             'is_correct' => in_array($index, $correct, true),
             'position' => $index + 1,
         ])->all();
-    }
-
-    private function completeAttachedMaterials(Assessment $assessment, User $trainee): void
-    {
-        foreach ($this->assessments->materialsFor($assessment) as $material) {
-            if ($material->type !== MaterialType::Assessment) {
-                continue;
-            }
-            $enrollment = $this->enrollments->findForCourseAndTrainee($material->chapter->module->course, $trainee);
-            if ($enrollment) {
-                $this->enrollments->completeMaterial($enrollment, $material);
-                $this->learning->recalculate($enrollment);
-            }
-        }
     }
 }

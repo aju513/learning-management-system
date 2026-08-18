@@ -52,11 +52,11 @@ test('Trainees see published courses and submit one pending application', functi
     expect(Enrollment::whereBelongsTo($published)->whereBelongsTo($trainee, 'trainee')->count())->toBe(1);
 });
 
-test('pending applications do not grant learning or linked assessment access', function () {
+test('pending applications do not grant learning or standalone quiz access', function () {
     $instructor = applicationUser('instructor');
     $trainee = applicationUser('trainee');
     [$course, $material] = catalogCourse($instructor);
-    $assessment = Assessment::factory()->published()->for($instructor, 'creator')->for($course)->create();
+    $assessment = Assessment::factory()->published()->for($instructor, 'creator')->create();
 
     $this->actingAs($trainee)->post(route('learning.applications.store', $course));
     $application = Enrollment::whereBelongsTo($course)->whereBelongsTo($trainee, 'trainee')->firstOrFail();

@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Result\IndexResultRequest;
-use App\Http\Requests\Result\ShowResultRequest;
 use App\Http\Requests\Result\ReviewAttemptRequest;
+use App\Http\Requests\Result\ShowResultRequest;
 use App\Models\AssessmentAttempt;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 use App\Services\AssessmentService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class ResultController extends Controller
 {

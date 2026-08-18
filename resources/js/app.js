@@ -11,6 +11,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { Calendar } from '@fullcalendar/core';
 import learningMaterialEditor from './components/learning-material-editor';
 import curriculumReorder from './components/curriculum-reorder';
+import { initializeQuillEditors } from './components/quill-editor';
 
 
 
@@ -26,6 +27,8 @@ Alpine.start();
 
 // Initialize components on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    initializeQuillEditors();
+
     // Map imports
     if (document.querySelector('#mapOne')) {
         import('./components/map').then(module => module.initMap());

@@ -40,6 +40,7 @@ return [
             'modules.create', 'modules.edit', 'modules.delete', 'modules.reorder',
             'chapters.create', 'chapters.edit', 'chapters.delete', 'chapters.reorder',
             'materials.create', 'materials.edit', 'materials.delete', 'materials.reorder',
+            'course-assessments.questions.manage',
             'course-applications.review-owned', 'course-progress.view-owned',
             'assessments.manage', 'assessments.show', 'assessments.create', 'assessments.edit', 'assessments.delete', 'assessments.publish', 'assessments.assign', 'assessments.import', 'assessments.reorder',
             'results.manage', 'results.view-owned', 'results.grade-owned',

@@ -8,6 +8,7 @@
     'error' => null,
     'required' => false,
     'disabled' => false,
+    'imageUploadUrl' => null,
 ])
 
 @php
@@ -21,6 +22,7 @@
         data-input-id="{{ $id }}"
         data-placeholder="{{ $placeholder }}"
         data-disabled="{{ $disabled ? 'true' : 'false' }}"
+        data-image-upload-url="{{ $imageUploadUrl }}"
         class="quill-editor overflow-hidden rounded-lg border border-gray-300 shadow-theme-xs dark:border-gray-700"
     >
         <div id="{{ $id }}-toolbar" class="ql-toolbar ql-snow">
@@ -41,10 +43,16 @@
                 <button class="ql-list" value="ordered" type="button" aria-label="Numbered list"></button>
                 <button class="ql-list" value="bullet" type="button" aria-label="Bulleted list"></button>
                 <button class="ql-link" type="button" aria-label="Insert link"></button>
+                @if($imageUploadUrl)
+                    <button class="ql-image" type="button" aria-label="Upload image"></button>
+                @endif
                 <button class="ql-clean" type="button" aria-label="Remove formatting"></button>
             </span>
         </div>
         <div id="{{ $id }}-editor" class="ql-container ql-snow min-h-36 text-sm" data-placeholder="{{ $placeholder }}"></div>
         <textarea id="{{ $id }}" name="{{ $name }}" class="hidden" @required($required) @disabled($disabled)>{{ $currentValue }}</textarea>
+        @if($imageUploadUrl)
+            <p data-quill-upload-error class="hidden px-3 pb-3 text-sm text-error-500" role="alert"></p>
+        @endif
     </div>
 </x-form.field>

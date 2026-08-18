@@ -4,6 +4,7 @@ namespace App\Http\Requests\Concerns;
 
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\CourseAssessment;
 
 trait AuthorizesLmsOwnership
 {
@@ -33,5 +34,10 @@ trait AuthorizesLmsOwnership
         $user = $this->user();
 
         return (bool) ($user?->can($ability) && ($user->can('assessments.edit-any') || $assessment->created_by === $user->id));
+    }
+
+    protected function canEditCourseAssessment(CourseAssessment $assessment): bool
+    {
+        return $this->canEditCourse($assessment->material->chapter->module->course, 'course-assessments.questions.manage');
     }
 }

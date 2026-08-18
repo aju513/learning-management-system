@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseChapter;
@@ -49,23 +48,6 @@ class LmsDemoSeeder extends Seeder
             LearningMaterial::query()->firstOrCreate(
                 ['course_chapter_id' => $chapter->id, 'position' => 1],
                 ['title' => 'Understanding Local Governance', 'type' => 'article', 'content' => '<p>Local governance brings public decisions and services closer to citizens.</p><p>Complete this article before continuing to the module quiz.</p>', 'duration_minutes' => 10, 'is_required' => true],
-            );
-            $assessment = Assessment::query()->firstOrCreate(
-                ['title' => 'Foundations Knowledge Check', 'created_by' => $instructor->id],
-                ['course_id' => $course->id, 'course_module_id' => $module->id, 'instructions' => 'Select the best answer.', 'duration_minutes' => 10, 'passing_percentage' => 60, 'max_attempts' => 2, 'status' => 'published', 'show_results' => true],
-            );
-            if ($assessment->questions()->doesntExist()) {
-                $question = $assessment->questions()->create(['prompt' => 'What is a central purpose of local governance?', 'type' => 'single_choice', 'marks' => 1, 'position' => 1]);
-                $question->options()->createMany([
-                    ['option_text' => 'Bringing public decisions closer to citizens', 'is_correct' => true, 'position' => 1],
-                    ['option_text' => 'Removing local accountability', 'is_correct' => false, 'position' => 2],
-                    ['option_text' => 'Replacing every national institution', 'is_correct' => false, 'position' => 3],
-                    ['option_text' => 'Avoiding public service delivery', 'is_correct' => false, 'position' => 4],
-                ]);
-            }
-            LearningMaterial::query()->firstOrCreate(
-                ['course_chapter_id' => $chapter->id, 'position' => 2],
-                ['assessment_id' => $assessment->id, 'title' => 'Module Knowledge Check', 'type' => 'assessment', 'description' => 'Pass the quiz to complete the module.', 'duration_minutes' => 10, 'is_required' => true],
             );
             Enrollment::query()->firstOrCreate(
                 ['course_id' => $course->id, 'user_id' => $trainee->id],

@@ -59,17 +59,15 @@
                     @if($material->content)<div class="prose mb-5 max-w-none text-gray-700 dark:text-gray-300">{!! $material->content !!}</div>@endif
                     <a href="{{ $material->external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Open external resource</a>
                     @break
-                @case(\App\Enums\MaterialType::Assessment)
+                @case(\App\Enums\MaterialType::CourseAssessment)
                     @if($material->content)<div class="prose mb-5 max-w-none text-gray-700 dark:text-gray-300">{!! $material->content !!}</div>@endif
-                    @if($material->assessment)
-                        <div class="rounded-xl bg-gray-50 p-5 dark:bg-white/[0.03]">
-                            <h3 class="font-semibold text-gray-800 dark:text-white">{{ $material->assessment->title }}</h3>
-                            <p class="mt-1 text-sm text-gray-500">Pass score {{ $material->assessment->passing_percentage }}% · {{ $material->assessment->duration_minutes }} minutes</p>
-                            <form method="POST" action="{{ route('learning.assessments.start', $material->assessment) }}" class="mt-4">@csrf <button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Start assessment</button></form>
-                        </div>
-                    @else
-                        <p class="text-sm text-error-500">The attached assessment is unavailable.</p>
-                    @endif
+                    <div class="rounded-xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-500/30 dark:bg-brand-500/10">
+                        <p class="font-semibold text-gray-800 dark:text-white">Course assessment</p>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">Pass with {{ $material->courseAssessment?->passing_percentage ?? 60 }}% or higher. You can retake it until you pass.</p>
+                        @if(! $enrollment->materialProgress->firstWhere('learning_material_id', $material->id)?->completed_at && $material->courseAssessment)
+                            <form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $material]) }}" class="mt-4">@csrf<button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">Start assessment</button></form>
+                        @endif
+                    </div>
                     @break
                 @default
                     <p class="text-sm text-gray-500">This learning material is unavailable.</p>
@@ -80,7 +78,11 @@
             <div>@if($previous)<a href="{{ route('learning.courses.materials.show', [$enrollment, $previous]) }}" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">← Previous</a>@endif</div>
             <div class="flex gap-3">
                 @if(! $enrollment->materialProgress->firstWhere('learning_material_id', $material->id)?->completed_at)
-                    <form method="POST" action="{{ route('learning.courses.materials.complete', [$enrollment, $material]) }}">@csrf <button class="rounded-lg bg-success-500 px-4 py-2.5 text-sm font-medium text-white">Mark complete</button></form>
+                    @if($material->type !== \App\Enums\MaterialType::CourseAssessment)
+                        <form method="POST" action="{{ route('learning.courses.materials.complete', [$enrollment, $material]) }}">@csrf <button class="rounded-lg bg-success-500 px-4 py-2.5 text-sm font-medium text-white">Mark complete</button></form>
+                    @else
+                        <span class="text-sm text-gray-500">Pass the assessment to complete this material.</span>
+                    @endif
                 @else
                     <x-ui.badge color="success">Completed</x-ui.badge>
                 @endif

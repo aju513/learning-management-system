@@ -39,10 +39,10 @@ return [
     ],
     'instructor' => [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'instructor.dashboard', 'permission' => 'portals.instructor.access', 'order' => 10],
-        ['key' => 'courses', 'label' => 'My Courses', 'icon' => 'dashboard', 'route' => 'instructor.courses.index', 'permission' => 'courses.manage', 'order' => 20],
+        ['key' => 'courses', 'label' => 'My Courses', 'icon' => 'journal-bookmark', 'route' => 'instructor.courses.index', 'permission' => 'courses.manage', 'order' => 20],
         ['key' => 'applications', 'label' => 'Applications', 'icon' => 'users', 'route' => 'instructor.applications.index', 'permission' => 'course-applications.review-owned', 'order' => 30],
         ['key' => 'trainees', 'label' => 'My Trainees', 'icon' => 'users', 'route' => 'instructor.trainees.index', 'permission' => 'course-progress.view-owned', 'order' => 40],
-        ['key' => 'assessments', 'label' => 'My Quizzes', 'icon' => 'permissions', 'route' => 'instructor.assessments.index', 'permission' => 'assessments.manage', 'order' => 50],
+        ['key' => 'assessments', 'label' => 'My Quizzes', 'icon' => 'pencil', 'route' => 'instructor.assessments.index', 'permission' => 'assessments.manage', 'order' => 50],
         ['key' => 'results', 'label' => 'Results', 'icon' => 'activity-log', 'route' => 'instructor.results.index', 'permission' => 'results.manage', 'order' => 60],
     ],
     'trainee' => [

@@ -13,7 +13,6 @@ use App\Http\Requests\LearningMaterial\StoreLearningMaterialRequest;
 use App\Http\Requests\LearningMaterial\UpdateLearningMaterialRequest;
 use App\Models\CourseChapter;
 use App\Models\LearningMaterial;
-use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Services\CourseService;
 use App\Support\PortalRoute;
@@ -25,7 +24,6 @@ class LearningMaterialController extends Controller
 {
     public function __construct(
         private readonly CourseRepositoryInterface $courses,
-        private readonly AssessmentRepositoryInterface $assessments,
         private readonly CourseService $service,
     ) {}
 
@@ -38,7 +36,12 @@ class LearningMaterialController extends Controller
 
     public function store(StoreLearningMaterialRequest $request, CourseChapter $courseChapter): RedirectResponse
     {
-        $this->service->createMaterial($courseChapter, $request->validated(), $request->user());
+        $material = $this->service->createMaterial($courseChapter, $request->validated(), $request->user());
+
+        if ($material->type === MaterialType::CourseAssessment && $material->courseAssessment) {
+            return redirect()->route(PortalRoute::name('course-assessments.show'), $material->courseAssessment)
+                ->with('success', 'Course assessment created. Add its questions below.');
+        }
 
         return $this->courseRedirect($courseChapter)->with('success', 'Learning material added.');
     }
@@ -83,7 +86,6 @@ class LearningMaterialController extends Controller
         return [
             'material' => $material,
             'chapter' => $chapter,
-            'attachableAssessments' => $this->assessments->attachable($request->user()),
         ];
     }
 
