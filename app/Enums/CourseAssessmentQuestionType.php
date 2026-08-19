@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Enums;
+
+enum CourseAssessmentQuestionType: string
+{
+    case SingleChoice = 'single_choice';
+    case MultipleChoice = 'multiple_choice';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::SingleChoice => 'Single choice',
+            self::MultipleChoice => 'Multiple choice',
+        };
+    }
+}

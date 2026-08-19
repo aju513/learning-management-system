@@ -10,7 +10,7 @@ use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\LearningMaterial;
 use App\Models\User;
-use App\Repositories\Contracts\AssessmentRepositoryInterface;
+use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
@@ -23,7 +23,8 @@ class CourseService
 {
     public function __construct(
         private readonly CourseRepositoryInterface $courses,
-        private readonly AssessmentRepositoryInterface $assessments,
+        private readonly CourseAssessmentRepositoryInterface $courseAssessments,
+        private readonly LearningMaterialImageService $materialImages,
     ) {}
 
     public function createCategory(array $data, User $actor): CourseCategory
@@ -109,6 +110,18 @@ class CourseService
             if ($course->modules->flatMap->chapters->contains(fn (CourseChapter $chapter) => $chapter->materials->isEmpty())) {
                 throw ValidationException::withMessages(['status' => 'Every chapter needs at least one learning material before publishing.']);
             }
+            foreach ($course->modules->flatMap->chapters->flatMap->materials->where('type', MaterialType::CourseAssessment) as $material) {
+                $assessment = $material->courseAssessment?->load('questions.options');
+                if (! $assessment || $assessment->questions->isEmpty()) {
+                    throw ValidationException::withMessages(['status' => 'Every course assessment needs at least one question before publishing.']);
+                }
+                foreach ($assessment->questions as $question) {
+                    $correctCount = $question->options->where('is_correct', true)->count();
+                    if ($question->options->count() < 2 || $correctCount < 1 || ($question->type->value === 'single_choice' && $correctCount !== 1)) {
+                        throw ValidationException::withMessages(['status' => 'Every course assessment question needs valid answer options before publishing.']);
+                    }
+                }
+            }
         }
         $course = $this->courses->updateCourse($course, [
             'status' => $status,
@@ -127,6 +140,7 @@ class CourseService
         }
         $course = $this->courses->findCourseDetails($course);
         $materialFiles = $course->modules->flatMap->chapters->flatMap->materials->pluck('file_path')->filter();
+        $imageFiles = $course->modules->flatMap->chapters->flatMap(fn (CourseChapter $chapter) => $chapter->images->concat($chapter->materials->flatMap->images))->unique('id');
         DB::transaction(function () use ($course, $actor): void {
             activity('lms')->causedBy($actor)->performedOn($course)->event('course.deleted')
                 ->withProperties(['title' => $course->title])->log('Course deleted');
@@ -136,6 +150,7 @@ class CourseService
             Storage::disk('public')->delete($course->thumbnail_path);
         }
         Storage::disk('local')->delete($materialFiles->all());
+        $this->materialImages->deleteFiles($imageFiles);
     }
 
     public function createModule(Course $course, array $data, User $actor): CourseModule
@@ -195,10 +210,12 @@ class CourseService
     {
         $module = $this->courses->findModuleDetails($module);
         $files = $module->chapters->flatMap->materials->pluck('file_path')->filter();
+        $imageFiles = $module->chapters->flatMap(fn (CourseChapter $chapter) => $chapter->images->concat($chapter->materials->flatMap->images))->unique('id');
         activity('lms')->causedBy($actor)->performedOn($module)->event('course-module.deleted')
             ->withProperties(['title' => $module->title])->log('Course module deleted');
         $this->courses->deleteModule($module);
         Storage::disk('local')->delete($files->all());
+        $this->materialImages->deleteFiles($imageFiles);
     }
 
     public function createChapter(CourseModule $module, array $data, User $actor): CourseChapter
@@ -254,23 +271,34 @@ class CourseService
         if ($this->courses->chapterHasMaterials($chapter)) {
             throw ValidationException::withMessages(['chapter' => 'Move or delete this chapter’s learning materials before deleting the chapter.']);
         }
+        $images = $this->materialImages->deletePendingForChapter($chapter);
         activity('lms')->causedBy($actor)->performedOn($chapter)->event('course-chapter.deleted')
             ->withProperties(['title' => $chapter->title, 'course_module_id' => $chapter->course_module_id])->log('Course chapter deleted');
         $this->courses->deleteChapter($chapter);
+        $this->materialImages->deleteFiles($images);
     }
 
     public function createMaterial(CourseChapter $chapter, array $data, User $actor): LearningMaterial
     {
         $data = $this->prepareMaterialData($data, $actor);
+        $data['content'] = $this->materialImages->sanitizeContent($data['content'] ?? null, $chapter, $actor);
         $newFile = $data['file_path'] ?? null;
 
         try {
             return DB::transaction(function () use ($chapter, $data, $actor): LearningMaterial {
+                $passingPercentage = Arr::pull($data, 'passing_percentage');
                 $material = $this->courses->createMaterial([
                     ...$data,
                     'course_chapter_id' => $chapter->id,
                     'position' => $this->courses->nextMaterialPosition($chapter),
                 ]);
+                if ($material->type === MaterialType::CourseAssessment) {
+                    $this->courseAssessments->create([
+                        'learning_material_id' => $material->id,
+                        'passing_percentage' => $passingPercentage,
+                    ]);
+                }
+                $this->materialImages->synchronize($material, $data['content'] ?? null, $chapter, $actor);
                 activity('lms')->causedBy($actor)->performedOn($material)->event('learning-material.created')
                     ->withProperties(['course_id' => $chapter->module->course_id, 'chapter_id' => $chapter->id, 'type' => $material->type->value])->log('Learning material created');
 
@@ -289,11 +317,25 @@ class CourseService
     {
         $oldFile = $material->file_path;
         $data = $this->prepareMaterialData($data, $actor, $material);
+        $data['content'] = $this->materialImages->sanitizeContent($data['content'] ?? null, $material->chapter, $actor, $material);
         $newFile = $data['file_path'] ?? null;
+        $removedImages = collect();
 
         try {
-            $material = DB::transaction(function () use ($material, $data, $actor): LearningMaterial {
+            $material = DB::transaction(function () use ($material, $data, $actor, &$removedImages): LearningMaterial {
+                $passingPercentage = Arr::pull($data, 'passing_percentage');
+                $existingCourseAssessment = $this->courseAssessments->findForMaterial($material);
                 $material = $this->courses->updateMaterial($material, $data);
+                if ($material->type === MaterialType::CourseAssessment) {
+                    if ($existingCourseAssessment) {
+                        $this->courseAssessments->update($existingCourseAssessment, ['passing_percentage' => $passingPercentage]);
+                    } else {
+                        $this->courseAssessments->create(['learning_material_id' => $material->id, 'passing_percentage' => $passingPercentage]);
+                    }
+                } elseif ($existingCourseAssessment) {
+                    $this->courseAssessments->delete($existingCourseAssessment);
+                }
+                $removedImages = $this->materialImages->synchronize($material, $data['content'] ?? null, $material->chapter, $actor);
                 activity('lms')->causedBy($actor)->performedOn($material)->event('learning-material.updated')->log('Learning material updated');
 
                 return $material;
@@ -309,6 +351,7 @@ class CourseService
         if (array_key_exists('file_path', $data) && $oldFile && $oldFile !== $material->file_path) {
             Storage::disk('local')->delete($oldFile);
         }
+        $this->materialImages->deleteFiles($removedImages);
 
         return $material;
     }
@@ -343,12 +386,18 @@ class CourseService
     public function deleteMaterial(LearningMaterial $material, User $actor): void
     {
         $file = $material->file_path;
-        activity('lms')->causedBy($actor)->performedOn($material)->event('learning-material.deleted')
-            ->withProperties(['title' => $material->title])->log('Learning material deleted');
-        $this->courses->deleteMaterial($material);
+        $images = DB::transaction(function () use ($material, $actor) {
+            $images = $this->materialImages->deleteForMaterial($material);
+            activity('lms')->causedBy($actor)->performedOn($material)->event('learning-material.deleted')
+                ->withProperties(['title' => $material->title])->log('Learning material deleted');
+            $this->courses->deleteMaterial($material);
+
+            return $images;
+        });
         if ($file) {
             Storage::disk('local')->delete($file);
         }
+        $this->materialImages->deleteFiles($images);
     }
 
     private function prepareMaterialData(array $data, User $actor, ?LearningMaterial $material = null): array
@@ -357,16 +406,7 @@ class CourseService
         $videoSource = Arr::pull($data, 'video_source');
         $type = MaterialType::from($data['type']);
         $typeChanged = $material && $material->type !== $type;
-        if ($type === MaterialType::Assessment && filled($data['assessment_id'] ?? null)) {
-            $assessment = $this->assessments->findAssessment((int) $data['assessment_id']);
-            if (! $actor->can('assessments.edit-any') && $assessment->created_by !== $actor->id) {
-                throw ValidationException::withMessages(['assessment_id' => 'You can only attach an assessment you own.']);
-            }
-        }
         $data['is_required'] = (bool) ($data['is_required'] ?? false);
-        if (filled($data['content'] ?? null)) {
-            $data['content'] = $this->sanitizeArticle($data['content']);
-        }
         if ($file instanceof UploadedFile) {
             $data['file_path'] = $file->store('lms/materials');
             $data['original_filename'] = $file->getClientOriginalName();
@@ -395,18 +435,11 @@ class CourseService
         if ($type !== MaterialType::File) {
             $data['file_type'] = null;
         }
-        if ($type !== MaterialType::Assessment) {
-            $data['assessment_id'] = null;
+        if ($type !== MaterialType::CourseAssessment) {
+            unset($data['passing_percentage']);
         }
 
         return $data;
-    }
-
-    private function sanitizeArticle(string $html): string
-    {
-        $clean = strip_tags($html, '<p><br><strong><b><em><i><ul><ol><li><h2><h3><blockquote>');
-
-        return (string) preg_replace('/<([a-z][a-z0-9]*)\b[^>]*>/i', '<$1>', $clean);
     }
 
     private function uniqueCategorySlug(string $name, ?CourseCategory $ignore = null): string

@@ -134,7 +134,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
 
     public function findForLearning(Enrollment $enrollment): Enrollment
     {
-        return $enrollment->load(['course.modules.chapters.materials.assessment', 'materialProgress']);
+        return $enrollment->load(['course.modules.chapters.materials.courseAssessment', 'materialProgress']);
     }
 
     public function findForCourseAndTrainee(Course $course, User $trainee): ?Enrollment

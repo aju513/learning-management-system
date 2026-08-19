@@ -8,7 +8,7 @@ use App\Enums\NavigationMode;
 use App\Models\Enrollment;
 use App\Models\LearningMaterial;
 use App\Models\User;
-use App\Repositories\Contracts\AssessmentRepositoryInterface;
+use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +17,7 @@ class LearningService
 {
     public function __construct(
         private readonly EnrollmentRepositoryInterface $enrollments,
-        private readonly AssessmentRepositoryInterface $assessments,
+        private readonly CourseAssessmentRepositoryInterface $courseAssessments,
     ) {}
 
     public function open(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
@@ -51,8 +51,8 @@ class LearningService
 
     public function complete(Enrollment $enrollment, LearningMaterial $material, User $trainee): Enrollment
     {
-        if ($material->type === MaterialType::Assessment && (! $material->assessment || ! $this->assessments->hasPassed($material->assessment, $trainee))) {
-            throw new AuthorizationException('Pass the assessment before completing this material.');
+        if ($material->type === MaterialType::CourseAssessment && (! $material->courseAssessment || ! $this->courseAssessments->hasPassed($material->courseAssessment, $trainee))) {
+            throw new AuthorizationException('Pass the course assessment before completing this material.');
         }
 
         return DB::transaction(function () use ($enrollment, $material, $trainee): Enrollment {

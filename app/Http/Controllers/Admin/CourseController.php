@@ -12,7 +12,6 @@ use App\Http\Requests\Course\ShowCourseRequest;
 use App\Http\Requests\Course\StoreCourseRequest;
 use App\Http\Requests\Course\UpdateCourseRequest;
 use App\Models\Course;
-use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Services\CourseService;
 use App\Support\PortalRoute;
@@ -23,7 +22,6 @@ class CourseController extends Controller
 {
     public function __construct(
         private readonly CourseRepositoryInterface $courses,
-        private readonly AssessmentRepositoryInterface $assessments,
         private readonly CourseService $service,
     ) {}
 
@@ -50,8 +48,7 @@ class CourseController extends Controller
     public function show(ShowCourseRequest $request, Course $course): View
     {
         return view('pages.admin.courses.show', [
-            'course' => $this->courses->findCourseDetails($course),
-            'attachableAssessments' => $this->assessments->attachable($request->user()), 'title' => $course->title,
+            'course' => $this->courses->findCourseDetails($course), 'title' => $course->title,
         ]);
     }
 

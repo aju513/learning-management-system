@@ -7,7 +7,6 @@ use App\Models\AssessmentAssignment;
 use App\Models\AssessmentAttempt;
 use App\Models\AssessmentQuestion;
 use App\Models\AttemptAnswer;
-use App\Models\LearningMaterial;
 use App\Models\User;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -17,7 +16,7 @@ class AssessmentRepository implements AssessmentRepositoryInterface
 {
     public function paginate(array $filters, User $actor, int $perPage = 15): LengthAwarePaginator
     {
-        return Assessment::query()->with(['creator', 'course'])->withCount(['questions', 'attempts'])
+        return Assessment::query()->with('creator')->withCount(['questions', 'attempts'])
             ->when(! $actor->can('assessments.view-all'), fn ($query) => $query->where('created_by', $actor->id))
             ->when($filters['search'] ?? null, fn ($query, string $search) => $query->where('title', 'like', "%{$search}%"))
             ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
@@ -26,7 +25,7 @@ class AssessmentRepository implements AssessmentRepositoryInterface
 
     public function findForManagement(Assessment $assessment): Assessment
     {
-        return $assessment->load(['creator', 'course', 'module', 'questions.options', 'assignments.trainee'])
+        return $assessment->load(['creator', 'questions.options', 'assignments.trainee'])
             ->loadCount('attempts');
     }
 
@@ -69,19 +68,9 @@ class AssessmentRepository implements AssessmentRepositoryInterface
         return $assessment->attempts()->exists();
     }
 
-    public function hasAttachedMaterials(Assessment $assessment): bool
-    {
-        return $assessment->materials()->exists();
-    }
-
     public function findForAvailability(Assessment $assessment): Assessment
     {
-        return $assessment->load(['course', 'module.course']);
-    }
-
-    public function materialsFor(Assessment $assessment): Collection
-    {
-        return LearningMaterial::query()->where('assessment_id', $assessment->id)->with('chapter.module.course')->get();
+        return $assessment;
     }
 
     public function createQuestion(array $attributes): AssessmentQuestion
@@ -145,19 +134,14 @@ class AssessmentRepository implements AssessmentRepositoryInterface
     public function availableFor(User $trainee): Collection
     {
         return Assessment::query()->where('status', 'published')
-            ->where(fn ($query) => $query
-                ->whereHas('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id))
-                ->orWhereHas('course.enrollments', fn ($enrollment) => $enrollment->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed']))
-                ->orWhereHas('module.course.enrollments', fn ($enrollment) => $enrollment->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed'])))
+            ->whereHas('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id))
             ->withCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)])
-            ->with('course')->orderBy('ends_at')->orderBy('title')->get();
+            ->orderBy('ends_at')->orderBy('title')->get();
     }
 
     public function userCanTake(Assessment $assessment, User $trainee): bool
     {
-        return $assessment->assignments()->where('user_id', $trainee->id)->exists()
-            || $assessment->course?->enrollments()->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed'])->exists()
-            || $assessment->module?->course?->enrollments()->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed'])->exists();
+        return $assessment->assignments()->where('user_id', $trainee->id)->exists();
     }
 
     public function countAttempts(Assessment $assessment, User $trainee): int

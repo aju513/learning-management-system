@@ -232,7 +232,9 @@ test('material creation and editing use dedicated preview pages and clean incomp
         ->assertSee('animate-pulse')
         ->assertSee('open-material-preview')
         ->assertSee('Trainee preview')
-        ->assertSee('Documents');
+        ->assertSee('Documents')
+        ->assertDontSee('External link')
+        ->assertDontSee('External URL');
 
     $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
         'title' => 'Missing guide',
@@ -291,13 +293,12 @@ test('publishing requires every module and chapter to contain learning material'
     expect($course->fresh()->status->value)->toBe('published');
 });
 
-test('owners can create the canonical material types and assessment materials', function () {
+test('owners can create the canonical material types and course assessment materials', function () {
     Storage::fake('local');
     $instructor = chapterAuthor();
     $course = Course::factory()->for($instructor, 'instructor')->create();
     $module = CourseModule::factory()->for($course)->create();
     $chapter = CourseChapter::factory()->for($module, 'module')->create();
-    $assessment = \App\Models\Assessment::factory()->for($instructor, 'creator')->create();
 
     $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
         'title' => 'Routing article', 'type' => 'article', 'content' => '<p>Read this article.</p>', 'is_required' => 1,
@@ -318,20 +319,21 @@ test('owners can create the canonical material types and assessment materials', 
         'content' => '<p>Read the documentation.</p>', 'is_required' => 0,
     ])->assertRedirect();
 
-    $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
-        'title' => 'Knowledge check', 'type' => 'assessment', 'assessment_id' => $assessment->id,
-        'content' => '<p>Complete the quiz.</p>', 'is_required' => 1,
-    ])->assertRedirect();
+    $assessmentResponse = $this->actingAs($instructor)->post(route('instructor.learning-materials.store', $chapter), [
+        'title' => 'Knowledge check', 'type' => 'course_assessment', 'passing_percentage' => 70,
+        'content' => '<p>Complete the assessment.</p>', 'is_required' => 1,
+    ]);
 
     $materials = $chapter->materials()->orderBy('position')->get();
-    expect($materials->pluck('type')->map(fn ($type) => $type->value)->all())->toBe(['article', 'video', 'file', 'link', 'assessment'])
+    $assessmentResponse->assertRedirect(route('instructor.course-assessments.show', $materials[4]->courseAssessment));
+    expect($materials->pluck('type')->map(fn ($type) => $type->value)->all())->toBe(['article', 'video', 'file', 'link', 'course_assessment'])
         ->and($materials[0]->content)->toBe('<p>Read this article.</p>')
         ->and($materials[1]->video_url)->toBe('https://www.youtube.com/watch?v=abc123')
         ->and($materials[1]->content)->toBe('<p>Watch the lesson.</p>alert(1)')
         ->and($materials[2]->file_type)->toBe('pdf')
         ->and($materials[2]->file_path)->not->toBeNull()
         ->and($materials[3]->external_url)->toBe('https://laravel.com/docs')
-        ->and($materials[4]->assessment_id)->toBe($assessment->id);
+        ->and($materials[4]->courseAssessment->passing_percentage)->toBe('70.00');
 });
 
 test('trainee navigation shows chapters while the catalog keeps a flat module preview', function () {

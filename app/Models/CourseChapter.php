@@ -22,4 +22,9 @@ class CourseChapter extends Model
     {
         return $this->hasMany(LearningMaterial::class)->orderBy('position');
     }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(LearningMaterialImage::class);
+    }
 }

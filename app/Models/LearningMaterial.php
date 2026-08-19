@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class LearningMaterial extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'course_chapter_id', 'assessment_id', 'title', 'type', 'description', 'content', 'video_url', 'external_url', 'file_type',
+        'course_chapter_id', 'title', 'type', 'description', 'content', 'video_url', 'external_url', 'file_type',
         'file_path', 'original_filename', 'mime_type', 'duration_minutes', 'position', 'is_required',
     ];
 
@@ -27,13 +28,18 @@ class LearningMaterial extends Model
         return $this->belongsTo(CourseChapter::class, 'course_chapter_id');
     }
 
-    public function assessment(): BelongsTo
-    {
-        return $this->belongsTo(Assessment::class);
-    }
-
     public function progress(): HasMany
     {
         return $this->hasMany(MaterialProgress::class);
+    }
+
+    public function courseAssessment(): HasOne
+    {
+        return $this->hasOne(CourseAssessment::class);
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(LearningMaterialImage::class);
     }
 }

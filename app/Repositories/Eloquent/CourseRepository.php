@@ -131,7 +131,7 @@ class CourseRepository implements CourseRepositoryInterface
 
     public function findCourseDetails(Course $course): Course
     {
-        return $course->load(['category', 'instructor', 'modules.chapters.materials.assessment', 'assessments'])
+        return $course->load(['category', 'instructor', 'modules.chapters.images', 'modules.chapters.materials.courseAssessment', 'modules.chapters.materials.images'])
             ->loadCount('enrollments');
     }
 
@@ -169,7 +169,7 @@ class CourseRepository implements CourseRepositoryInterface
 
     public function findModuleDetails(CourseModule $module): CourseModule
     {
-        return $module->load('chapters.materials');
+        return $module->load(['chapters.images', 'chapters.materials.images']);
     }
 
     public function createModule(array $attributes): CourseModule
@@ -215,7 +215,7 @@ class CourseRepository implements CourseRepositoryInterface
 
     public function findChapterDetails(CourseChapter $chapter): CourseChapter
     {
-        return $chapter->load(['module.course', 'materials.assessment']);
+        return $chapter->load(['module.course', 'materials.courseAssessment', 'materials.images']);
     }
 
     public function createChapter(array $attributes): CourseChapter
@@ -266,7 +266,7 @@ class CourseRepository implements CourseRepositoryInterface
 
     public function findMaterialDetails(LearningMaterial $material): LearningMaterial
     {
-        return $material->load(['chapter.module.course', 'assessment']);
+        return $material->load(['chapter.module.course', 'courseAssessment', 'images']);
     }
 
     public function createMaterial(array $attributes): LearningMaterial

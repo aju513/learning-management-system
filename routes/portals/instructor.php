@@ -3,10 +3,12 @@
 use App\Http\Controllers\Admin\AssessmentAssignmentController;
 use App\Http\Controllers\Admin\AssessmentController;
 use App\Http\Controllers\Admin\AssessmentQuestionController;
+use App\Http\Controllers\Admin\CourseAssessmentController;
 use App\Http\Controllers\Admin\CourseChapterController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\CourseModuleController;
 use App\Http\Controllers\Admin\LearningMaterialController;
+use App\Http\Controllers\Admin\LearningMaterialImageController;
 use App\Http\Controllers\Admin\ResultController;
 use App\Modules\Instructor\Http\Controllers\ApplicationController;
 use App\Modules\Instructor\Http\Controllers\DashboardController;
@@ -35,11 +37,21 @@ Route::prefix('instructor')->name('instructor.')->middleware(['auth', 'active', 
     Route::delete('/course-chapters/{course_chapter}', [CourseChapterController::class, 'destroy'])->name('course-chapters.destroy');
     Route::get('/course-chapters/{course_chapter}/materials/create', [LearningMaterialController::class, 'create'])->name('learning-materials.create');
     Route::post('/course-chapters/{course_chapter}/materials', [LearningMaterialController::class, 'store'])->name('learning-materials.store');
+    Route::post('/course-chapters/{course_chapter}/material-images', [LearningMaterialImageController::class, 'storeForChapter'])
+        ->middleware('can:materials.create')->name('learning-material-images.store-chapter');
     Route::patch('/course-chapters/{course_chapter}/materials/reorder', [LearningMaterialController::class, 'reorder'])->name('learning-materials.reorder');
     Route::get('/learning-materials/{learning_material}/edit', [LearningMaterialController::class, 'edit'])->name('learning-materials.edit');
     Route::put('/learning-materials/{learning_material}', [LearningMaterialController::class, 'update'])->name('learning-materials.update');
+    Route::post('/learning-materials/{learning_material}/material-images', [LearningMaterialImageController::class, 'storeForMaterial'])
+        ->middleware('can:materials.edit')->name('learning-material-images.store-material');
     Route::patch('/learning-materials/{learning_material}/move', [LearningMaterialController::class, 'move'])->name('learning-materials.move');
     Route::delete('/learning-materials/{learning_material}', [LearningMaterialController::class, 'destroy'])->name('learning-materials.destroy');
+    Route::get('/course-assessments/{course_assessment}', [CourseAssessmentController::class, 'show'])->name('course-assessments.show');
+    Route::post('/course-assessments/{course_assessment}/questions', [CourseAssessmentController::class, 'store'])->name('course-assessment-questions.store');
+    Route::patch('/course-assessments/{course_assessment}/questions/reorder', [CourseAssessmentController::class, 'reorder'])->name('course-assessment-questions.reorder');
+    Route::get('/course-assessment-questions/{course_assessment_question}/edit', [CourseAssessmentController::class, 'edit'])->name('course-assessment-questions.edit');
+    Route::put('/course-assessment-questions/{course_assessment_question}', [CourseAssessmentController::class, 'update'])->name('course-assessment-questions.update');
+    Route::delete('/course-assessment-questions/{course_assessment_question}', [CourseAssessmentController::class, 'destroy'])->name('course-assessment-questions.destroy');
     Route::get('/applications', [ApplicationController::class, 'index'])->name('applications.index');
     Route::patch('/applications/{enrollment}/approve', [ApplicationController::class, 'approve'])->name('applications.approve');
     Route::patch('/applications/{enrollment}/reject', [ApplicationController::class, 'reject'])->name('applications.reject');

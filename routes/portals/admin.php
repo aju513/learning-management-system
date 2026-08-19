@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\AssessmentController;
 use App\Http\Controllers\Admin\AssessmentAssignmentController;
+use App\Http\Controllers\Admin\AssessmentController;
 use App\Http\Controllers\Admin\AssessmentQuestionController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\EnrollmentController;

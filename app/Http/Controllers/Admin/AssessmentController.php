@@ -13,7 +13,6 @@ use App\Http\Requests\Assessment\StoreAssessmentRequest;
 use App\Http\Requests\Assessment\UpdateAssessmentRequest;
 use App\Models\Assessment;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
-use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Services\AssessmentService;
 use App\Support\PortalRoute;
@@ -24,7 +23,6 @@ class AssessmentController extends Controller
 {
     public function __construct(
         private readonly AssessmentRepositoryInterface $assessments,
-        private readonly CourseRepositoryInterface $courses,
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly AssessmentService $service,
     ) {}

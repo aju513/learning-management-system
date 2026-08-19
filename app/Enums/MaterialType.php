@@ -8,16 +8,16 @@ enum MaterialType: string
     case Video = 'video';
     case File = 'file';
     case Link = 'link';
-    case Assessment = 'assessment';
+    case CourseAssessment = 'course_assessment';
 
     public function label(): string
     {
         return match ($this) {
             self::File => 'File',
             self::Link => 'External link',
-            self::Assessment => 'Assessment',
             self::Article => 'Article',
             self::Video => 'Video',
+            self::CourseAssessment => 'Course assessment',
         };
     }
 

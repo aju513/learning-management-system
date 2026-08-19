@@ -47,11 +47,6 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
-    public function assessments(): HasMany
-    {
-        return $this->hasMany(Assessment::class);
-    }
-
     public function isPublished(): bool
     {
         return $this->status === CourseStatus::Published;

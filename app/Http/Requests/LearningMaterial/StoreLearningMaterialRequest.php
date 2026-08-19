@@ -22,6 +22,19 @@ class StoreLearningMaterialRequest extends FormRequest
         return $this->materialRules(true);
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('type') !== MaterialType::Video->value || filled($this->input('video_source'))) {
+            return;
+        }
+
+        $source = $this->hasFile('file') ? 'upload' : (filled($this->input('video_url')) ? 'url' : null);
+
+        if ($source) {
+            $this->merge(['video_source' => $source]);
+        }
+    }
+
     public function after(): array
     {
         return [function (Validator $validator): void {
@@ -65,7 +78,7 @@ class StoreLearningMaterialRequest extends FormRequest
             'video_source' => [Rule::requiredIf($this->input('type') === MaterialType::Video->value), 'nullable', Rule::in(['url', 'upload'])],
             'video_url' => ['nullable', 'url:http,https', 'max:2000'],
             'external_url' => [Rule::requiredIf($this->input('type') === MaterialType::Link->value), 'nullable', 'url:http,https', 'max:2000'],
-            'assessment_id' => [Rule::requiredIf($this->input('type') === 'assessment'), 'nullable', 'integer', 'exists:assessments,id'],
+            'passing_percentage' => [Rule::requiredIf($this->input('type') === MaterialType::CourseAssessment->value), 'nullable', 'numeric', 'min:0', 'max:100'],
             'file_type' => [Rule::requiredIf($this->input('type') === MaterialType::File->value), 'nullable', Rule::in(array_filter(['pdf', 'docx', 'pptx', $material?->file_type === 'legacy' ? 'legacy' : null]))],
             'file' => [Rule::requiredIf(($creating || $typeChanged) && (in_array($this->input('type'), $fileTypes, true) || ($this->input('type') === MaterialType::Video->value && $this->input('video_source') === 'upload'))), 'nullable', 'file', 'mimes:pdf,docx,pptx,mp4,webm', 'max:102400'],
             'duration_minutes' => ['nullable', 'integer', 'min:0', 'max:100000'], 'is_required' => ['required', 'boolean'],

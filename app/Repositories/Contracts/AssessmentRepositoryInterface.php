@@ -31,11 +31,7 @@ interface AssessmentRepositoryInterface
 
     public function hasAttempts(Assessment $assessment): bool;
 
-    public function hasAttachedMaterials(Assessment $assessment): bool;
-
     public function findForAvailability(Assessment $assessment): Assessment;
-
-    public function materialsFor(Assessment $assessment): Collection;
 
     public function createQuestion(array $attributes): AssessmentQuestion;
 

@@ -22,9 +22,4 @@ class CourseModule extends Model
     {
         return $this->hasMany(CourseChapter::class)->orderBy('position');
     }
-
-    public function assessments(): HasMany
-    {
-        return $this->hasMany(Assessment::class)->orderBy('title');
-    }
 }

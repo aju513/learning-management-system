@@ -21,7 +21,9 @@ CourseCategory
        -> CourseModule
             -> CourseChapter
                  -> LearningMaterial
-                      -> optional Assessment
+                      -> optional CourseAssessment
+                           -> CourseAssessmentQuestion
+                                -> CourseAssessmentOption
 
 User -> Enrollment -> MaterialProgress
 
@@ -36,7 +38,7 @@ Assessment
        -> AttemptAnswer
 ```
 
-Assessments are independent records. They may remain standalone, link to a course/final assessment, link to a module, and/or appear as a learning material. This avoids coupling the assessment engine to course delivery and leaves room for a future question bank.
+`Assessment` is the standalone quiz engine. It has no course, module, or learning-material relationship and is available only through direct trainee assignments. `CourseAssessment` is a separate course-material model with its own questions, options, attempts, and answers.
 
 ## Course authoring
 
@@ -46,11 +48,11 @@ Modules, chapters, and materials use persisted integer positions. New modules re
 
 Learning materials are created and edited on dedicated authoring pages. The form shows only fields relevant to the selected material type and provides a live, read-only trainee-style preview beside the form. The enrolled learning player displays the full Module -> Chapter -> Material hierarchy; the public catalog keeps its compact module-level material list.
 
-Supported materials are article, video URL/upload, file, link, and assessment. File materials use PDF, DOCX, or PPTX subtypes; unsupported legacy files remain downloadable but cannot be selected for new materials. Video URLs are stored separately from external links, while rich text is available as article content or additional notes for other material types. Uploaded learning files are stored on the private local disk and are served only through an authorized enrollment download route. Thumbnail images use the public disk. Article and material-note HTML is reduced to a small safe tag set and stripped of attributes before storage.
+Supported new materials are article, video URL/upload, file, and course assessment. External-link and legacy records remain supported for compatibility. Course assessments allow only single-choice and multiple-choice questions, use a configurable passing percentage, allow unlimited retakes, and show selected/correct answers after submission. Uploaded learning files and rich-text images are stored on the private local disk and are served only through authorized routes. Rich-text images are tracked per learning material, limited to JPEG, PNG, and WebP files up to 5 MB, and removed when no longer referenced. Thumbnail images use the public disk. Article and material-note HTML is reduced to a small safe tag set, protected image sources are retained, and unsafe attributes or external image URLs are stripped before storage.
 
 ## Applications, enrollment, and learning
 
-Published courses appear in the Trainee catalog. Applying creates a pending enrollment record but does not grant course materials or linked-assessment access. An Admin can review any pending application; an Instructor can review only applications for courses they own. Approval activates the enrollment, while rejection stores an optional review note. A rejected or cancelled application can be submitted again. Duplicate pending applications and applications for already active/completed enrollment are rejected.
+Published courses appear in the Trainee catalog. Applying creates a pending enrollment record but does not grant course materials or quiz access. An Admin can review any pending application; an Instructor can review only applications for courses they own. Approval activates the enrollment, while rejection stores an optional review note. A rejected or cancelled application can be submitted again. Duplicate pending applications and applications for already active/completed enrollment are rejected.
 
 Instructor and Admin application review groups requests inside course-level collapsible panels with plus/dash controls, applied and accepted totals, hover states, and ascending request dates. Approved requests leave the review list and appear in the Instructor My Trainees view, grouped by course with the same collapsible presentation.
 
@@ -62,13 +64,13 @@ Opening a material records the last view and starts the enrollment. Completing r
 completed required materials / total required materials * 100
 ```
 
-At 100 percent, the enrollment becomes completed and receives a completion timestamp. Sequential courses reject access when an earlier required material is incomplete. Assessment materials are completed automatically after a passing attempt and cannot be manually completed before passing.
+At 100 percent, the enrollment becomes completed and receives a completion timestamp. Sequential courses reject access when an earlier required material is incomplete. Required course-assessment materials are completed automatically after a passing attempt and cannot be manually completed before passing. Failed attempts can be retaken without a limit.
 
 ## Assessments and results
 
-Assessments support draft, published, and closed states; duration; passing percentage; maximum attempts; availability dates; course/module links; and standalone trainee assignment. Questions support single choice, multiple choice, and true/false behavior using reusable option rows.
+Standalone quizzes support draft, published, and closed states; duration; passing percentage; maximum attempts; availability dates; and direct trainee assignment. Questions support single choice, multiple choice, and true/false behavior using reusable option rows. They are not course materials.
 
-Starting a test creates or resumes one in-progress attempt and records its expiry. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Graded attempts are immutable through the application UI.
+Starting a standalone quiz creates or resumes one in-progress attempt and records its expiry. Course-assessment attempts are separate, unlimited, and choice-only. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Course-assessment results include the selected and correct options. Graded attempts are immutable through the application UI.
 
 ## Reporting
 

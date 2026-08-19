@@ -101,6 +101,9 @@ return [
         'materials.delete' => ['view_title' => 'Delete learning materials', 'description' => 'Allows deleting learning materials.'],
         'materials.reorder' => ['view_title' => 'Reorder learning materials', 'description' => 'Allows changing learning material order.'],
     ],
+    'course-assessments' => [
+        'course-assessments.questions.manage' => ['view_title' => 'Manage course assessment questions', 'description' => 'Allows managing multiple-choice questions for course assessment materials.'],
+    ],
     'enrollments' => [
         'enrollments.manage' => ['view_title' => 'Manage enrollments', 'description' => 'Allows viewing course enrollment records.'],
         'enrollments.create' => ['view_title' => 'Assign enrollments', 'description' => 'Allows assigning trainees to published courses.'],

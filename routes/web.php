@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\LearningMaterialImageController;
 use App\Http\Controllers\Admin\PasswordController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Auth\DemoLoginController;
@@ -22,6 +23,10 @@ Route::prefix('account')->name('account.')->middleware(['auth', 'active'])->grou
 
 Route::redirect('/admin/profile', '/account/profile');
 Route::redirect('/admin/password/change', '/account/password');
+
+Route::get('/learning-material-images/{learning_material_image}', [LearningMaterialImageController::class, 'show'])
+    ->middleware(['auth', 'active'])
+    ->name('learning-material-images.show');
 
 require __DIR__.'/portals/super-admin.php';
 require __DIR__.'/portals/admin.php';
