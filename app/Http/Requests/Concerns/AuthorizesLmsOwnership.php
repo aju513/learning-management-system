@@ -11,27 +11,27 @@ trait AuthorizesLmsOwnership
     {
         $user = $this->user();
 
-        return (bool) ($user?->can('courses.show') && ($user->can('courses.view-all') || $course->instructor_id === $user->id));
+        return (bool) ($user?->can('courses.show') && ($user->can('courses.view-all') || (int) $course->instructor_id === (int) $user->id));
     }
 
     protected function canEditCourse(Course $course, string $ability): bool
     {
         $user = $this->user();
 
-        return (bool) ($user?->can($ability) && ($user->can('courses.edit-any') || $course->instructor_id === $user->id));
+        return (bool) ($user?->can($ability) && ($user->can('courses.edit-any') || (int) $course->instructor_id === (int) $user->id));
     }
 
     protected function canViewAssessment(Assessment $assessment): bool
     {
         $user = $this->user();
 
-        return (bool) ($user?->can('assessments.show') && ($user->can('assessments.view-all') || $assessment->created_by === $user->id));
+        return (bool) ($user?->can('assessments.show') && ($user->can('assessments.view-all') || (int) $assessment->created_by === (int) $user->id));
     }
 
     protected function canEditAssessment(Assessment $assessment, string $ability): bool
     {
         $user = $this->user();
 
-        return (bool) ($user?->can($ability) && ($user->can('assessments.edit-any') || $assessment->created_by === $user->id));
+        return (bool) ($user?->can($ability) && ($user->can('assessments.edit-any') || (int) $assessment->created_by === (int) $user->id));
     }
 }

@@ -196,6 +196,16 @@ test('course curriculum renders collapsible reorder handles without legacy arrow
         ->assertDontSee('title="Move chapter up"', false);
 });
 
+test('course ownership authorization tolerates database id scalar differences', function () {
+    $instructor = chapterAuthor();
+    $course = Course::factory()->for($instructor, 'instructor')->create();
+    $instructor->setAttribute('id', (string) $instructor->id);
+
+    $this->actingAs($instructor)
+        ->get(route('instructor.courses.show', $course))
+        ->assertOk();
+});
+
 test('chapter management and material authoring reject a foreign course owner', function () {
     $owner = chapterAuthor();
     $other = chapterAuthor();
