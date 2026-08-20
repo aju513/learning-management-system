@@ -7,7 +7,7 @@ use App\Repositories\Contracts\ReportRepositoryInterface;
 
 class DashboardService
 {
-    public function __construct(private readonly ReportRepositoryInterface $reports) {}
+    public function __construct(private readonly ReportRepositoryInterface $reports, private readonly CreditScoreService $credits) {}
 
     public function forSuperAdmin(): array
     {
@@ -26,6 +26,6 @@ class DashboardService
 
     public function forTrainee(User $trainee): array
     {
-        return $this->reports->traineeDashboard($trainee);
+        return $this->reports->traineeDashboard($trainee) + ['creditAlerts' => $this->credits->dashboardData($trainee)];
     }
 }

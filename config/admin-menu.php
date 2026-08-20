@@ -13,6 +13,7 @@ return [
             ['key' => 'categories', 'label' => 'Categories', 'route' => 'super-admin.course-categories.index', 'permission' => 'course-categories.manage', 'order' => 20],
             ['key' => 'applications', 'label' => 'Applications', 'route' => 'super-admin.applications.index', 'permission' => 'course-applications.review-all', 'order' => 30],
             ['key' => 'enrollments', 'label' => 'Enrollments', 'route' => 'super-admin.enrollments.index', 'permission' => 'enrollments.manage', 'order' => 40],
+            ['key' => 'fiscal-years', 'label' => 'Fiscal Years', 'route' => 'super-admin.fiscal-years.index', 'permission' => 'fiscal-years.manage', 'order' => 50],
         ]],
         ['key' => 'assessments', 'label' => 'Assessments', 'icon' => 'permissions', 'order' => 40, 'children' => [
             ['key' => 'tests', 'label' => 'Quizzes', 'route' => 'super-admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 10],

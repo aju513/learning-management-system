@@ -50,6 +50,7 @@ return [
             'course-catalog.view', 'course-applications.view-own', 'course-applications.create',
             'learning.view', 'learning.complete', 'learning.download',
             'assessments.take', 'results.manage',
+            'credit-scores.view-own', 'credit-scores.claim-own', 'credit-scores.refresh-attendance',
         ],
     ],
     'role_management_permissions' => [

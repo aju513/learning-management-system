@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AssessmentPlayerController;
 use App\Http\Controllers\Admin\CourseAssessmentPlayerController;
+use App\Http\Controllers\Admin\CreditScoreController;
 use App\Http\Controllers\Admin\LearningController;
 use App\Http\Controllers\Admin\ResultController;
 use App\Modules\Trainee\Http\Controllers\ApplicationController;
@@ -28,4 +29,9 @@ Route::prefix('learning')->name('learning.')->middleware(['auth', 'active', 'can
     Route::post('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'submit'])->name('assessments.attempts.submit');
     Route::get('/results', [ResultController::class, 'index'])->name('results.index');
     Route::get('/results/{assessment_attempt}', [ResultController::class, 'show'])->name('results.show');
+    Route::middleware('can:credit-scores.view-own')->group(function (): void {
+        Route::get('/credit-scores', [CreditScoreController::class, 'index'])->name('credit-scores.index');
+        Route::post('/credit-scores/attendance/refresh', [CreditScoreController::class, 'refreshAttendance'])->middleware('can:credit-scores.refresh-attendance')->name('credit-scores.attendance.refresh');
+        Route::post('/credit-scores/{credit_award}/claim', [CreditScoreController::class, 'claim'])->middleware('can:credit-scores.claim-own')->name('credit-scores.claim');
+    });
 });

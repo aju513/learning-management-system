@@ -32,9 +32,14 @@ class LearningController extends Controller
 
     public function complete(CompleteLearningMaterialRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): RedirectResponse
     {
-        $this->service->complete($enrollment, $learningMaterial, $request->user());
+        $result = $this->service->complete($enrollment, $learningMaterial, $request->user());
 
-        return back()->with('success', 'Material marked complete.');
+        $redirect = back()->with('success', 'Material marked complete.');
+        if ($result['creditAward']) {
+            $redirect->with('credit_award_id', $result['creditAward']->id);
+        }
+
+        return $redirect;
     }
 
     public function download(DownloadLearningMaterialRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): StreamedResponse

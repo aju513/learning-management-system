@@ -22,6 +22,7 @@ class StoreAssessmentRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:3000'],
             'instructions' => ['nullable', 'string', 'max:10000'], 'duration_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
             'passing_percentage' => ['required', 'numeric', 'min:0', 'max:100'], 'max_attempts' => ['required', 'integer', 'min:1', 'max:20'],
+            'credit_points' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'starts_at' => ['nullable', 'date'], 'ends_at' => ['nullable', 'date', 'after:starts_at'], 'show_results' => ['required', 'boolean'],
         ];
     }

@@ -3,6 +3,12 @@
     <p class="text-sm text-white/75">{{ $context }}</p>
     <h1 class="mt-1 text-2xl font-bold">Welcome back, {{ auth()->user()->name }}</h1>
 </div>
+@if(isset($creditAlerts) && $creditAlerts['eligibleCount'] > 0)
+    <a href="{{ route('learning.credit-scores.index') }}" class="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-warning-200 bg-warning-50 p-5 text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-200">
+        <span><span class="block font-semibold">You haven’t claimed all your credit scores.</span><span class="mt-1 block text-sm">{{ number_format($creditAlerts['eligibleTotal'], 2) }} credits are ready to claim for {{ $creditAlerts['fiscalYear']?->name }}.</span></span>
+        <span class="rounded-lg bg-warning-500 px-4 py-2 text-sm font-medium text-white">Review credits</span>
+    </a>
+@endif
 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
     @foreach ($metrics as $label => $value)
         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">

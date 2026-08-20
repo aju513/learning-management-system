@@ -20,6 +20,7 @@ class CourseAssessmentService
         private readonly CourseAssessmentRepositoryInterface $courseAssessments,
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly LearningService $learning,
+        private readonly CreditScoreService $credits,
     ) {}
 
     public function createQuestion(CourseAssessment $assessment, array $data, User $actor): CourseAssessmentQuestion
@@ -145,6 +146,7 @@ class CourseAssessmentService
             if ($passed) {
                 $this->enrollments->completeMaterial($enrollment, $attempt->courseAssessment->material);
                 $this->learning->recalculate($enrollment);
+                $this->credits->recordAssessmentPass($attempt->courseAssessment, $trainee, $attempt->submitted_at);
             }
 
             activity('lms')->causedBy($trainee)->performedOn($attempt)->event('course-assessment-attempt.graded')

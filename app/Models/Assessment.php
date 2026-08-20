@@ -14,7 +14,7 @@ class Assessment extends Model
 
     protected $fillable = [
         'created_by', 'title', 'description', 'instructions', 'duration_minutes',
-        'passing_percentage', 'max_attempts', 'status', 'starts_at', 'ends_at', 'show_results',
+        'passing_percentage', 'credit_points', 'max_attempts', 'status', 'starts_at', 'ends_at', 'show_results',
     ];
 
     protected function casts(): array
@@ -22,6 +22,7 @@ class Assessment extends Model
         return [
             'status' => AssessmentStatus::class,
             'passing_percentage' => 'decimal:2',
+            'credit_points' => 'decimal:2',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'show_results' => 'boolean',

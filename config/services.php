@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'tmis' => [
+        'attendance' => [
+            'driver' => env('TMIS_ATTENDANCE_DRIVER', 'sandbox'),
+            'sandbox_days' => env('TMIS_SANDBOX_PRESENT_DAYS', 0),
+            'base_url' => env('TMIS_BASE_URL'),
+            'token' => env('TMIS_TOKEN'),
+        ],
+    ],
+
 ];

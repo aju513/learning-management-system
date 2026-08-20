@@ -24,6 +24,7 @@ class AssessmentService
         private readonly AssessmentRepositoryInterface $assessments,
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly UserRepositoryInterface $users,
+        private readonly CreditScoreService $credits,
     ) {}
 
     public function create(array $data, User $actor): Assessment
@@ -258,6 +259,9 @@ class AssessmentService
                 'score_percentage' => $score,
                 'passed' => $requiresReview ? null : $score >= (float) $attempt->assessment->passing_percentage,
             ]);
+            if ($attempt->passed) {
+                $this->credits->recordAssessmentPass($attempt->assessment, $trainee, $attempt->submitted_at);
+            }
             activity('lms')->causedBy($trainee)->performedOn($attempt)->event($requiresReview ? 'assessment-attempt.submitted' : 'assessment-attempt.graded')
                 ->withProperties(['assessment_id' => $attempt->assessment_id, 'status' => $attempt->status->value])->log($requiresReview ? 'Assessment attempt submitted for review' : 'Assessment attempt graded');
 
@@ -303,6 +307,9 @@ class AssessmentService
                 'score_percentage' => $score,
                 'passed' => $score >= (float) $attempt->assessment->passing_percentage,
             ]);
+            if ($attempt->passed) {
+                $this->credits->recordAssessmentPass($attempt->assessment, $attempt->trainee, $attempt->submitted_at);
+            }
             activity('lms')->causedBy($reviewer)->performedOn($attempt)->event('assessment-attempt.reviewed')
                 ->withProperties(['score' => $score, 'passed' => $attempt->passed])->log('Assessment attempt manually reviewed');
 

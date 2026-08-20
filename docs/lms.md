@@ -83,6 +83,16 @@ Each portal has a separate dashboard query and view:
 
 The reports page contains basic course completion, trainee completion, and assessment pass/fail/average-score reports.
 
+## Fiscal-year credit scores
+
+Super Admin manages explicit fiscal-year periods with draft, active, and closed states. Periods cannot overlap and only one period may be active. Each fiscal year defines the attendance threshold and fixed attendance credit value.
+
+Courses, standalone assessments, and course assessments may each define credit points. A completed course or passed test creates one eligible credit award for the learner and fiscal year. Awards are idempotent per source activity and remain eligible until the trainee claims them. Claimed totals are calculated from the credit ledger rather than stored as a mutable balance.
+
+The trainee Fiscal Year Credit Score page shows the current attendance snapshot, for example `36 / 90`, eligible awards, claimed history, and total claimed credits. Attendance is refreshed through an `AttendanceProviderInterface`; the default local implementation is a sandbox provider configured through `TMIS_SANDBOX_PRESENT_DAYS`. A future TMIS REST provider can replace the adapter without changing the credit ledger.
+
+The trainee navbar displays the active fiscal year and claimed total, while the dashboard highlights unclaimed awards. These alerts are calculated on demand and are not persisted notifications.
+
 ## Local demo data
 
 `php artisan db:seed` creates local-only demonstration data after permissions are synchronized. It does not run the demo seeder in testing or production.
@@ -104,4 +114,4 @@ The root specification describes user-specific permissions, but this repository 
 
 The agreed backlog for reusable test schedules and history, academic ownership and collaboration, and scoped Admin access is recorded in the [Future LMS Roadmap](future-lms-roadmap.md). These behaviors are documentation-only and are not part of the delivered MVP.
 
-SSO/OIDC, TMIS synchronization, certificates, notifications, SCORM/xAPI, live classes, assignments, manual grading, question banks, randomized exams, and exports remain future phases. The LMS tables reference local user IDs only at the authentication boundary, so a future stable TMIS/OIDC subject mapping can be introduced without changing course, learning, or assessment rules.
+SSO/OIDC, live TMIS synchronization, TMIS training enrollment mapping, certificates, persisted notifications, SCORM/xAPI, live classes, assignments, manual grading, question banks, randomized exams, and exports remain future phases. The LMS tables reference local user IDs only at the authentication boundary, so a future stable TMIS/OIDC subject mapping can be introduced without changing course, learning, or assessment rules.

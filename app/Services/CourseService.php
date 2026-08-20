@@ -63,6 +63,7 @@ class CourseService
             $data['instructor_id'] = $actor->can('courses.edit-any') && filled($data['instructor_id'] ?? null)
                 ? $data['instructor_id'] : $actor->id;
             $data['status'] = CourseStatus::Draft;
+            $data['credit_points'] = $data['credit_points'] ?? 0;
             if ($thumbnail instanceof UploadedFile) {
                 $data['thumbnail_path'] = $thumbnail->store('lms/thumbnails', 'public');
             }
@@ -287,6 +288,7 @@ class CourseService
         try {
             return DB::transaction(function () use ($chapter, $data, $actor): LearningMaterial {
                 $passingPercentage = Arr::pull($data, 'passing_percentage');
+                $creditPoints = Arr::pull($data, 'credit_points', 0);
                 $material = $this->courses->createMaterial([
                     ...$data,
                     'course_chapter_id' => $chapter->id,
@@ -296,6 +298,7 @@ class CourseService
                     $this->courseAssessments->create([
                         'learning_material_id' => $material->id,
                         'passing_percentage' => $passingPercentage,
+                        'credit_points' => $creditPoints,
                     ]);
                 }
                 $this->materialImages->synchronize($material, $data['content'] ?? null, $chapter, $actor);
@@ -324,13 +327,14 @@ class CourseService
         try {
             $material = DB::transaction(function () use ($material, $data, $actor, &$removedImages): LearningMaterial {
                 $passingPercentage = Arr::pull($data, 'passing_percentage');
+                $creditPoints = Arr::pull($data, 'credit_points', 0);
                 $existingCourseAssessment = $this->courseAssessments->findForMaterial($material);
                 $material = $this->courses->updateMaterial($material, $data);
                 if ($material->type === MaterialType::CourseAssessment) {
                     if ($existingCourseAssessment) {
-                        $this->courseAssessments->update($existingCourseAssessment, ['passing_percentage' => $passingPercentage]);
+                        $this->courseAssessments->update($existingCourseAssessment, ['passing_percentage' => $passingPercentage, 'credit_points' => $creditPoints]);
                     } else {
-                        $this->courseAssessments->create(['learning_material_id' => $material->id, 'passing_percentage' => $passingPercentage]);
+                        $this->courseAssessments->create(['learning_material_id' => $material->id, 'passing_percentage' => $passingPercentage, 'credit_points' => $creditPoints]);
                     }
                 } elseif ($existingCourseAssessment) {
                     $this->courseAssessments->delete($existingCourseAssessment);

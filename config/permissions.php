@@ -148,6 +148,18 @@ return [
     'reports' => [
         'reports.view' => ['view_title' => 'View LMS reports', 'description' => 'Allows viewing course, trainee, and assessment reports.'],
     ],
+    'fiscal-years' => [
+        'fiscal-years.manage' => ['view_title' => 'Manage fiscal years', 'description' => 'Allows listing and filtering fiscal-year credit periods.'],
+        'fiscal-years.show' => ['view_title' => 'View fiscal years', 'description' => 'Allows viewing fiscal-year details.'],
+        'fiscal-years.create' => ['view_title' => 'Create fiscal years', 'description' => 'Allows creating fiscal-year credit periods.'],
+        'fiscal-years.edit' => ['view_title' => 'Edit fiscal years', 'description' => 'Allows editing and changing fiscal-year status.'],
+        'fiscal-years.delete' => ['view_title' => 'Delete fiscal years', 'description' => 'Allows deleting unused draft fiscal years.'],
+    ],
+    'credit-scores' => [
+        'credit-scores.view-own' => ['view_title' => 'View own credit scores', 'description' => 'Allows viewing own fiscal-year credit history and eligibility.'],
+        'credit-scores.claim-own' => ['view_title' => 'Claim own credit scores', 'description' => 'Allows claiming eligible own credit awards.'],
+        'credit-scores.refresh-attendance' => ['view_title' => 'Refresh own attendance', 'description' => 'Allows refreshing own attendance from the configured attendance provider.'],
+    ],
     'system' => [
         'permissions.view' => [
             'view_title' => 'View permissions',

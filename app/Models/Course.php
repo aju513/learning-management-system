@@ -15,7 +15,7 @@ class Course extends Model
 
     protected $fillable = [
         'category_id', 'instructor_id', 'title', 'slug', 'short_description', 'description',
-        'thumbnail_path', 'difficulty', 'estimated_duration_minutes', 'status', 'navigation_mode', 'published_at',
+        'thumbnail_path', 'difficulty', 'estimated_duration_minutes', 'credit_points', 'status', 'navigation_mode', 'published_at',
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class Course extends Model
         return [
             'status' => CourseStatus::class,
             'navigation_mode' => NavigationMode::class,
+            'credit_points' => 'decimal:2',
             'published_at' => 'datetime',
         ];
     }

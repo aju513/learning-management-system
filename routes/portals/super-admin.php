@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CourseChapterController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\CourseModuleController;
 use App\Http\Controllers\Admin\EnrollmentController;
+use App\Http\Controllers\Admin\FiscalYearController;
 use App\Http\Controllers\Admin\LearningMaterialController;
 use App\Http\Controllers\Admin\LearningMaterialImageController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -84,6 +85,16 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'active'
     Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
     Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
     Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
+    Route::middleware('can:fiscal-years.manage')->group(function (): void {
+        Route::get('/fiscal-years', [FiscalYearController::class, 'index'])->name('fiscal-years.index');
+        Route::get('/fiscal-years/create', [FiscalYearController::class, 'create'])->middleware('can:fiscal-years.create')->name('fiscal-years.create');
+        Route::post('/fiscal-years', [FiscalYearController::class, 'store'])->middleware('can:fiscal-years.create')->name('fiscal-years.store');
+        Route::get('/fiscal-years/{fiscal_year}', [FiscalYearController::class, 'show'])->middleware('can:fiscal-years.show')->name('fiscal-years.show');
+        Route::get('/fiscal-years/{fiscal_year}/edit', [FiscalYearController::class, 'edit'])->middleware('can:fiscal-years.edit')->name('fiscal-years.edit');
+        Route::put('/fiscal-years/{fiscal_year}', [FiscalYearController::class, 'update'])->middleware('can:fiscal-years.edit')->name('fiscal-years.update');
+        Route::patch('/fiscal-years/{fiscal_year}/status', [FiscalYearController::class, 'status'])->middleware('can:fiscal-years.edit')->name('fiscal-years.status');
+        Route::delete('/fiscal-years/{fiscal_year}', [FiscalYearController::class, 'destroy'])->middleware('can:fiscal-years.delete')->name('fiscal-years.destroy');
+    });
 
     Route::get('/assessments', [AssessmentController::class, 'index'])->name('assessments.index');
     Route::get('/assessments/create', [AssessmentController::class, 'create'])->name('assessments.create');

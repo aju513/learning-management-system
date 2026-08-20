@@ -11,11 +11,11 @@ class CourseAssessment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['learning_material_id', 'passing_percentage'];
+    protected $fillable = ['learning_material_id', 'passing_percentage', 'credit_points'];
 
     protected function casts(): array
     {
-        return ['passing_percentage' => 'decimal:2'];
+        return ['passing_percentage' => 'decimal:2', 'credit_points' => 'decimal:2'];
     }
 
     public function material(): BelongsTo

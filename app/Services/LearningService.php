@@ -18,6 +18,7 @@ class LearningService
     public function __construct(
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly CourseAssessmentRepositoryInterface $courseAssessments,
+        private readonly CreditScoreService $credits,
     ) {}
 
     public function open(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
@@ -49,33 +50,43 @@ class LearningService
         ];
     }
 
-    public function complete(Enrollment $enrollment, LearningMaterial $material, User $trainee): Enrollment
+    public function complete(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
     {
         if ($material->type === MaterialType::CourseAssessment && (! $material->courseAssessment || ! $this->courseAssessments->hasPassed($material->courseAssessment, $trainee))) {
             throw new AuthorizationException('Pass the course assessment before completing this material.');
         }
 
-        return DB::transaction(function () use ($enrollment, $material, $trainee): Enrollment {
+        return DB::transaction(function () use ($enrollment, $material, $trainee): array {
             $this->enrollments->completeMaterial($enrollment, $material);
             $enrollment = $this->recalculate($enrollment);
+            $award = $enrollment->status->value === 'completed'
+                ? $this->credits->recordCourseCompletion($enrollment->course, $trainee, $enrollment->completed_at)
+                : null;
             activity('lms')->causedBy($trainee)->performedOn($material)->event('learning-material.completed')
                 ->withProperties(['enrollment_id' => $enrollment->id, 'progress' => $enrollment->progress_percentage])->log('Learning material completed');
 
-            return $enrollment;
+            return ['enrollment' => $enrollment, 'creditAward' => $award];
         });
     }
 
     public function recalculate(Enrollment $enrollment): Enrollment
     {
+        $enrollment->loadMissing('course');
         $total = $this->enrollments->requiredMaterialCount($enrollment);
         $completed = $this->enrollments->completedRequiredMaterialCount($enrollment);
         $percentage = $total === 0 ? 0 : round($completed / $total * 100, 2);
         $isComplete = $total > 0 && $completed >= $total;
 
-        return $this->enrollments->update($enrollment, [
+        $enrollment = $this->enrollments->update($enrollment, [
             'progress_percentage' => $percentage,
             'status' => $isComplete ? EnrollmentStatus::Completed : EnrollmentStatus::Active,
             'completed_at' => $isComplete ? ($enrollment->completed_at ?? now()) : null,
         ]);
+
+        if ($isComplete) {
+            $this->credits->recordCourseCompletion($enrollment->course, $enrollment->trainee, $enrollment->completed_at);
+        }
+
+        return $enrollment;
     }
 }

@@ -27,7 +27,10 @@ The sidebar and Blade `@can` directives improve usability, but route middleware,
 - `config/admin-menu.php` owns the four independent portal navigation manifests.
 - Services own role synchronization and audit event properties.
 - Repositories own filtering and pagination.
+- Credit awards are claimable ledger records. Fiscal-year configuration, attendance snapshots, and awards use dedicated repositories and services; claimed totals are derived from claimed ledger rows.
 
 ## LMS modules
 
 The portals use separate routes, portal transport controllers, dashboards, and menu manifests while sharing domain services, repository contracts, Eloquent repositories, and models. This keeps role experiences independent without duplicating course, enrollment, assessment, and reporting rules. Standalone quizzes and course assessments are separate bounded models: quizzes use direct assignments, while course assessments belong only to course learning materials and gate required sequential progress. Uploaded learning files use authorized download routes rather than public storage. See `docs/lms.md` for the domain model and operational details.
+
+Attendance is isolated behind `AttendanceProviderInterface`. The current sandbox provider supplies deterministic local data, while a future TMIS HTTP implementation can be added without moving external API concerns into controllers or credit-award persistence.

@@ -16,6 +16,7 @@
         'description' => old('description', $material->description ?? ''),
         'duration' => old('duration_minutes', $material->duration_minutes ?? 0),
         'passingPercentage' => old('passing_percentage', $material->courseAssessment?->passing_percentage ?? 60),
+        'creditPoints' => old('credit_points', $material->courseAssessment?->credit_points ?? 0),
         'isRequired' => (bool) old('is_required', $material->is_required ?? true),
         'content' => old('content', $material->content ?? ''),
         'videoUrl' => old('video_url', $material->video_url ?? ''),
@@ -146,6 +147,7 @@
             <div x-show="type === 'course_assessment'" x-cloak class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
                 <h3 class="font-semibold text-gray-800 dark:text-white">Course assessment settings</h3>
                 <x-form.input name="passing_percentage" label="Passing score (%)" type="number" min="0" max="100" step="0.01" x-model="passingPercentage" required />
+                <x-form.input name="credit_points" label="Passed-test credit points" type="number" min="0" step="0.01" x-model="creditPoints" required />
                 <p class="text-sm text-gray-500">Retakes are unlimited. You can add the multiple-choice questions after saving.</p>
             </div>
 

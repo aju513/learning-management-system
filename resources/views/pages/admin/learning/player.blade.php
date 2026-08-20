@@ -32,7 +32,13 @@
         </nav>
     </aside>
 
-    <main class="space-y-5">
+<main class="space-y-5">
+        @if(session('credit_award_id'))
+            <div x-data="{ open: true }" x-show="open" x-cloak class="rounded-2xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-500/30 dark:bg-brand-500/10">
+                <div class="flex items-start justify-between gap-4"><div><p class="font-semibold text-brand-800 dark:text-brand-200">Claim this credit score</p><p class="mt-1 text-sm text-brand-700 dark:text-brand-300">You completed this course and have a credit score ready to claim.</p></div><button type="button" @click="open = false" class="text-brand-600" aria-label="Close">&times;</button></div>
+                <form method="POST" action="{{ route('learning.credit-scores.claim', session('credit_award_id')) }}" class="mt-4">@csrf<button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">Claim credit score</button></form>
+            </div>
+        @endif
         <x-common.component-card :title="$material->title" :desc="$material->description ?? ''">
             @switch($material->type)
                 @case(\App\Enums\MaterialType::Article)
