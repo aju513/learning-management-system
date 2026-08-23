@@ -14,6 +14,7 @@ use App\Http\Requests\Course\UpdateCourseRequest;
 use App\Models\Course;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Services\CourseService;
+use App\Services\Training\TrainingCatalogProviderInterface;
 use App\Support\PortalRoute;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -23,6 +24,7 @@ class CourseController extends Controller
     public function __construct(
         private readonly CourseRepositoryInterface $courses,
         private readonly CourseService $service,
+        private readonly TrainingCatalogProviderInterface $trainingCatalog,
     ) {}
 
     public function index(IndexCourseRequest $request): View
@@ -80,6 +82,12 @@ class CourseController extends Controller
 
     private function formData(Course $course, \App\Models\User $actor): array
     {
-        return ['course' => $course, 'categories' => $this->courses->activeCategories(), 'instructors' => $this->courses->instructors(), 'actor' => $actor];
+        return [
+            'course' => $course,
+            'categories' => $this->courses->activeCategories(),
+            'instructors' => $this->courses->instructors(),
+            'trainings' => $this->trainingCatalog->all(),
+            'actor' => $actor,
+        ];
     }
 }

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -25,10 +26,12 @@ class AssessmentService
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly UserRepositoryInterface $users,
         private readonly CreditScoreService $credits,
+        private readonly TrainingAvailabilityService $availability,
     ) {}
 
     public function create(array $data, User $actor): Assessment
     {
+        unset($data['available_to_all']);
         $data['created_by'] = $actor->id;
         $data['status'] = AssessmentStatus::Draft;
         $assessment = $this->assessments->create($data);
@@ -39,6 +42,7 @@ class AssessmentService
 
     public function update(Assessment $assessment, array $data, User $actor): Assessment
     {
+        unset($data['available_to_all']);
         if ($assessment->questions()->where('type', QuestionType::QuestionAnswer->value)->exists()) {
             $data['show_results'] = true;
         }
@@ -185,7 +189,7 @@ class AssessmentService
     public function start(Assessment $assessment, User $trainee): AssessmentAttempt
     {
         $assessment = $this->assessments->findForAvailability($assessment);
-        if (! $assessment->isAvailable() || ! $this->assessments->userCanTake($assessment, $trainee)) {
+        if (! $assessment->isAvailable() || ! $this->assessments->userCanTake($assessment, $trainee) || ! $this->availability->isAvailable($assessment, $trainee)) {
             throw new AuthorizationException('This assessment is not currently available to you.');
         }
         if ($active = $this->assessments->activeAttempt($assessment, $trainee)) {

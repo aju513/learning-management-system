@@ -17,7 +17,7 @@ class CreditScoreController extends Controller
 
     public function index(IndexCreditScoreRequest $request): View
     {
-        return view('pages.admin.credit-scores.index', $this->service->pageData($request->user()) + ['title' => 'Fiscal Year Credit Score']);
+        return view('pages.admin.credit-scores.index', $this->service->pageData($request->user()) + ['title' => 'Credit Scores']);
     }
 
     public function claim(ClaimCreditScoreRequest $request, CreditAward $creditAward): RedirectResponse

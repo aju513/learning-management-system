@@ -130,6 +130,11 @@ test('sequential learning records material and course completion', function () {
     $this->actingAs($admin)->post(route('admin.enrollments.store'), ['course_id' => $course->id, 'trainees' => [$trainee->id]])->assertRedirect();
     $enrollment = Enrollment::whereBelongsTo($trainee, 'trainee')->whereBelongsTo($course)->firstOrFail();
 
+    $this->actingAs($trainee)->get(route('learning.courses.player', $enrollment))
+        ->assertOk()
+        ->assertSee('Learning space')
+        ->assertSee('Course contents')
+        ->assertDontSee('Toggle Sidebar');
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[1]]))->assertForbidden();
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[0]]))->assertOk();
     $this->actingAs($trainee)->post(route('learning.courses.materials.complete', [$enrollment, $materials[0]]))->assertRedirect();

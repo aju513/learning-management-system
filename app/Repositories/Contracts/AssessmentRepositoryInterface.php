@@ -53,7 +53,13 @@ interface AssessmentRepositoryInterface
 
     public function unassign(AssessmentAssignment $assignment): void;
 
-    public function availableFor(User $trainee): Collection;
+    public function availableFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
+
+    public function appliedFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
+
+    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
+
+    public function creditAssessmentsForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection;
 
     public function userCanTake(Assessment $assessment, User $trainee): bool;
 

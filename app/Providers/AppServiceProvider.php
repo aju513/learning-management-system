@@ -29,6 +29,10 @@ use App\Repositories\Eloquent\RoleRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Services\Attendance\AttendanceProviderInterface;
 use App\Services\Attendance\SandboxAttendanceProvider;
+use App\Services\Training\ConfigTrainingCatalogProvider;
+use App\Services\Training\ConfigTrainingEnrollmentProvider;
+use App\Services\Training\TrainingCatalogProviderInterface;
+use App\Services\Training\TrainingEnrollmentProviderInterface;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -63,6 +67,8 @@ class AppServiceProvider extends ServiceProvider
                 default => $this->app->make(SandboxAttendanceProvider::class),
             };
         });
+        $this->app->bind(TrainingCatalogProviderInterface::class, ConfigTrainingCatalogProvider::class);
+        $this->app->bind(TrainingEnrollmentProviderInterface::class, ConfigTrainingEnrollmentProvider::class);
     }
 
     /**

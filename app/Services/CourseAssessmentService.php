@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\User;
 use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
+use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class CourseAssessmentService
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly LearningService $learning,
         private readonly CreditScoreService $credits,
+        private readonly TrainingAvailabilityService $availability,
     ) {}
 
     public function createQuestion(CourseAssessment $assessment, array $data, User $actor): CourseAssessmentQuestion
@@ -81,6 +83,7 @@ class CourseAssessmentService
     public function start(CourseAssessment $assessment, Enrollment $enrollment, User $trainee): CourseAssessmentAttempt
     {
         $assessment = $this->courseAssessments->findForManagement($assessment);
+        $this->availability->assertAvailable($assessment->material->chapter->module->course, $trainee);
         if ($enrollment->user_id !== $trainee->id || $assessment->material->chapter->module->course_id !== $enrollment->course_id) {
             throw new AuthorizationException('This course assessment is not part of your enrollment.');
         }

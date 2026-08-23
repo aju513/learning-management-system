@@ -6,6 +6,7 @@
     <x-form.input name="max_attempts" label="Maximum attempts" type="number" min="1" max="20" :value="$assessment->max_attempts ?? 1" required />
     <x-form.input name="starts_at" label="Available from" type="datetime-local" :value="$assessment->starts_at?->format('Y-m-d\TH:i')" />
     <x-form.input name="ends_at" label="Available until" type="datetime-local" :value="$assessment->ends_at?->format('Y-m-d\TH:i')" />
+    <x-form.training-availability :model="$assessment" :trainings="$trainings" />
     <div class="sm:col-span-2"><x-form.textarea name="description" label="Description" :value="$assessment->description" rows="3" /></div>
     <div class="sm:col-span-2"><x-form.textarea name="instructions" label="Instructions" :value="$assessment->instructions" rows="5" /></div>
     <x-form.toggle name="show_results" label="Show score immediately after submission" :checked="$assessment->show_results ?? true" />

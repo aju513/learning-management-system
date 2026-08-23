@@ -30,7 +30,7 @@ interface EnrollmentRepositoryInterface
 
     public function delete(Enrollment $enrollment): void;
 
-    public function forTrainee(User $trainee): Collection;
+    public function forTrainee(User $trainee, array $eligibleTrainingKeys = []): Collection;
 
     public function applicationsForTrainee(User $trainee): Collection;
 

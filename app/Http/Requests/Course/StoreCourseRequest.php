@@ -3,11 +3,14 @@
 namespace App\Http\Requests\Course;
 
 use App\Enums\NavigationMode;
+use App\Http\Requests\Concerns\ValidatesTrainingAvailability;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreCourseRequest extends FormRequest
 {
+    use ValidatesTrainingAvailability;
+
     public function authorize(): bool
     {
         return $this->user()?->can('courses.create') ?? false;
@@ -22,6 +25,7 @@ class StoreCourseRequest extends FormRequest
             'difficulty' => ['required', Rule::in(['beginner', 'intermediate', 'advanced'])],
             'estimated_duration_minutes' => ['required', 'integer', 'min:0', 'max:100000'],
             'credit_points' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            ...$this->trainingAvailabilityRules(),
             'navigation_mode' => ['required', Rule::enum(NavigationMode::class)],
             'thumbnail' => ['nullable', 'image', 'max:4096'],
         ];

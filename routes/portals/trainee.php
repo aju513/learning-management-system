@@ -17,12 +17,14 @@ Route::prefix('learning')->name('learning.')->middleware(['auth', 'active', 'can
     Route::get('/applications', [ApplicationController::class, 'index'])->name('applications.index');
     Route::post('/applications/{course}', [ApplicationController::class, 'store'])->name('applications.store');
     Route::get('/courses', [LearningController::class, 'index'])->name('courses.index');
+    Route::get('/courses/{enrollment}/learn', [LearningController::class, 'player'])->name('courses.player');
     Route::get('/courses/{enrollment}/materials/{learning_material}', [LearningController::class, 'show'])->name('courses.materials.show');
     Route::post('/courses/{enrollment}/materials/{learning_material}/complete', [LearningController::class, 'complete'])->name('courses.materials.complete');
     Route::get('/courses/{enrollment}/materials/{learning_material}/download', [LearningController::class, 'download'])->name('courses.materials.download');
     Route::post('/courses/{enrollment}/materials/{learning_material}/course-assessment/start', [CourseAssessmentPlayerController::class, 'start'])->name('courses.materials.course-assessment.start');
     Route::get('/courses/{enrollment}/course-assessment-attempts/{course_assessment_attempt}', [CourseAssessmentPlayerController::class, 'show'])->name('course-assessment-attempts.show');
     Route::post('/courses/{enrollment}/course-assessment-attempts/{course_assessment_attempt}', [CourseAssessmentPlayerController::class, 'submit'])->name('course-assessment-attempts.submit');
+    Route::get('/assessments/applied', [AssessmentPlayerController::class, 'applied'])->name('assessments.applied');
     Route::get('/assessments', [AssessmentPlayerController::class, 'index'])->name('assessments.index');
     Route::post('/assessments/{assessment}/start', [AssessmentPlayerController::class, 'start'])->name('assessments.start');
     Route::get('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'show'])->name('assessments.attempts.show');

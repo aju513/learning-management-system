@@ -7,18 +7,23 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\User;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
+use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class CourseApplicationService
 {
-    public function __construct(private readonly EnrollmentRepositoryInterface $enrollments) {}
+    public function __construct(
+        private readonly EnrollmentRepositoryInterface $enrollments,
+        private readonly TrainingAvailabilityService $availability,
+    ) {}
 
     public function apply(Course $course, User $trainee): Enrollment
     {
         if (! $course->isPublished()) {
             throw ValidationException::withMessages(['course' => 'This course is not accepting applications.']);
         }
+        $this->availability->assertAvailable($course, $trainee);
 
         $existing = $course->enrollments()->where('user_id', $trainee->id)->first();
         if ($existing && in_array($existing->status, [EnrollmentStatus::Pending, EnrollmentStatus::Active, EnrollmentStatus::Completed], true)) {

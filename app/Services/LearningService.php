@@ -10,6 +10,7 @@ use App\Models\LearningMaterial;
 use App\Models\User;
 use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
+use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
@@ -19,11 +20,13 @@ class LearningService
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly CourseAssessmentRepositoryInterface $courseAssessments,
         private readonly CreditScoreService $credits,
+        private readonly TrainingAvailabilityService $availability,
     ) {}
 
     public function open(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->availability->assertAvailable($enrollment->course, $trainee);
         $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
         if (! $materials->contains('id', $material->id)) {
             throw new AuthorizationException('This material is not part of the enrolled course.');
@@ -50,8 +53,24 @@ class LearningService
         ];
     }
 
+    public function launch(Enrollment $enrollment, User $trainee): array
+    {
+        $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->availability->assertAvailable($enrollment->course, $trainee);
+        $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
+        abort_unless($materials->isNotEmpty(), 404);
+
+        $completedIds = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
+        $material = $materials->first(fn (LearningMaterial $item) => ! $completedIds->contains($item->id)) ?? $materials->first();
+
+        return $this->open($enrollment, $material, $trainee);
+    }
+
     public function complete(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
     {
+        $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->availability->assertAvailable($enrollment->course, $trainee);
+
         if ($material->type === MaterialType::CourseAssessment && (! $material->courseAssessment || ! $this->courseAssessments->hasPassed($material->courseAssessment, $trainee))) {
             throw new AuthorizationException('Pass the course assessment before completing this material.');
         }

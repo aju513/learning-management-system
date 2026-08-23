@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests\Assessment;
 
+use App\Http\Requests\Concerns\ValidatesTrainingAvailability;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAssessmentRequest extends FormRequest
 {
+    use ValidatesTrainingAvailability;
+
     public function authorize(): bool
     {
         return $this->user()?->can('assessments.create') ?? false;
@@ -23,6 +26,7 @@ class StoreAssessmentRequest extends FormRequest
             'instructions' => ['nullable', 'string', 'max:10000'], 'duration_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
             'passing_percentage' => ['required', 'numeric', 'min:0', 'max:100'], 'max_attempts' => ['required', 'integer', 'min:1', 'max:20'],
             'credit_points' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            ...$this->trainingAvailabilityRules(),
             'starts_at' => ['nullable', 'date'], 'ends_at' => ['nullable', 'date', 'after:starts_at'], 'show_results' => ['required', 'boolean'],
         ];
     }

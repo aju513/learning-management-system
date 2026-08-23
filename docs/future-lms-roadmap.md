@@ -15,10 +15,12 @@ This document records agreed backlog items for a later LMS phase. It describes i
 
 ## TMIS enrollment integration
 
-Fiscal-year credit scores and the sandbox attendance adapter are delivered in the LMS. The remaining TMIS enrollment workflow is deferred until the external contract is available:
+Fiscal-year credit scores and the sandbox attendance adapter are delivered in the LMS. Training-restricted courses and assessments now persist a stable training key and resolve catalog/enrollment state through replaceable providers. The first implementation is configuration-backed for deterministic local testing; the TMIS adapter should preserve those provider contracts and map the LMS user to the corresponding TMIS identity.
+
+The remaining TMIS enrollment workflow is deferred until the external contract is available:
 
 - Add a stable LMS-to-TMIS user identifier mapping.
-- Add an optional TMIS training identifier to courses.
+- Replace the configuration training catalog with a TMIS training identifier/catalog adapter.
 - Check TMIS enrollment before activating an LMS enrollment.
 - Activate directly when TMIS confirms enrollment; otherwise retain an approval-required pending state.
 - Record provider failures without granting LMS access by accident.

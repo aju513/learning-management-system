@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CreditAward;
+use App\Models\Enrollment;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Services\CreditScoreService;
@@ -62,6 +64,63 @@ test('course completion credit is created only once for a learner and fiscal yea
     $second = $service->recordCourseCompletion($course, $trainee, now());
 
     expect($first->id)->toBe($second->id)->and(CreditAward::count())->toBe(1);
+});
+
+test('credit scores page shows course credit availability and taken state', function () {
+    $trainee = creditPortalUser('trainee');
+    $fiscalYear = FiscalYear::factory()->create(['starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active']);
+    $course = Course::factory()->published()->create(['title' => 'Leadership Essentials', 'credit_points' => 5]);
+
+    $this->actingAs($trainee)->get(route('learning.credit-scores.index'))
+        ->assertOk()
+        ->assertSee('Leadership Essentials')
+        ->assertSee('Available')
+        ->assertSee('+5.00');
+
+    Enrollment::factory()->create(['course_id' => $course->id, 'user_id' => $trainee->id, 'status' => 'active']);
+
+    $this->actingAs($trainee)->get(route('learning.credit-scores.index'))
+        ->assertOk()
+        ->assertSee('Enrolled');
+
+    $award = CreditAward::factory()->create([
+        'fiscal_year_id' => $fiscalYear->id,
+        'user_id' => $trainee->id,
+        'course_id' => $course->id,
+        'source_key' => 'course:'.$course->id,
+    ]);
+
+    $this->actingAs($trainee)->get(route('learning.credit-scores.index'))
+        ->assertOk()
+        ->assertSee('Credit score ready');
+
+    $award->update(['status' => 'claimed']);
+
+    $this->actingAs($trainee)->get(route('learning.credit-scores.index'))
+        ->assertOk()
+        ->assertSee('Credit score taken');
+});
+
+test('credit scores page shows detailed test credit opportunities', function () {
+    $trainee = creditPortalUser('trainee');
+    $instructor = creditPortalUser('instructor');
+    FiscalYear::factory()->create(['starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active']);
+    $assessment = Assessment::factory()->published()->for($instructor, 'creator')->create([
+        'title' => 'Leadership Assessment',
+        'credit_points' => 3,
+        'duration_minutes' => 45,
+        'passing_percentage' => 70,
+    ]);
+    $assessment->assignments()->create(['user_id' => $trainee->id, 'assigned_by' => $instructor->id, 'assigned_at' => now()]);
+
+    $this->actingAs($trainee)->get(route('learning.credit-scores.index'))
+        ->assertOk()
+        ->assertSee('Test credit scores')
+        ->assertSee('Test module')
+        ->assertSee('Leadership Assessment')
+        ->assertSee('+3.00')
+        ->assertSee('45 minutes')
+        ->assertSee('Pass 70%');
 });
 
 test('a trainee cannot claim another trainee credit award', function () {

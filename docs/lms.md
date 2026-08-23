@@ -93,6 +93,16 @@ The trainee Fiscal Year Credit Score page shows the current attendance snapshot,
 
 The trainee navbar displays the active fiscal year and claimed total, while the dashboard highlights unclaimed awards. These alerts are calculated on demand and are not persisted notifications.
 
+The trainee sidebar contains **Overview**, a **Courses** group, a **Tests** group, and **Credit Scores**. Courses contains Course Catalog, Applied Courses, and Enrolled Courses. Tests contains Applied Tests and Enrolled Tests: applied tests are assigned tests not yet started, while enrolled tests include every assigned test and show its current attempt state. Credit Scores is shared by both learning types and separates Course Credit Scores from Test Credit Scores, showing the source module, points, training eligibility, enrollment/attempt progress, pass state, and claim status.
+
+Starting or continuing an enrolled course opens the dedicated course player in a new tab. The player uses a focused learning layout without the portal sidebar or regular navbar, and provides its own course outline, progress indicator, material content, completion controls, assessment actions, and previous/next lesson navigation.
+
+### Training-restricted content
+
+Courses and standalone assessments can be marked as available to everyone or restricted to one required training. The authoring form uses a fixed training catalog from `config/training.php`, and the sandbox enrollment provider uses the same file's user-to-training mapping. Trainee catalog, enrollment, learning, assessment listing, and assessment-start workflows enforce the restriction server-side. Course-embedded assessments inherit their parent course restriction.
+
+The provider interfaces under `App\Services\Training` are intentionally separate from the content models so the configuration providers can later be replaced by TMIS catalog and enrollment API adapters without changing course or assessment records.
+
 ## Local demo data
 
 `php artisan db:seed` creates local-only demonstration data after permissions are synchronized. It does not run the demo seeder in testing or production.

@@ -58,6 +58,7 @@ class CourseService
     public function createCourse(array $data, User $actor): Course
     {
         return DB::transaction(function () use ($data, $actor): Course {
+            unset($data['available_to_all']);
             $thumbnail = Arr::pull($data, 'thumbnail');
             $data['slug'] = $this->uniqueCourseSlug($data['title']);
             $data['instructor_id'] = $actor->can('courses.edit-any') && filled($data['instructor_id'] ?? null)
@@ -78,6 +79,7 @@ class CourseService
     public function updateCourse(Course $course, array $data, User $actor): Course
     {
         return DB::transaction(function () use ($course, $data, $actor): Course {
+            unset($data['available_to_all']);
             $oldThumbnail = $course->thumbnail_path;
             $thumbnail = Arr::pull($data, 'thumbnail');
             $data['slug'] = $this->uniqueCourseSlug($data['title'], $course);

@@ -15,6 +15,7 @@ use App\Models\Assessment;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Services\AssessmentService;
+use App\Services\Training\TrainingCatalogProviderInterface;
 use App\Support\PortalRoute;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -25,6 +26,7 @@ class AssessmentController extends Controller
         private readonly AssessmentRepositoryInterface $assessments,
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly AssessmentService $service,
+        private readonly TrainingCatalogProviderInterface $trainingCatalog,
     ) {}
 
     public function index(IndexAssessmentRequest $request): View
@@ -34,7 +36,11 @@ class AssessmentController extends Controller
 
     public function create(): View
     {
-        return view('pages.admin.assessments.create', ['assessment' => new Assessment(['show_results' => true]), 'title' => 'Create Quiz']);
+        return view('pages.admin.assessments.create', [
+            'assessment' => new Assessment(['show_results' => true]),
+            'trainings' => $this->trainingCatalog->all(),
+            'title' => 'Create Quiz',
+        ]);
     }
 
     public function store(StoreAssessmentRequest $request): RedirectResponse
@@ -51,7 +57,11 @@ class AssessmentController extends Controller
 
     public function edit(EditAssessmentRequest $request, Assessment $assessment): View
     {
-        return view('pages.admin.assessments.edit', ['assessment' => $this->assessments->findForManagement($assessment), 'title' => 'Edit Quiz']);
+        return view('pages.admin.assessments.edit', [
+            'assessment' => $this->assessments->findForManagement($assessment),
+            'trainings' => $this->trainingCatalog->all(),
+            'title' => 'Edit Quiz',
+        ]);
     }
 
     public function update(UpdateAssessmentRequest $request, Assessment $assessment): RedirectResponse

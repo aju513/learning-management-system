@@ -116,10 +116,14 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
         $enrollment->delete();
     }
 
-    public function forTrainee(User $trainee): Collection
+    public function forTrainee(User $trainee, array $eligibleTrainingKeys = []): Collection
     {
         return Enrollment::query()->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed'])
-            ->with(['course.category', 'course.instructor', 'course.modules.chapters.materials'])->latest('enrolled_at')->get();
+            ->whereHas('course', function ($query) use ($eligibleTrainingKeys): void {
+                $query->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                    ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+            })
+            ->with(['course.category', 'course.instructor', 'course.modules.chapters.materials', 'materialProgress'])->latest('enrolled_at')->get();
     }
 
     public function applicationsForTrainee(User $trainee): Collection

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AvailabilityScope;
 use App\Enums\CourseStatus;
 use App\Enums\NavigationMode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ class Course extends Model
 
     protected $fillable = [
         'category_id', 'instructor_id', 'title', 'slug', 'short_description', 'description',
-        'thumbnail_path', 'difficulty', 'estimated_duration_minutes', 'credit_points', 'status', 'navigation_mode', 'published_at',
+        'thumbnail_path', 'difficulty', 'estimated_duration_minutes', 'credit_points', 'availability_scope', 'required_training_key', 'status', 'navigation_mode', 'published_at',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class Course extends Model
             'status' => CourseStatus::class,
             'navigation_mode' => NavigationMode::class,
             'credit_points' => 'decimal:2',
+            'availability_scope' => AvailabilityScope::class,
             'published_at' => 'datetime',
         ];
     }
@@ -46,6 +48,11 @@ class Course extends Model
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    public function creditAwards(): HasMany
+    {
+        return $this->hasMany(CreditAward::class);
     }
 
     public function isPublished(): bool

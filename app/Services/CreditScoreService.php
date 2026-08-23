@@ -12,10 +12,14 @@ use App\Models\CourseAssessment;
 use App\Models\CreditAward;
 use App\Models\FiscalYear;
 use App\Models\User;
+use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\AttendanceSnapshotRepositoryInterface;
+use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\CreditAwardRepositoryInterface;
 use App\Repositories\Contracts\FiscalYearRepositoryInterface;
 use App\Services\Attendance\AttendanceProviderInterface;
+use App\Services\Training\TrainingAvailabilityService;
+use App\Services\Training\TrainingCatalogProviderInterface;
 use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -26,8 +30,12 @@ class CreditScoreService
     public function __construct(
         private readonly FiscalYearRepositoryInterface $fiscalYears,
         private readonly CreditAwardRepositoryInterface $awards,
+        private readonly CourseRepositoryInterface $courses,
+        private readonly AssessmentRepositoryInterface $assessments,
         private readonly AttendanceSnapshotRepositoryInterface $attendance,
         private readonly AttendanceProviderInterface $attendanceProvider,
+        private readonly TrainingAvailabilityService $availability,
+        private readonly TrainingCatalogProviderInterface $trainingCatalog,
     ) {}
 
     public function recordCourseCompletion(Course $course, User $trainee, ?DateTimeInterface $occurredAt = null): ?CreditAward
@@ -120,6 +128,7 @@ class CreditScoreService
     public function pageData(User $trainee): array
     {
         $fiscalYear = $this->fiscalYears->active();
+        $eligibleTrainingKeys = $this->availability->eligibleTrainingKeys($trainee);
 
         return [
             'fiscalYear' => $fiscalYear,
@@ -128,6 +137,9 @@ class CreditScoreService
             'history' => $this->awards->forUser($trainee, $fiscalYear),
             'claimedTotal' => $this->awards->claimedTotal($trainee, $fiscalYear),
             'eligibleTotal' => $this->awards->eligibleTotal($trainee, $fiscalYear),
+            'creditCourses' => $this->courses->creditCoursesForTrainee($trainee, $eligibleTrainingKeys, $fiscalYear?->id),
+            'creditAssessments' => $this->assessments->creditAssessmentsForTrainee($trainee, $eligibleTrainingKeys, $fiscalYear?->id),
+            'trainingNames' => $this->trainingCatalog->all()->pluck('name', 'key')->all(),
         ];
     }
 

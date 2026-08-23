@@ -29,9 +29,13 @@ interface CourseRepositoryInterface
 
     public function paginateCourses(array $filters, User $actor, int $perPage = 12): LengthAwarePaginator;
 
-    public function paginatePublishedCatalog(array $filters, User $trainee, int $perPage = 12): LengthAwarePaginator;
+    public function paginatePublishedCatalog(array $filters, User $trainee, array $eligibleTrainingKeys = [], int $perPage = 12): LengthAwarePaginator;
 
-    public function findPublishedCatalogCourse(Course $course, User $trainee): Course;
+    public function availableForOverview(User $trainee, array $eligibleTrainingKeys = [], int $limit = 8): Collection;
+
+    public function creditCoursesForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection;
+
+    public function findPublishedCatalogCourse(Course $course, User $trainee, array $eligibleTrainingKeys = []): Course;
 
     public function allPublishedCourses(): Collection;
 

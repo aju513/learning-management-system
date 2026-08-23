@@ -117,12 +117,27 @@ test('portal navigation is fixed per role instead of accumulating shared menu it
 
         return [$role => $user];
     });
+    $superAdminNavigation = collect($navigation->forUser($users['super-admin']));
 
-    expect(collect($navigation->forUser($users['super-admin']))->pluck('label')->all())->toContain('User Management', 'Learning Oversight', 'Access Matrix')
+    expect($superAdminNavigation->pluck('label')->all())->toBe(['Dashboard', 'User Management', 'Course Overview', 'Test Overview', 'System Settings', 'Reports', 'Activity Log'])
+        ->and(collect($superAdminNavigation->firstWhere('label', 'Course Overview')['children'])->map(fn (array $item): array => ['key' => $item['key'], 'label' => $item['label']])->all())->toBe([
+            ['key' => 'courses', 'label' => 'Courses'],
+            ['key' => 'applications', 'label' => 'Applications'],
+            ['key' => 'enrollments', 'label' => 'Enrollments'],
+        ])
+        ->and(collect($superAdminNavigation->firstWhere('label', 'Test Overview')['children'])->map(fn (array $item): array => ['key' => $item['key'], 'label' => $item['label']])->all())->toBe([
+            ['key' => 'tests', 'label' => 'Quizzes'],
+            ['key' => 'results', 'label' => 'Results'],
+        ])
+        ->and(collect($superAdminNavigation->firstWhere('label', 'System Settings')['children'])->map(fn (array $item): array => ['key' => $item['key'], 'label' => $item['label']])->all())->toBe([
+            ['key' => 'fiscal-years', 'label' => 'Fiscal Years'],
+            ['key' => 'categories', 'label' => 'Categories'],
+        ])
+        ->and($superAdminNavigation->flatMap(fn (array $item): array => $item['children'] ?? [])->pluck('label')->all())->not->toContain('Access Matrix')
         ->and(collect($navigation->forUser($users['admin']))->pluck('label')->all())->toContain('People', 'Enrollments', 'Reports')
         ->and(collect($navigation->forUser($users['admin']))->pluck('label')->all())->not->toContain('My Learning', 'My Courses')
         ->and(collect($navigation->forUser($users['instructor']))->pluck('label')->all())->toContain('My Courses', 'My Trainees')
-        ->and(collect($navigation->forUser($users['trainee']))->pluck('label')->all())->toContain('Course Catalog', 'My Learning', 'My Tests')
+        ->and(collect($navigation->forUser($users['trainee']))->pluck('label')->all())->toBe(['Overview', 'Courses', 'Tests', 'Credit Scores'])
         ->and(collect($navigation->forUser($users['trainee']))->pluck('label')->all())->not->toContain('Enrollments', 'User Management');
 });
 
