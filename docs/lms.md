@@ -42,7 +42,7 @@ Assessment
 
 ## Course authoring
 
-Courses support draft, published, and archived states; beginner/intermediate/advanced difficulty; estimated duration; thumbnail; category; instructor ownership; and free or sequential navigation. Before publication, a course must have at least one module, every module must have a chapter, and every chapter must contain learning material.
+Courses support draft, published, and archived states; beginner/intermediate/advanced difficulty; estimated duration; thumbnail; category; instructor ownership; and free or sequential navigation. Before publication, a course must have a title, description, thumbnail, at least one module, every module must have a chapter, and every chapter must contain learning material. The instructor editor shows module/chapter/material/question counts and a publishing-readiness summary with links to each blocker.
 
 Modules, chapters, and materials use persisted integer positions. New modules receive an editable `Chapter 1`, every published module and chapter must contain content, and non-empty chapters cannot be deleted. Module and chapter creation uses dedicated modal forms triggered by the bottom Add buttons; the shared modal backdrop dims the page without blur and closes on outside click or Escape. The authoring UI presents modules and chapters as independently collapsible accordions; focusing a target module or chapter closes sibling panels, and URL anchors reopen the relevant panel after material or modal edits. Authorized authors can drag modules within a course, chapters within their current module, and materials within their chapter; all drops autosave through validated service/repository boundaries. Materials display dynamic `Page 1`, `Page 2`, and similar labels that update after reordering.
 
@@ -58,7 +58,7 @@ Instructor and Admin application review groups requests inside course-level coll
 
 Admin and Super Admin retain direct assignment. Assignment is idempotent for each trainee/course pair and supersedes pending, rejected, or cancelled state. Trainees see only active and completed enrollments in My Learning; pending/rejected/cancelled records remain in My Applications.
 
-Opening a material records the last view and starts the enrollment. Completing required materials recalculates progress as:
+Opening a material records the last view and starts the enrollment. A sequential-course request for a locked lesson returns a course-state screen identifying the blocking lesson and showing completed required lessons instead of a raw authorization error. Completing required materials recalculates progress as:
 
 ```text
 completed required materials / total required materials * 100
@@ -70,7 +70,9 @@ At 100 percent, the enrollment becomes completed and receives a completion times
 
 Standalone quizzes support draft, published, and closed states; duration; passing percentage; maximum attempts; availability dates; and direct trainee assignment. Questions support single choice, multiple choice, and true/false behavior using reusable option rows. They are not course materials.
 
-Starting a standalone quiz creates or resumes one in-progress attempt and records its expiry. Course-assessment attempts are separate, unlimited, and choice-only. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Course-assessment results include the selected and correct options. Graded attempts are immutable through the application UI.
+Starting a standalone quiz creates or resumes one in-progress attempt and records its integer-cast expiry duration. Course-assessment attempts are separate, unlimited, and choice-only. While a trainee works, answers are autosaved to the attempt and locally recovered in the browser. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Submission is idempotent so a retry after a lost browser response returns the existing result rather than creating duplicate answers. The player disables the submit action, confirms the final action, displays a recovery message on network failure, and redirects to the result/submitted state. Course-assessment results include the selected and correct options. Graded attempts are immutable through the application UI.
+
+The application provides friendly 403 and 500 screens with an explanation and recovery actions. Operational Super Admins may use the protected `admin.maintenance.optimize-clear` POST route when command-line access is unavailable.
 
 ## Reporting
 

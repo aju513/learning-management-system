@@ -75,4 +75,11 @@ class AssessmentPlayerController extends Controller
 
         return redirect()->route('learning.assessments.attempts.show', $assessmentAttempt)->with('success', 'Quiz submitted successfully.');
     }
+
+    public function save(SubmitAttemptRequest $request, AssessmentAttempt $assessmentAttempt): \Illuminate\Http\JsonResponse
+    {
+        $this->service->saveAnswers($assessmentAttempt, $request->validated('answers', []), $request->user());
+
+        return response()->json(['saved' => true]);
+    }
 }

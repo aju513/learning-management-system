@@ -46,4 +46,11 @@ class CourseAssessmentPlayerController extends Controller
         return redirect()->route('learning.course-assessment-attempts.show', [$enrollment, $courseAssessmentAttempt])
             ->with('success', 'Course assessment submitted.');
     }
+
+    public function save(SubmitAttemptRequest $request, Enrollment $enrollment, CourseAssessmentAttempt $courseAssessmentAttempt): \Illuminate\Http\JsonResponse
+    {
+        $this->service->saveAnswers($courseAssessmentAttempt, $request->validated('answers', []), $request->user());
+
+        return response()->json(['saved' => true]);
+    }
 }

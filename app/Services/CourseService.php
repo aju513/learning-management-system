@@ -129,8 +129,20 @@ class CourseService
     {
         $issues = [];
 
+        if (blank($course->title)) {
+            $issues[] = ['message' => 'Add a course title before publishing.'];
+        }
+        if (blank($course->short_description) && blank($course->description)) {
+            $issues[] = ['message' => 'Add a course description before publishing.'];
+        }
+        if (blank($course->thumbnail_path)) {
+            $issues[] = ['message' => 'Add a course thumbnail before publishing.'];
+        }
+
         if ($course->modules->isEmpty()) {
-            return [['message' => 'Add at least one module before publishing.']];
+            $issues[] = ['message' => 'Add at least one module before publishing.'];
+
+            return $issues;
         }
 
         foreach ($course->modules as $module) {

@@ -8,6 +8,7 @@
     </x-slot:actions>
 </x-common.page-breadcrumb>
 @php($questionsLocked = $assessment->status === \App\Enums\AssessmentStatus::Published || (int) ($assessment->attempts_count ?? 0) > 0)
+@php($lockMessage = $assessment->status === \App\Enums\AssessmentStatus::Published ? 'Questions are locked because this quiz is published.' : 'Questions are locked because '.($assessment->attempts_count ?? 0).' attempt(s) have started.')
 <div class="grid gap-6 xl:grid-cols-[1fr_340px]">
     <div class="space-y-6">
         <x-common.component-card title="Questions" desc="Objective questions are graded automatically.">
@@ -33,7 +34,7 @@
             @if(! $questionsLocked)
                 <x-common.component-card title="Add question" desc="Use multiple choice when more than one answer is correct."><form method="POST" action="{{ route(\App\Support\PortalRoute::name('assessment-questions.store'), $assessment) }}" class="space-y-6">@csrf @include('pages.admin.assessments._question-form', ['question' => null])<div class="text-right"><button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">{{ __('Add question') }}</button></div></form></x-common.component-card>
             @else
-                <p class="rounded-xl border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">{{ __('Questions are locked after publishing or once an attempt has started.') }}</p>
+                <p class="rounded-xl border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">{{ __($lockMessage) }}</p>
             @endif
         @endcan
     </div>

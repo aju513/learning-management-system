@@ -177,3 +177,14 @@ test('Admins can access course and test reports plus system settings', function 
         $this->actingAs($admin)->get($url)->assertOk();
     }
 });
+
+test('only Super Admins can clear application caches through the maintenance route', function () {
+    $this->artisan('admin:permissions-sync')->assertSuccessful();
+    $superAdmin = User::factory()->create();
+    $superAdmin->syncRoles(['super-admin']);
+    $trainee = User::factory()->create();
+    $trainee->syncRoles(['trainee']);
+
+    $this->actingAs($trainee)->post(route('admin.maintenance.optimize-clear'))->assertForbidden();
+    $this->actingAs($superAdmin)->post(route('admin.maintenance.optimize-clear'))->assertRedirect();
+});

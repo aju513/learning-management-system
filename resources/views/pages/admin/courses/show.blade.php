@@ -20,6 +20,28 @@
     </x-slot:actions>
 </x-common.page-breadcrumb>
 
+@php
+    $courseModules = $course->modules;
+    $courseChapters = $courseModules->flatMap->chapters;
+    $courseMaterials = $courseChapters->flatMap->materials;
+    $assessmentQuestions = $courseMaterials->sum(fn ($material) => $material->courseAssessment?->questions->count() ?? 0);
+    $readyModules = $courseModules->filter(fn ($module) => $module->chapters->isNotEmpty() && $module->chapters->every(fn ($chapter) => $chapter->materials->isNotEmpty()))->count();
+    $readyChapters = $courseChapters->filter(fn ($chapter) => $chapter->materials->isNotEmpty())->count();
+@endphp
+<x-common.component-card title="Course builder progress" desc="Keep the curriculum complete before publishing." class="mb-6">
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        @foreach([
+            ['label' => 'Modules completed', 'value' => $readyModules.'/'.$courseModules->count()],
+            ['label' => 'Chapters completed', 'value' => $readyChapters.'/'.$courseChapters->count()],
+            ['label' => 'Materials added', 'value' => (string) $courseMaterials->count()],
+            ['label' => 'Assessment questions', 'value' => (string) $assessmentQuestions],
+            ['label' => 'Publishing readiness', 'value' => $publishIssues === [] ? 'Ready to publish' : count($publishIssues).' issue(s)'],
+        ] as $metric)
+            <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ __($metric['label']) }}</p><p class="mt-2 text-lg font-semibold {{ $metric['label'] === 'Publishing readiness' && $publishIssues === [] ? 'text-success-600' : 'text-gray-800 dark:text-white' }}">{{ $metric['value'] }}</p></div>
+        @endforeach
+    </div>
+</x-common.component-card>
+
 @if($publishIssues !== [])
     <x-common.component-card title="Course completeness" desc="Resolve these items before publishing the course." class="mb-6">
         <ul class="space-y-3 text-sm">

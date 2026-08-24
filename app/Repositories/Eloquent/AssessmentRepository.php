@@ -214,6 +214,14 @@ class AssessmentRepository implements AssessmentRepositoryInterface
         return AttemptAnswer::query()->create($attributes);
     }
 
+    public function upsertAnswer(AssessmentAttempt $attempt, AssessmentQuestion $question, array $attributes): AttemptAnswer
+    {
+        return AttemptAnswer::query()->updateOrCreate(
+            ['assessment_attempt_id' => $attempt->id, 'assessment_question_id' => $question->id],
+            $attributes,
+        );
+    }
+
     public function updateAnswer(AttemptAnswer $answer, array $attributes): AttemptAnswer
     {
         $answer->update($attributes);

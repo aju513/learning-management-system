@@ -82,13 +82,14 @@ test('course assessment failures can be retaken and passing completes the requir
     $wrong = $question->options->firstWhere('is_correct', false);
     $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create(['status' => 'active']);
 
-    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $next]))->assertForbidden();
+    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $next]))
+        ->assertOk()->assertSee('Complete the previous required lesson first')->assertSee('Go to previous lesson');
     $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))
         ->assertRedirect();
     $attempt = CourseAssessmentAttempt::firstOrFail();
 
     $this->actingAs($instructor)->get(route('instructor.course-assessments.show', $assessment))
-        ->assertSee('Questions are locked because trainees have already started this assessment.')
+        ->assertSee('Questions are locked because 1 attempt(s) have started this assessment.')
         ->assertDontSee('name="prompt"', false);
 
     $this->actingAs($trainee)->post(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [

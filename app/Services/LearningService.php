@@ -34,11 +34,24 @@ class LearningService
         }
         $index = $materials->search(fn (LearningMaterial $item) => (int) $item->id === (int) $material->id);
         $material = $materials[$index];
+        $completed = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
+        $requiredMaterials = $materials->where('is_required', true);
+        $progress = [
+            'completed' => $requiredMaterials->filter(fn (LearningMaterial $item) => $completed->contains($item->id))->count(),
+            'total' => $requiredMaterials->count(),
+        ];
         if ($enrollment->course->navigation_mode === NavigationMode::Sequential) {
-            $completed = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
-            $locked = $materials->take($index)->contains(fn (LearningMaterial $item) => $item->is_required && ! $completed->contains($item->id));
-            if ($locked) {
-                throw new AuthorizationException('Complete the previous required material first.');
+            $blockingMaterial = $materials->take($index)->first(fn (LearningMaterial $item) => $item->is_required && ! $completed->contains($item->id));
+            if ($blockingMaterial) {
+                return [
+                    'enrollment' => $enrollment,
+                    'material' => $material,
+                    'previous' => $index > 0 ? $materials[$index - 1] : null,
+                    'next' => null,
+                    'locked' => true,
+                    'blockingMaterial' => $blockingMaterial,
+                    'progress' => $progress,
+                ];
             }
         }
         $this->enrollments->touchProgress($enrollment, $material);
@@ -51,6 +64,9 @@ class LearningService
             'material' => $material,
             'previous' => $index > 0 ? $materials[$index - 1] : null,
             'next' => $index < $materials->count() - 1 ? $materials[$index + 1] : null,
+            'locked' => false,
+            'blockingMaterial' => null,
+            'progress' => $progress,
         ];
     }
 

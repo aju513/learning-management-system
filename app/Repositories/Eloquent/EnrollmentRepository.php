@@ -134,14 +134,20 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
                             ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
                     });
             })
-            ->with(['course.category', 'course.instructor', 'course.modules.chapters.materials', 'materialProgress'])->latest('enrolled_at')->get();
+            ->with([
+                'course.category',
+                'course.instructor',
+                'course.modules.chapters.materials.courseAssessment.questions',
+                'course.modules.chapters.materials.courseAssessment.attempts',
+                'materialProgress',
+            ])->latest('enrolled_at')->get();
     }
 
     public function applicationsForTrainee(User $trainee): Collection
     {
         return Enrollment::query()
             ->where('user_id', $trainee->id)
-            ->whereIn('status', ['pending', 'rejected', 'cancelled'])
+            ->whereIn('status', ['pending', 'active', 'completed', 'rejected', 'cancelled'])
             ->with(['course.category', 'course.instructor', 'reviewer'])
             ->latest('requested_at')
             ->get();
@@ -149,7 +155,11 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
 
     public function findForLearning(Enrollment $enrollment): Enrollment
     {
-        return $enrollment->load(['course.modules.chapters.materials.courseAssessment', 'materialProgress']);
+        return $enrollment->load([
+            'course.modules.chapters.materials.courseAssessment.questions',
+            'course.modules.chapters.materials.courseAssessment.attempts',
+            'materialProgress',
+        ]);
     }
 
     public function findForCourseAndTrainee(Course $course, User $trainee): ?Enrollment

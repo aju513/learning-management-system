@@ -199,7 +199,7 @@ class AssessmentService
             'attempt_number' => $attemptCount + 1,
             'status' => AttemptStatus::InProgress,
             'started_at' => now(),
-            'expires_at' => now()->addMinutes($assessment->duration_minutes),
+            'expires_at' => now()->addMinutes((int) $assessment->duration_minutes),
         ]);
         activity('lms')->causedBy($trainee)->performedOn($attempt)->event('assessment-attempt.started')
             ->withProperties(['assessment_id' => $assessment->id, 'attempt_number' => $attempt->attempt_number])->log('Assessment attempt started');
@@ -209,8 +209,12 @@ class AssessmentService
 
     public function submit(AssessmentAttempt $attempt, array $answers, User $trainee): AssessmentAttempt
     {
-        if ($attempt->status !== AttemptStatus::InProgress || (int) $attempt->user_id !== (int) $trainee->id) {
+        if ((int) $attempt->user_id !== (int) $trainee->id) {
             throw new AuthorizationException('This attempt cannot be submitted.');
+        }
+
+        if ($attempt->status !== AttemptStatus::InProgress) {
+            return $this->assessments->findAttemptForTaking($attempt);
         }
 
         return DB::transaction(function () use ($attempt, $answers, $trainee): AssessmentAttempt {
@@ -219,7 +223,7 @@ class AssessmentService
             $total = (float) $attempt->assessment->questions->sum('marks');
             foreach ($attempt->assessment->questions as $question) {
                 if ($question->type === QuestionType::QuestionAnswer) {
-                    $this->assessments->createAnswer([
+                    $this->assessments->upsertAnswer($attempt, $question, [
                         'assessment_attempt_id' => $attempt->id,
                         'assessment_question_id' => $question->id,
                         'selected_option_ids' => null,
@@ -238,7 +242,7 @@ class AssessmentService
                 $isCorrect = $selected === $correct;
                 $marks = $isCorrect ? (float) $question->marks : 0.0;
                 $earned += $marks;
-                $this->assessments->createAnswer([
+                $this->assessments->upsertAnswer($attempt, $question, [
                     'assessment_attempt_id' => $attempt->id,
                     'assessment_question_id' => $question->id,
                     'selected_option_ids' => $selected,
@@ -265,6 +269,31 @@ class AssessmentService
 
             return $attempt;
         });
+    }
+
+    public function saveAnswers(AssessmentAttempt $attempt, array $answers, User $trainee): void
+    {
+        if ($attempt->status !== AttemptStatus::InProgress || (int) $attempt->user_id !== (int) $trainee->id) {
+            throw new AuthorizationException('This attempt is no longer available for saving.');
+        }
+
+        $attempt = $this->assessments->findAttemptForTaking($attempt);
+        foreach ($attempt->assessment->questions as $question) {
+            $key = (string) $question->id;
+            if (! array_key_exists($key, $answers) && ! array_key_exists($question->id, $answers)) {
+                continue;
+            }
+            $answer = $answers[$key] ?? $answers[$question->id];
+            $attributes = $question->type === QuestionType::QuestionAnswer
+                ? ['selected_option_ids' => null, 'text_answer' => trim((string) $answer)]
+                : ['selected_option_ids' => $this->selectedOptionIds($question, $answer), 'text_answer' => null];
+
+            $this->assessments->upsertAnswer($attempt, $question, [
+                ...$attributes,
+                'earned_marks' => 0,
+                'is_correct' => false,
+            ]);
+        }
     }
 
     public function review(AssessmentAttempt $attempt, array $reviews, User $reviewer): AssessmentAttempt
@@ -324,6 +353,14 @@ class AssessmentService
             'is_correct' => in_array($index, $correct, true),
             'position' => $index + 1,
         ])->all();
+    }
+
+    private function selectedOptionIds(AssessmentQuestion $question, mixed $answer): array
+    {
+        $selected = array_values(array_unique(array_map('intval', Arr::wrap($answer))));
+        sort($selected);
+
+        return array_values(array_intersect($selected, $question->options->pluck('id')->map(fn ($id) => (int) $id)->all()));
     }
 
     private function ensureEditable(Assessment $assessment): void

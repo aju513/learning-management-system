@@ -271,7 +271,7 @@ test('material creation and editing use dedicated preview pages and clean incomp
 
 test('publishing requires every module and chapter to contain learning material', function () {
     $instructor = chapterAuthor();
-    $course = Course::factory()->for($instructor, 'instructor')->create();
+    $course = Course::factory()->for($instructor, 'instructor')->create(['thumbnail_path' => 'courses/test-thumbnail.jpg']);
 
     $this->actingAs($instructor)->post(route('instructor.course-modules.store', $course), ['title' => 'Empty module'])->assertRedirect();
     $chapter = $course->modules()->firstOrFail()->chapters()->firstOrFail();
@@ -286,7 +286,7 @@ test('publishing requires every module and chapter to contain learning material'
 
 test('course publishing identifies incomplete assessment questions and links back to the editor', function () {
     $instructor = chapterAuthor();
-    $course = Course::factory()->for($instructor, 'instructor')->create();
+    $course = Course::factory()->for($instructor, 'instructor')->create(['thumbnail_path' => 'courses/test-thumbnail.jpg']);
     $module = CourseModule::factory()->for($course)->create(['title' => 'Module One']);
     $chapter = CourseChapter::factory()->for($module, 'module')->create(['title' => 'Assessment Chapter']);
     $material = LearningMaterial::factory()->for($chapter, 'chapter')->create(['title' => 'Knowledge Check', 'type' => 'course_assessment']);
@@ -362,7 +362,8 @@ test('trainee navigation shows chapters while the catalog keeps a flat module pr
         ->assertDontSee('Private Chapter Alpha')
         ->assertDontSee('Private Chapter Beta');
 
-    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $second]))->assertForbidden();
+    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $second]))
+        ->assertOk()->assertSee('Lesson locked')->assertSee('First item');
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $first]))
         ->assertOk()
         ->assertSee('Private Chapter Alpha')

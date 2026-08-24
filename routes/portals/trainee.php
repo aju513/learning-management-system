@@ -23,11 +23,13 @@ Route::prefix('learning')->name('learning.')->middleware(['auth', 'active', 'can
     Route::get('/enrollments/{enrollment}/materials/{learning_material}/download', [LearningController::class, 'download'])->name('courses.materials.download');
     Route::post('/enrollments/{enrollment}/materials/{learning_material}/course-assessment/start', [CourseAssessmentPlayerController::class, 'start'])->name('courses.materials.course-assessment.start');
     Route::get('/enrollments/{enrollment}/course-assessment-attempts/{course_assessment_attempt}', [CourseAssessmentPlayerController::class, 'show'])->name('course-assessment-attempts.show');
+    Route::patch('/enrollments/{enrollment}/course-assessment-attempts/{course_assessment_attempt}/answers', [CourseAssessmentPlayerController::class, 'save'])->name('course-assessment-attempts.answers.save');
     Route::post('/enrollments/{enrollment}/course-assessment-attempts/{course_assessment_attempt}', [CourseAssessmentPlayerController::class, 'submit'])->name('course-assessment-attempts.submit');
     Route::get('/assessments/applied', [AssessmentPlayerController::class, 'applied'])->name('assessments.applied');
     Route::get('/assessments', [AssessmentPlayerController::class, 'index'])->name('assessments.index');
     Route::post('/assessments/{assessment}/start', [AssessmentPlayerController::class, 'start'])->name('assessments.start');
     Route::get('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'show'])->name('assessments.attempts.show');
+    Route::patch('/assessments/attempts/{assessment_attempt}/answers', [AssessmentPlayerController::class, 'save'])->name('assessments.attempts.answers.save');
     Route::post('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'submit'])->name('assessments.attempts.submit');
     Route::get('/results', [ResultController::class, 'index'])->name('results.index');
     Route::get('/results/{assessment_attempt}', [ResultController::class, 'show'])->name('results.show');

@@ -1,8 +1,9 @@
 @extends('layouts.app')
 @section('content')
     @php
-        $courseGroups = $availableCourses->groupBy(fn ($course) => $course->required_training_key ?: '__all__');
-        $testGroups = $availableTests->groupBy(fn ($test) => $test->required_training_key ?: '__all__');
+        $courseGroups = collect($availableCourses ?? [])->groupBy(fn ($course) => $course->required_training_key ?: '__all__');
+        $testGroups = collect($availableTests ?? [])->groupBy(fn ($test) => $test->required_training_key ?: '__all__');
+        $trainingNames = $trainingNames ?? [];
         $trainingTitle = fn (string $key): string => $key === '__all__' ? __('Available to everyone') : ($trainingNames[$key] ?? __('Required training'));
     @endphp
 
@@ -21,7 +22,7 @@
         <p class="mt-2 max-w-2xl text-sm text-white/80">{{ __('Start a course or test that is available through your training enrollment.') }}</p>
     </div>
 
-    @if(isset($creditAlerts) && $creditAlerts['eligibleCount'] > 0)
+    @if(isset($creditAlerts) && ($creditAlerts['eligibleCount'] ?? 0) > 0 && Route::has('learning.credit-scores.index'))
         <a href="{{ route('learning.credit-scores.index') }}" class="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-warning-200 bg-warning-50 p-5 text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-200">
             <span><span class="block font-semibold">You haven’t claimed all your credit scores.</span><span class="mt-1 block text-sm">{{ number_format($creditAlerts['eligibleTotal'], 2) }} credits are ready to claim for {{ $creditAlerts['fiscalYear']?->name }}.</span></span>
             <span class="rounded-lg bg-warning-500 px-4 py-2 text-sm font-medium text-white">{{ __('Review credits') }}</span>

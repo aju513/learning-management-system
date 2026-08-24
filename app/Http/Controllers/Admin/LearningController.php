@@ -14,6 +14,7 @@ use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Services\LearningService;
 use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -41,9 +42,17 @@ class LearningController extends Controller
         return view('pages.admin.learning.player', $this->service->open($enrollment, $learningMaterial, $request->user()) + ['title' => $learningMaterial->title]);
     }
 
-    public function complete(CompleteLearningMaterialRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): RedirectResponse
+    public function complete(CompleteLearningMaterialRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): RedirectResponse|JsonResponse
     {
         $result = $this->service->complete($enrollment, $learningMaterial, $request->user());
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'completed' => true,
+                'progress_percentage' => (float) $result['enrollment']->progress_percentage,
+                'status' => $result['enrollment']->status->value,
+            ]);
+        }
 
         $redirect = back()->with('success', 'Material marked complete.');
         if ($result['creditAward']) {

@@ -75,6 +75,8 @@ interface AssessmentRepositoryInterface
 
     public function createAnswer(array $attributes): AttemptAnswer;
 
+    public function upsertAnswer(AssessmentAttempt $attempt, AssessmentQuestion $question, array $attributes): AttemptAnswer;
+
     public function updateAnswer(AttemptAnswer $answer, array $attributes): AttemptAnswer;
 
     public function updateAttempt(AssessmentAttempt $attempt, array $attributes): AssessmentAttempt;

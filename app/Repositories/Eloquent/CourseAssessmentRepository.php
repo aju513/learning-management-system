@@ -129,4 +129,12 @@ class CourseAssessmentRepository implements CourseAssessmentRepositoryInterface
     {
         return CourseAssessmentAnswer::query()->create($attributes);
     }
+
+    public function upsertAnswer(CourseAssessmentAttempt $attempt, CourseAssessmentQuestion $question, array $attributes): CourseAssessmentAnswer
+    {
+        return CourseAssessmentAnswer::query()->updateOrCreate(
+            ['course_assessment_attempt_id' => $attempt->id, 'course_assessment_question_id' => $question->id],
+            $attributes,
+        );
+    }
 }

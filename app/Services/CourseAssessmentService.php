@@ -112,8 +112,12 @@ class CourseAssessmentService
 
     public function submit(CourseAssessmentAttempt $attempt, array $answers, Enrollment $enrollment, User $trainee): CourseAssessmentAttempt
     {
-        if ((int) $attempt->user_id !== (int) $trainee->id || $attempt->status !== 'in_progress') {
+        if ((int) $attempt->user_id !== (int) $trainee->id) {
             throw new AuthorizationException('This course assessment attempt cannot be submitted.');
+        }
+
+        if ($attempt->status !== 'in_progress') {
+            return $this->courseAssessments->findAttemptForTaking($attempt);
         }
 
         return DB::transaction(function () use ($attempt, $answers, $enrollment, $trainee): CourseAssessmentAttempt {
@@ -130,7 +134,7 @@ class CourseAssessmentService
                 $isCorrect = $selected === $correct;
                 $marks = $isCorrect ? (float) $question->marks : 0.0;
                 $earned += $marks;
-                $this->courseAssessments->createAnswer([
+                $this->courseAssessments->upsertAnswer($attempt, $question, [
                     'course_assessment_attempt_id' => $attempt->id,
                     'course_assessment_question_id' => $question->id,
                     'selected_option_ids' => $selected,
@@ -158,6 +162,30 @@ class CourseAssessmentService
 
             return $attempt;
         });
+    }
+
+    public function saveAnswers(CourseAssessmentAttempt $attempt, array $answers, User $trainee): void
+    {
+        if ((int) $attempt->user_id !== (int) $trainee->id || $attempt->status !== 'in_progress') {
+            throw new AuthorizationException('This course assessment attempt is no longer available for saving.');
+        }
+
+        $attempt = $this->courseAssessments->findAttemptForTaking($attempt);
+        foreach ($attempt->courseAssessment->questions as $question) {
+            $key = (string) $question->id;
+            if (! array_key_exists($key, $answers) && ! array_key_exists($question->id, $answers)) {
+                continue;
+            }
+            $answer = $answers[$key] ?? $answers[$question->id];
+            $selected = array_values(array_unique(array_map('intval', Arr::wrap($answer))));
+            sort($selected);
+            $validOptionIds = $question->options->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $this->courseAssessments->upsertAnswer($attempt, $question, [
+                'selected_option_ids' => array_values(array_intersect($selected, $validOptionIds)),
+                'earned_marks' => 0,
+                'is_correct' => false,
+            ]);
+        }
     }
 
     private function ensureEditable(CourseAssessment $assessment): void
