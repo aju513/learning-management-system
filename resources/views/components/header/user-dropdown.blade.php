@@ -5,7 +5,7 @@
         </span>
         <span class="hidden lg:block">
             <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ auth()->user()->name }}</span>
-            <span class="block text-xs text-gray-500">{{ auth()->user()->roles->pluck('name')->join(', ') }}</span>
+            <span class="block text-xs text-gray-500">{{ auth()->user()->roles->map(fn ($role) => \App\Enums\SystemRole::tryFrom($role->name)?->label() ?? $role->name)->join(', ') }}</span>
         </span>
         <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg>
     </button>
@@ -14,11 +14,11 @@
             <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ auth()->user()->name }}</p>
             <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
         </div>
-        <a href="{{ route('account.profile.edit') }}" class="mt-2 flex rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">My profile</a>
-        <a href="{{ route('account.password.edit') }}" class="flex rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">Change password</a>
+        <a href="{{ route('account.profile.edit') }}" class="mt-2 flex rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">{{ __('My profile') }}</a>
+        <a href="{{ route('account.password.edit') }}" class="flex rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">{{ __('Change password') }}</a>
         <form method="POST" action="{{ route('logout') }}" class="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
             @csrf
-            <button type="submit" class="flex w-full rounded-lg px-3 py-2 text-sm text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10">Sign out</button>
+            <button type="submit" class="flex w-full rounded-lg px-3 py-2 text-sm text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10">{{ __('Sign out') }}</button>
         </form>
     </div>
 </div>

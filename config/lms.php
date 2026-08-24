@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'course_assessment_min_questions' => 10,
+
     'demo_login' => [
         'enabled' => env('LMS_DEMO_LOGIN_ENABLED', env('APP_ENV') === 'local'),
         'accounts' => [
@@ -28,11 +30,14 @@ return [
             'users.manage', 'users.show', 'users.create', 'users.edit', 'users.delete', 'users.change-status', 'users.assign-roles',
             'users.manage-instructors', 'users.manage-trainees',
             'courses.manage', 'courses.show', 'courses.view-all',
+            'course-categories.manage', 'course-categories.create', 'course-categories.edit', 'course-categories.delete',
+            'fiscal-years.manage', 'fiscal-years.show', 'fiscal-years.create', 'fiscal-years.edit', 'fiscal-years.delete',
             'enrollments.manage', 'enrollments.create', 'enrollments.delete',
             'course-applications.review-all',
             'assessments.manage', 'assessments.show', 'assessments.view-all', 'assessments.create', 'assessments.edit', 'assessments.edit-any',
             'assessments.delete', 'assessments.publish', 'assessments.assign', 'assessments.import', 'assessments.reorder',
             'results.manage', 'results.view-all', 'results.grade-any', 'reports.view',
+            'credit-scores.view-all',
         ],
         'instructor' => [
             'portals.instructor.access', 'dashboard.view',

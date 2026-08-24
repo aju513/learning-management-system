@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Course player' }} | {{ config('app.name') }}</title>
+    <title>{{ __($title ?? 'Course player') }} | {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
         (function () {
@@ -16,6 +16,7 @@
 </head>
 
 <body class="min-h-full bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-white">
+    <div class="fixed right-4 top-4 z-50"><x-common.locale-switcher /></div>
     @if (session('success'))
         <div class="fixed left-1/2 top-5 z-50 w-[min(92vw,520px)] -translate-x-1/2 rounded-xl border border-success-500/30 bg-success-50 px-4 py-3 text-sm text-success-700 shadow-theme-lg dark:bg-success-500/15 dark:text-success-400">
             {{ session('success') }}

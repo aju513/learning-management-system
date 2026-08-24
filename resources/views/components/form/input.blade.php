@@ -24,7 +24,7 @@
         name="{{ $name }}"
         type="{{ $type }}"
         value="{{ $currentValue }}"
-        @if($placeholder) placeholder="{{ $placeholder }}" @endif
+        @if($placeholder) placeholder="{{ __($placeholder) }}" @endif
         @if($autocomplete) autocomplete="{{ $autocomplete }}" @endif
         @required($required)
         @disabled($disabled)

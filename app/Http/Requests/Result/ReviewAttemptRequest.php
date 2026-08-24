@@ -11,7 +11,7 @@ class ReviewAttemptRequest extends FormRequest
         $attempt = $this->route('assessment_attempt');
         $user = $this->user();
 
-        return (bool) ($user?->can('results.grade-any') || ($user?->can('results.grade-owned') && $attempt->assessment->created_by === $user->id));
+        return (bool) ($user?->can('results.grade-any') || ($user?->can('results.grade-owned') && (int) $attempt->assessment->created_by === (int) $user->id));
     }
 
     public function rules(): array

@@ -111,7 +111,7 @@ test('standalone assessments are filtered and blocked by training eligibility', 
 test('course assessments inherit the parent course training restriction', function () {
     $instructor = trainingAvailabilityUser('instructor');
     $trainee = trainingAvailabilityUser('trainee');
-    $course = Course::factory()->for($instructor, 'instructor')->create([
+    $course = Course::factory()->published()->for($instructor, 'instructor')->create([
         'availability_scope' => 'training',
         'required_training_key' => 'workplace-safety',
     ]);

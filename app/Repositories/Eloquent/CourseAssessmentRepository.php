@@ -36,7 +36,11 @@ class CourseAssessmentRepository implements CourseAssessmentRepositoryInterface
 
     public function findForManagement(CourseAssessment $assessment): CourseAssessment
     {
-        return $assessment->load(['material.chapter.module.course', 'questions.options'])->loadCount('attempts');
+        return $assessment->load(['material.chapter.module.course', 'questions.options'])
+            ->loadCount([
+                'attempts',
+                'attempts as started_attempts' => fn ($query) => $query->whereNotNull('started_at'),
+            ]);
     }
 
     public function hasAttempts(CourseAssessment $assessment): bool

@@ -118,6 +118,7 @@ test('portal navigation is fixed per role instead of accumulating shared menu it
         return [$role => $user];
     });
     $superAdminNavigation = collect($navigation->forUser($users['super-admin']));
+    $adminNavigation = collect($navigation->forUser($users['admin']));
 
     expect($superAdminNavigation->pluck('label')->all())->toBe(['Dashboard', 'User Management', 'Course Overview', 'Test Overview', 'System Settings', 'Reports', 'Activity Log'])
         ->and(collect($superAdminNavigation->firstWhere('label', 'Course Overview')['children'])->map(fn (array $item): array => ['key' => $item['key'], 'label' => $item['label']])->all())->toBe([
@@ -132,10 +133,14 @@ test('portal navigation is fixed per role instead of accumulating shared menu it
         ->and(collect($superAdminNavigation->firstWhere('label', 'System Settings')['children'])->map(fn (array $item): array => ['key' => $item['key'], 'label' => $item['label']])->all())->toBe([
             ['key' => 'fiscal-years', 'label' => 'Fiscal Years'],
             ['key' => 'categories', 'label' => 'Categories'],
+            ['key' => 'credit-scores', 'label' => 'Credit Score Viewer'],
         ])
         ->and($superAdminNavigation->flatMap(fn (array $item): array => $item['children'] ?? [])->pluck('label')->all())->not->toContain('Access Matrix')
-        ->and(collect($navigation->forUser($users['admin']))->pluck('label')->all())->toContain('People', 'Enrollments', 'Reports')
-        ->and(collect($navigation->forUser($users['admin']))->pluck('label')->all())->not->toContain('My Learning', 'My Courses')
+        ->and($adminNavigation->pluck('label')->all())->toBe(['Dashboard', 'People', 'Course Overview', 'Test Overview', 'System Settings', 'Reports'])
+        ->and($adminNavigation->firstWhere('label', 'Course Overview')['children'])->toHaveCount(4)
+        ->and($adminNavigation->firstWhere('label', 'Test Overview')['children'])->toHaveCount(4)
+        ->and(collect($adminNavigation->firstWhere('label', 'System Settings')['children'])->pluck('label')->all())->toBe(['Categories', 'Fiscal Years', 'Credit Score Viewer'])
+        ->and($adminNavigation->pluck('label')->all())->not->toContain('My Learning', 'My Courses')
         ->and(collect($navigation->forUser($users['instructor']))->pluck('label')->all())->toContain('My Courses', 'My Trainees')
         ->and(collect($navigation->forUser($users['trainee']))->pluck('label')->all())->toBe(['Overview', 'Courses', 'Tests', 'Credit Scores'])
         ->and(collect($navigation->forUser($users['trainee']))->pluck('label')->all())->not->toContain('Enrollments', 'User Management');
@@ -157,4 +162,18 @@ test('the Super Admin oversight screens render without learner features', functi
 
     $this->actingAs($superAdmin)->get(route('learning.catalog.index'))->assertForbidden();
     expect(Route::has('admin.roles.create'))->toBeFalse();
+});
+
+test('Admins can access course and test reports plus system settings', function () {
+    $this->artisan('admin:permissions-sync')->assertSuccessful();
+    $admin = User::factory()->create();
+    $admin->syncRoles(['admin']);
+
+    foreach ([
+        route('admin.courses.index'), route('admin.enrollments.index'), route('admin.assessments.index'),
+        route('admin.course-reports.index'), route('admin.test-reports.index'), route('admin.course-categories.index'),
+        route('admin.fiscal-years.index'),
+    ] as $url) {
+        $this->actingAs($admin)->get($url)->assertOk();
+    }
 });

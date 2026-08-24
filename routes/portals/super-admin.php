@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\CourseCategoryController;
 use App\Http\Controllers\Admin\CourseChapterController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\CourseModuleController;
+use App\Http\Controllers\Admin\CreditScoreController;
 use App\Http\Controllers\Admin\EnrollmentController;
 use App\Http\Controllers\Admin\FiscalYearController;
 use App\Http\Controllers\Admin\LearningMaterialController;
@@ -50,6 +51,7 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'active'
     Route::put('/courses/{course}', [CourseController::class, 'update'])->name('courses.update');
     Route::patch('/courses/{course}/status', [CourseController::class, 'status'])->name('courses.status');
     Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
+    Route::get('/courses/{course}/preview', [CourseController::class, 'preview'])->name('courses.preview');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::post('/courses/{course}/modules', [CourseModuleController::class, 'store'])->name('course-modules.store');
     Route::patch('/courses/{course}/modules/reorder', [CourseModuleController::class, 'reorder'])->name('course-modules.reorder');
@@ -117,6 +119,8 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'active'
     Route::get('/results/{assessment_attempt}', [ResultController::class, 'show'])->name('results.show');
     Route::patch('/results/{assessment_attempt}/review', [ResultController::class, 'review'])->name('results.review');
     Route::get('/reports', ReportController::class)->name('reports.index');
+    Route::get('/credit-scores', [CreditScoreController::class, 'viewer'])
+        ->middleware('can:credit-scores.view-all')->name('credit-scores.index');
     Route::get('/access-matrix', PermissionController::class)->name('access-matrix.index');
     Route::get('/activity-log', ActivityLogController::class)->name('activity.index');
 });

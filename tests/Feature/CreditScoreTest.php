@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Assessment;
+use App\Models\AssessmentAttempt;
 use App\Models\Course;
 use App\Models\CreditAward;
 use App\Models\Enrollment;
@@ -52,6 +53,18 @@ test('trainees can refresh attendance and claim the annual attendance award', fu
     $award = CreditAward::firstOrFail();
     $this->actingAs($trainee)->post(route('learning.credit-scores.claim', $award))->assertRedirect();
     expect($award->refresh()->status->value)->toBe('claimed');
+});
+
+test('trainee dashboard renders the credit summary header', function () {
+    $trainee = creditPortalUser('trainee');
+    FiscalYear::factory()->create([
+        'name' => 'FY 2026', 'starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active',
+    ]);
+
+    $this->actingAs($trainee)->get(route('learning.dashboard'))
+        ->assertOk()
+        ->assertSee('FY 2026')
+        ->assertSee('0.00 credits');
 });
 
 test('course completion credit is created only once for a learner and fiscal year', function () {
@@ -130,4 +143,53 @@ test('a trainee cannot claim another trainee credit award', function () {
     $award = CreditAward::factory()->create(['fiscal_year_id' => $fiscalYear->id, 'user_id' => $other->id]);
 
     $this->actingAs($trainee)->post(route('learning.credit-scores.claim', $award))->assertForbidden();
+});
+
+test('admins and super admins can review a trainee fiscal-year credit breakdown', function () {
+    $admin = creditPortalUser('admin');
+    $superAdmin = creditPortalUser('super-admin');
+    $trainee = creditPortalUser('trainee');
+    $fiscalYear = FiscalYear::factory()->create([
+        'name' => 'FY 2026', 'starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active',
+    ]);
+    $course = Course::factory()->published()->create(['title' => 'Leadership Essentials']);
+    Enrollment::factory()->create([
+        'course_id' => $course->id, 'user_id' => $trainee->id, 'status' => 'completed',
+        'enrolled_at' => '2026-02-01', 'completed_at' => '2026-03-01',
+    ]);
+    CreditAward::factory()->create([
+        'fiscal_year_id' => $fiscalYear->id, 'user_id' => $trainee->id, 'course_id' => $course->id,
+        'source_type' => 'course_completion', 'source_key' => 'course:'.$course->id,
+        'source_label' => $course->title, 'points' => 5, 'status' => 'claimed', 'claimed_at' => '2026-03-01',
+    ]);
+    $assessment = Assessment::factory()->published()->create(['title' => 'Leadership Quiz', 'credit_points' => 3]);
+    AssessmentAttempt::query()->create([
+        'assessment_id' => $assessment->id, 'user_id' => $trainee->id, 'attempt_number' => 1,
+        'status' => 'graded', 'started_at' => '2026-04-01 09:00:00', 'submitted_at' => '2026-04-01 09:20:00',
+        'earned_marks' => 8, 'total_marks' => 10, 'score_percentage' => 80, 'passed' => true,
+    ]);
+    CreditAward::factory()->create([
+        'fiscal_year_id' => $fiscalYear->id, 'user_id' => $trainee->id, 'assessment_id' => $assessment->id,
+        'source_type' => 'assessment_pass', 'source_key' => 'assessment:'.$assessment->id,
+        'source_label' => $assessment->title, 'points' => 3, 'status' => 'eligible',
+    ]);
+
+    $this->actingAs($admin)->get(route('admin.credit-scores.index', [
+        'fiscal_year_id' => $fiscalYear->id, 'trainee_id' => $trainee->id, 'tab' => 'courses',
+    ]))->assertOk()->assertSee('Leadership Essentials')->assertSee('5.00');
+
+    $this->actingAs($superAdmin)->get(route('super-admin.credit-scores.index', [
+        'fiscal_year_id' => $fiscalYear->id, 'trainee_id' => $trainee->id, 'tab' => 'quizzes',
+    ]))->assertOk()->assertSee('Leadership Quiz')->assertSee('Passed')->assertSee('3.00');
+
+    $this->actingAs($admin)->get(route('admin.credit-scores.index', [
+        'fiscal_year_id' => $fiscalYear->id, 'trainee_id' => $trainee->id, 'tab' => 'overall',
+    ]))->assertOk()->assertSee('Overall')->assertSee('8.00')->assertSee('Claimed');
+});
+
+test('credit score viewer is restricted to staff with the all-trainee permission', function () {
+    $trainee = creditPortalUser('trainee');
+    $fiscalYear = FiscalYear::factory()->create();
+
+    $this->actingAs($trainee)->get(route('admin.credit-scores.index', ['fiscal_year_id' => $fiscalYear->id]))->assertForbidden();
 });

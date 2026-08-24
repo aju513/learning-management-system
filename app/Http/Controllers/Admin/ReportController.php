@@ -15,4 +15,14 @@ class ReportController extends Controller
     {
         return view('pages.admin.reports.index', $this->service->overview() + ['title' => 'LMS Reports']);
     }
+
+    public function courses(IndexReportRequest $request): View
+    {
+        return view('pages.admin.reports.courses', $this->service->courseReports() + ['title' => 'Course Reports']);
+    }
+
+    public function tests(IndexReportRequest $request): View
+    {
+        return view('pages.admin.reports.tests', $this->service->testReports() + ['title' => 'Test Reports']);
+    }
 }

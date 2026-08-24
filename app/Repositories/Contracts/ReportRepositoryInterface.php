@@ -15,4 +15,8 @@ interface ReportRepositoryInterface
     public function traineeDashboard(User $trainee): array;
 
     public function reports(): array;
+
+    public function courseReports(): array;
+
+    public function testReports(): array;
 }

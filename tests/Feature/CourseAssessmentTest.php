@@ -25,7 +25,7 @@ function assessmentPortalUser(string $role): User
 
 function courseAssessmentMaterial(User $instructor): array
 {
-    $course = Course::factory()->for($instructor, 'instructor')->create(['navigation_mode' => 'sequential']);
+    $course = Course::factory()->published()->for($instructor, 'instructor')->create(['navigation_mode' => 'sequential']);
     $module = CourseModule::factory()->for($course)->create();
     $chapter = CourseChapter::factory()->for($module, 'module')->create();
     $material = LearningMaterial::factory()->for($chapter, 'chapter')->create([
@@ -41,11 +41,14 @@ function courseAssessmentMaterial(User $instructor): array
 
 test('instructors can author only choice-based course assessment questions', function () {
     $instructor = assessmentPortalUser('instructor');
-    [, , $assessment] = courseAssessmentMaterial($instructor);
+    [$course, , $assessment] = courseAssessmentMaterial($instructor);
 
-    $this->actingAs($instructor)->get(route('instructor.course-assessments.show', $assessment))
-        ->assertOk()
-        ->assertSee('Multiple-choice questions');
+    $assessmentPage = $this->actingAs($instructor)->get(route('instructor.course-assessments.show', $assessment));
+    $assessmentPage->assertOk()
+        ->assertSee('Multiple-choice questions')
+        ->assertSee('Add question')
+        ->assertDontSee('Questions are locked because trainees have already started this assessment.')
+        ->assertSee(route('instructor.courses.show', $course).'#chapter-'.$assessment->material->chapter->id, false);
 
     $response = $this->actingAs($instructor)->post(route('instructor.course-assessment-questions.store', $assessment), [
         'prompt' => 'Which answers are valid?',
@@ -83,6 +86,10 @@ test('course assessment failures can be retaken and passing completes the requir
     $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))
         ->assertRedirect();
     $attempt = CourseAssessmentAttempt::firstOrFail();
+
+    $this->actingAs($instructor)->get(route('instructor.course-assessments.show', $assessment))
+        ->assertSee('Questions are locked because trainees have already started this assessment.')
+        ->assertDontSee('name="prompt"', false);
 
     $this->actingAs($trainee)->post(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
         'answers' => [$question->id => $wrong->id],

@@ -9,12 +9,15 @@ use Illuminate\View\Component;
 
 class CreditSummary extends Component
 {
-    public function __construct(private readonly CreditScoreService $service) {}
+    public array $summary;
+
+    public function __construct(CreditScoreService $service)
+    {
+        $this->summary = $service->navbarSummary(auth()->user());
+    }
 
     public function render(): View|Closure|string
     {
-        return view('components.header.credit-summary', [
-            'summary' => $this->service->navbarSummary(auth()->user()),
-        ]);
+        return view('components.header.credit-summary');
     }
 }

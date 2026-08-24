@@ -10,6 +10,6 @@ enum FiscalYearStatus: string
 
     public function label(): string
     {
-        return ucfirst($this->value);
+        return __(ucfirst($this->value));
     }
 }

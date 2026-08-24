@@ -10,10 +10,10 @@ enum CreditSourceType: string
 
     public function label(): string
     {
-        return match ($this) {
+        return __(match ($this) {
             self::Attendance => 'Attendance',
             self::CourseCompletion => 'Course completion',
             self::AssessmentPass => 'Passed test',
-        };
+        });
     }
 }

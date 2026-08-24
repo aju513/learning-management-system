@@ -9,6 +9,6 @@ enum CreditAwardStatus: string
 
     public function label(): string
     {
-        return $this === self::Eligible ? 'Ready to claim' : 'Claimed';
+        return __($this === self::Eligible ? 'Ready to claim' : 'Claimed');
     }
 }

@@ -11,12 +11,12 @@ enum SystemRole: string
 
     public function label(): string
     {
-        return match ($this) {
+        return __(match ($this) {
             self::SuperAdmin => 'Super Admin',
             self::Admin => 'Admin',
             self::Instructor => 'Instructor',
             self::Trainee => 'Trainee',
-        };
+        });
     }
 
     public function portalPermission(): string

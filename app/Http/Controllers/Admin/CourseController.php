@@ -8,6 +8,7 @@ use App\Http\Requests\Course\ChangeCourseStatusRequest;
 use App\Http\Requests\Course\DeleteCourseRequest;
 use App\Http\Requests\Course\EditCourseRequest;
 use App\Http\Requests\Course\IndexCourseRequest;
+use App\Http\Requests\Course\PreviewCourseRequest;
 use App\Http\Requests\Course\ShowCourseRequest;
 use App\Http\Requests\Course\StoreCourseRequest;
 use App\Http\Requests\Course\UpdateCourseRequest;
@@ -49,8 +50,20 @@ class CourseController extends Controller
 
     public function show(ShowCourseRequest $request, Course $course): View
     {
+        $course = $this->courses->findCourseDetails($course);
+
         return view('pages.admin.courses.show', [
-            'course' => $this->courses->findCourseDetails($course), 'title' => $course->title,
+            'course' => $course,
+            'publishIssues' => $this->service->publishingIssues($course),
+            'title' => $course->title,
+        ]);
+    }
+
+    public function preview(PreviewCourseRequest $request, Course $course): View
+    {
+        return view('pages.admin.courses.preview', [
+            'course' => $this->service->previewCourse($course),
+            'title' => 'Course preview',
         ]);
     }
 

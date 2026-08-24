@@ -20,6 +20,7 @@ return [
         ['key' => 'system-settings', 'label' => 'System Settings', 'icon' => 'system', 'order' => 50, 'children' => [
             ['key' => 'fiscal-years', 'label' => 'Fiscal Years', 'route' => 'super-admin.fiscal-years.index', 'permission' => 'fiscal-years.manage', 'order' => 10],
             ['key' => 'categories', 'label' => 'Categories', 'route' => 'super-admin.course-categories.index', 'permission' => 'course-categories.manage', 'order' => 20],
+            ['key' => 'credit-scores', 'label' => 'Credit Score Viewer', 'route' => 'super-admin.credit-scores.index', 'permission' => 'credit-scores.view-all', 'order' => 30],
         ]],
         ['key' => 'reports', 'label' => 'Reports', 'icon' => 'activity-log', 'route' => 'super-admin.reports.index', 'permission' => 'reports.view', 'order' => 60],
         ['key' => 'activity', 'label' => 'Activity Log', 'icon' => 'activity-log', 'route' => 'super-admin.activity.index', 'permission' => 'activity-log.view', 'order' => 70],
@@ -30,14 +31,24 @@ return [
             ['key' => 'instructors', 'label' => 'Instructors', 'route' => 'admin.instructors.index', 'permission' => 'users.manage-instructors', 'order' => 10],
             ['key' => 'trainees', 'label' => 'Trainees', 'route' => 'admin.trainees.index', 'permission' => 'users.manage-trainees', 'order' => 20],
         ]],
-        ['key' => 'courses', 'label' => 'Courses', 'icon' => 'dashboard', 'route' => 'admin.courses.index', 'permission' => 'courses.manage', 'order' => 30],
-        ['key' => 'applications', 'label' => 'Applications', 'icon' => 'users', 'route' => 'admin.applications.index', 'permission' => 'course-applications.review-all', 'order' => 40],
-        ['key' => 'enrollments', 'label' => 'Enrollments', 'icon' => 'users', 'route' => 'admin.enrollments.index', 'permission' => 'enrollments.manage', 'order' => 50],
-        ['key' => 'assessments', 'label' => 'Assessments', 'icon' => 'permissions', 'order' => 60, 'children' => [
-            ['key' => 'tests', 'label' => 'Quizzes', 'route' => 'admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 10],
-            ['key' => 'results', 'label' => 'Results', 'route' => 'admin.results.index', 'permission' => 'results.manage', 'order' => 20],
+        ['key' => 'course-overview', 'label' => 'Course Overview', 'icon' => 'dashboard', 'order' => 30, 'children' => [
+            ['key' => 'courses', 'label' => 'Courses', 'route' => 'admin.courses.index', 'permission' => 'courses.manage', 'order' => 10],
+            ['key' => 'applications', 'label' => 'Applications', 'route' => 'admin.applications.index', 'permission' => 'course-applications.review-all', 'order' => 20],
+            ['key' => 'enrollments', 'label' => 'Enrollments', 'route' => 'admin.enrollments.index', 'permission' => 'enrollments.manage', 'order' => 30],
+            ['key' => 'course-reports', 'label' => 'Course Reports', 'route' => 'admin.course-reports.index', 'permission' => 'reports.view', 'order' => 40],
         ]],
-        ['key' => 'reports', 'label' => 'Reports', 'icon' => 'activity-log', 'route' => 'admin.reports.index', 'permission' => 'reports.view', 'order' => 70],
+        ['key' => 'test-overview', 'label' => 'Test Overview', 'icon' => 'permissions', 'order' => 40, 'children' => [
+            ['key' => 'create-tests', 'label' => 'Create Tests', 'route' => 'admin.assessments.create', 'permission' => 'assessments.create', 'order' => 10],
+            ['key' => 'tests', 'label' => 'Tests', 'route' => 'admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 20],
+            ['key' => 'results', 'label' => 'Results', 'route' => 'admin.results.index', 'permission' => 'results.manage', 'order' => 30],
+            ['key' => 'test-reports', 'label' => 'Test Reports', 'route' => 'admin.test-reports.index', 'permission' => 'reports.view', 'order' => 40],
+        ]],
+        ['key' => 'system-settings', 'label' => 'System Settings', 'icon' => 'system', 'order' => 50, 'children' => [
+            ['key' => 'categories', 'label' => 'Categories', 'route' => 'admin.course-categories.index', 'permission' => 'course-categories.manage', 'order' => 10],
+            ['key' => 'fiscal-years', 'label' => 'Fiscal Years', 'route' => 'admin.fiscal-years.index', 'permission' => 'fiscal-years.manage', 'order' => 20],
+            ['key' => 'credit-scores', 'label' => 'Credit Score Viewer', 'route' => 'admin.credit-scores.index', 'permission' => 'credit-scores.view-all', 'order' => 30],
+        ]],
+        ['key' => 'reports', 'label' => 'Reports', 'icon' => 'activity-log', 'route' => 'admin.reports.index', 'permission' => 'reports.view', 'order' => 60],
     ],
     'instructor' => [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'instructor.dashboard', 'permission' => 'portals.instructor.access', 'order' => 10],

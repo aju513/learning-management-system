@@ -130,6 +130,7 @@ class CourseRepository implements CourseRepositoryInterface
             'category',
             'instructor',
             'modules.chapters.materials:id,course_chapter_id,title,type,duration_minutes,position',
+            'modules.chapters.materials.courseAssessment:id,learning_material_id',
             'enrollments' => fn ($query) => $query->where('user_id', $trainee->id),
         ]);
     }
@@ -172,7 +173,11 @@ class CourseRepository implements CourseRepositoryInterface
 
     public function findCourseDetails(Course $course): Course
     {
-        return $course->load(['category', 'instructor', 'modules.chapters.images', 'modules.chapters.materials.courseAssessment', 'modules.chapters.materials.images'])
+        return $course->load([
+            'category', 'instructor', 'modules.chapters.images',
+            'modules.chapters.materials.courseAssessment.questions.options',
+            'modules.chapters.materials.images',
+        ])
             ->loadCount('enrollments');
     }
 

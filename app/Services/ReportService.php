@@ -12,4 +12,14 @@ class ReportService
     {
         return $this->reports->reports();
     }
+
+    public function courseReports(): array
+    {
+        return $this->reports->courseReports();
+    }
+
+    public function testReports(): array
+    {
+        return $this->reports->testReports();
+    }
 }

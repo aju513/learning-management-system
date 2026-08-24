@@ -11,7 +11,7 @@
     </form>
     <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         @forelse ($courses as $course)
-            @php($application = $course->enrollments->first())
+            @php($application = $course->enrollments->firstWhere('course_id', $course->id))
             <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 @if ($course->thumbnail_path)
                     <img src="{{ Storage::disk('public')->url($course->thumbnail_path) }}" alt="" class="h-40 w-full object-cover">

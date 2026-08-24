@@ -2,6 +2,7 @@
 
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\CourseAssessment;
 use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
@@ -50,6 +51,44 @@ test('Trainees see published courses and submit one pending application', functi
 
     $this->actingAs($trainee)->post(route('learning.applications.store', $published))->assertSessionHasErrors('course');
     expect(Enrollment::whereBelongsTo($published)->whereBelongsTo($trainee, 'trainee')->count())->toBe(1);
+});
+
+test('My Learning excludes active enrollments for draft courses and identifies enrollment URLs', function () {
+    $instructor = applicationUser('instructor');
+    $trainee = applicationUser('trainee');
+    [$published, $publishedMaterial] = catalogCourse($instructor);
+    [$draft, $draftMaterial] = catalogCourse($instructor);
+    $draft->update(['status' => 'draft', 'published_at' => null]);
+
+    $publishedEnrollment = Enrollment::factory()->for($published)->for($trainee, 'trainee')->create(['status' => 'active']);
+    $draftEnrollment = Enrollment::factory()->for($draft)->for($trainee, 'trainee')->create(['status' => 'active']);
+
+    $response = $this->actingAs($trainee)->get(route('learning.courses.index'));
+    $response->assertOk()->assertSee($published->title)->assertDontSee($draft->title);
+
+    $player = $this->actingAs($trainee)->get(route('learning.courses.player', $publishedEnrollment));
+    $player->assertOk()->assertSee(route('learning.courses.materials.show', [$publishedEnrollment, $publishedMaterial]), false);
+
+    $this->actingAs($trainee)->get(route('learning.courses.player', $draftEnrollment))->assertForbidden();
+    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$publishedEnrollment, $draftMaterial]))->assertForbidden();
+});
+
+test('catalog labels course assessment materials consistently and assignment selects show course titles', function () {
+    $admin = applicationUser('admin');
+    $instructor = applicationUser('instructor');
+    $trainee = applicationUser('trainee');
+    [$course, $material] = catalogCourse($instructor);
+    $material->update(['type' => 'article', 'title' => 'Good Governance Knowledge Check']);
+    CourseAssessment::create(['learning_material_id' => $material->id]);
+
+    $this->actingAs($trainee)->get(route('learning.catalog.show', $course))
+        ->assertOk()
+        ->assertSee('Good Governance Knowledge Check')
+        ->assertSee('Course assessment')
+        ->assertDontSee('course_assessment');
+
+    $this->actingAs($admin)->get(route('admin.enrollments.index'))
+        ->assertOk()->assertSee($course->title);
 });
 
 test('pending applications do not grant learning or standalone quiz access', function () {

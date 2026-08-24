@@ -11,7 +11,8 @@ class LaunchCourseRequest extends FormRequest
         $enrollment = $this->route('enrollment');
 
         return (bool) ($this->user()?->can('learning.view')
-            && $enrollment->user_id === $this->user()->id
+            && $enrollment->course?->isPublished()
+            && (int) $enrollment->user_id === (int) $this->user()->id
             && $enrollment->status->grantsLearningAccess());
     }
 

@@ -26,12 +26,13 @@ class LearningService
     public function open(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->assertPublishedCourse($enrollment);
         $this->availability->assertAvailable($enrollment->course, $trainee);
         $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
         if (! $materials->contains('id', $material->id)) {
             throw new AuthorizationException('This material is not part of the enrolled course.');
         }
-        $index = $materials->search(fn (LearningMaterial $item) => $item->id === $material->id);
+        $index = $materials->search(fn (LearningMaterial $item) => (int) $item->id === (int) $material->id);
         $material = $materials[$index];
         if ($enrollment->course->navigation_mode === NavigationMode::Sequential) {
             $completed = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
@@ -56,6 +57,7 @@ class LearningService
     public function launch(Enrollment $enrollment, User $trainee): array
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->assertPublishedCourse($enrollment);
         $this->availability->assertAvailable($enrollment->course, $trainee);
         $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
         abort_unless($materials->isNotEmpty(), 404);
@@ -69,6 +71,7 @@ class LearningService
     public function complete(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->assertPublishedCourse($enrollment);
         $this->availability->assertAvailable($enrollment->course, $trainee);
 
         if ($material->type === MaterialType::CourseAssessment && (! $material->courseAssessment || ! $this->courseAssessments->hasPassed($material->courseAssessment, $trainee))) {
@@ -107,5 +110,12 @@ class LearningService
         }
 
         return $enrollment;
+    }
+
+    private function assertPublishedCourse(Enrollment $enrollment): void
+    {
+        if (! $enrollment->course->isPublished()) {
+            throw new AuthorizationException('This course is no longer available for learning.');
+        }
     }
 }

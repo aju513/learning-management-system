@@ -22,7 +22,7 @@
         id="{{ $id }}"
         name="{{ $name }}"
         rows="{{ $rows }}"
-        @if($placeholder) placeholder="{{ $placeholder }}" @endif
+        @if($placeholder) placeholder="{{ __($placeholder) }}" @endif
         @required($required)
         @disabled($disabled)
         {{ $attributes->merge(['class' => $textareaClasses]) }}

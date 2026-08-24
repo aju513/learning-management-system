@@ -1,18 +1,20 @@
-@props(['pageTitle' => 'Page'])
+@props(['pageTitle' => 'Page', 'translate' => true])
+
+@php($displayPageTitle = $translate ? __($pageTitle) : $pageTitle)
 
 <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
     <div class="flex flex-col gap-1.5">
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
-            {{ $pageTitle }}
+            {{ $displayPageTitle }}
         </h2>
-        <nav aria-label="Breadcrumb">
+        <nav aria-label="{{ __('Breadcrumb') }}">
             <ol class="flex items-center gap-1.5 whitespace-nowrap">
             <li>
                 <a
                     class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
                     href="{{ url('/') }}"
                 >
-                    Home
+                    {{ __('Home') }}
                     <svg
                         class="stroke-current"
                         width="17"
@@ -32,7 +34,7 @@
                 </a>
             </li>
             <li class="text-sm text-gray-800 dark:text-white/90">
-                {{ $pageTitle }}
+                {{ $displayPageTitle }}
             </li>
             </ol>
         </nav>

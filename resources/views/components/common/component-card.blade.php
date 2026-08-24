@@ -7,11 +7,11 @@
     <!-- Card Header -->
     <div class="px-6 py-5">
         <h3 class="text-base font-medium text-gray-800 dark:text-white/90">
-            {{ $title }}
+            {{ __($title) }}
         </h3>
         @if($desc)
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {{ $desc }}
+                {{ __($desc) }}
             </p>
         @endif
     </div>

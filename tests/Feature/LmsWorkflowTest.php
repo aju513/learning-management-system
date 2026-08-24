@@ -156,6 +156,13 @@ test('objective assessments enforce attempts and grade correct answers', functio
         'options' => ['First', 'Second', 'Third', 'Fourth'], 'correct_options' => [1],
     ])->assertRedirect();
     $this->actingAs($instructor)->patch(route('instructor.assessments.status', $assessment), ['status' => 'published'])->assertRedirect();
+    $this->actingAs($instructor)->get(route('instructor.assessments.show', $assessment))
+        ->assertSee('Questions are locked after publishing or once an attempt has started.')
+        ->assertDontSee('name="prompt"', false);
+    $this->actingAs($instructor)->post(route('instructor.assessment-questions.store', $assessment), [
+        'prompt' => 'A locked question', 'type' => 'single_choice', 'marks' => 1,
+        'options' => ['First', 'Second'], 'correct_options' => [0],
+    ])->assertSessionHasErrors('question');
     $this->actingAs($instructor)->post(route('instructor.assessment-assignments.store', $assessment), ['trainees' => [$trainee->id]])->assertRedirect();
 
     $this->actingAs($trainee)->post(route('learning.assessments.start', $assessment))->assertRedirect();

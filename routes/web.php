@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\PasswordController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Auth\DemoLoginController;
 use App\Http\Controllers\Auth\PortalController;
+use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/portal');
@@ -13,6 +14,8 @@ Route::post('/admin/demo-login', DemoLoginController::class)
     ->name('admin.demo-login');
 
 Route::get('/portal', PortalController::class)->middleware(['auth', 'active'])->name('portal.home');
+
+Route::post('/locale', LocaleController::class)->name('locale.update');
 
 Route::prefix('account')->name('account.')->middleware(['auth', 'active'])->group(function (): void {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

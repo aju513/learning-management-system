@@ -16,6 +16,6 @@ class StoreAssessmentAssignmentRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['trainees' => ['required', 'array', 'min:1'], 'trainees.*' => ['integer', 'distinct', 'exists:users,id'], 'due_at' => ['nullable', 'date', 'after:now']];
+        return ['trainees' => ['required', 'array', 'min:1'], 'trainees.*' => ['integer', 'distinct', 'exists:users,id'], 'due_at' => ['nullable', 'date_format:Y-m-d\\TH:i', 'after:now']];
     }
 }

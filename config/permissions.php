@@ -156,6 +156,7 @@ return [
         'fiscal-years.delete' => ['view_title' => 'Delete fiscal years', 'description' => 'Allows deleting unused draft fiscal years.'],
     ],
     'credit-scores' => [
+        'credit-scores.view-all' => ['view_title' => 'View trainee credit scores', 'description' => 'Allows viewing trainee fiscal-year credit summaries and activity details.'],
         'credit-scores.view-own' => ['view_title' => 'View own credit scores', 'description' => 'Allows viewing own fiscal-year credit history and eligibility.'],
         'credit-scores.claim-own' => ['view_title' => 'Claim own credit scores', 'description' => 'Allows claiming eligible own credit awards.'],
         'credit-scores.refresh-attendance' => ['view_title' => 'Refresh own attendance', 'description' => 'Allows refreshing own attendance from the configured attendance provider.'],

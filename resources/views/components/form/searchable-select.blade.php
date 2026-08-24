@@ -20,16 +20,16 @@
     foreach ($options as $optionKey => $option) {
         if (is_array($option)) {
             $optionValue = $option['value'] ?? $option['id'] ?? $optionKey;
-            $optionLabel = $option['label'] ?? $option['name'] ?? $optionValue;
+            $optionLabel = $option['label'] ?? $option['name'] ?? $option['title'] ?? $optionValue;
         } elseif (is_object($option)) {
             $optionValue = $option->value ?? $option->id ?? $optionKey;
-            $optionLabel = $option->label ?? $option->name ?? $optionValue;
+            $optionLabel = $option->label ?? $option->name ?? $option->title ?? $optionValue;
         } else {
             $optionValue = $optionKey;
             $optionLabel = $option;
         }
 
-        $normalizedOptions[] = ['value' => (string) $optionValue, 'label' => (string) $optionLabel];
+        $normalizedOptions[] = ['value' => (string) $optionValue, 'label' => (string) (is_array($option) || is_object($option) ? $optionLabel : __($optionLabel))];
     }
 @endphp
 
@@ -38,7 +38,7 @@
         x-data="{
             open: false,
             search: '',
-            placeholder: @js($placeholder),
+            placeholder: @js(__($placeholder)),
             selected: @js($currentValue === null ? '' : (string) $currentValue),
             options: @js($normalizedOptions),
             get filteredOptions() {
@@ -82,7 +82,7 @@
             </div>
             <div class="max-h-56 overflow-y-auto p-1" role="listbox" aria-label="{{ $label ?? $name }}">
                 @if($placeholder)
-                    <button type="button" @click="clear()" class="flex w-full rounded-md px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-50 dark:hover:bg-white/[0.03]">{{ $placeholder }}</button>
+                    <button type="button" @click="clear()" class="flex w-full rounded-md px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-50 dark:hover:bg-white/[0.03]">{{ __($placeholder) }}</button>
                 @endif
                 <template x-for="option in filteredOptions" :key="option.value">
                     <button type="button" @click="choose(option.value)" role="option" :aria-selected="selected === option.value" class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03]">
@@ -90,7 +90,7 @@
                         <span x-show="selected === option.value" class="text-brand-500" aria-hidden="true">✓</span>
                     </button>
                 </template>
-                <p x-show="filteredOptions.length === 0" class="px-3 py-2 text-sm text-gray-500">No options found.</p>
+                <p x-show="filteredOptions.length === 0" class="px-3 py-2 text-sm text-gray-500">{{ __('No options found.') }}</p>
             </div>
         </div>
     </div>

@@ -41,7 +41,7 @@ class FiscalYearService
             if ($fiscalYear->status === FiscalYearStatus::Closed) {
                 throw ValidationException::withMessages(['status' => 'Closed fiscal years cannot become active again.']);
             }
-            if ($this->fiscalYears->active() && $this->fiscalYears->active()->id !== $fiscalYear->id) {
+            if ($this->fiscalYears->active() && (int) $this->fiscalYears->active()->id !== (int) $fiscalYear->id) {
                 throw ValidationException::withMessages(['status' => 'Close the current active fiscal year before activating another.']);
             }
             if ($fiscalYear->attendance_threshold_days < 1 || (float) $fiscalYear->attendance_credit_points <= 0) {

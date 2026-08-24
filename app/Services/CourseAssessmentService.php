@@ -84,7 +84,7 @@ class CourseAssessmentService
     {
         $assessment = $this->courseAssessments->findForManagement($assessment);
         $this->availability->assertAvailable($assessment->material->chapter->module->course, $trainee);
-        if ($enrollment->user_id !== $trainee->id || $assessment->material->chapter->module->course_id !== $enrollment->course_id) {
+        if ((int) $enrollment->user_id !== (int) $trainee->id || (int) $assessment->material->chapter->module->course_id !== (int) $enrollment->course_id) {
             throw new AuthorizationException('This course assessment is not part of your enrollment.');
         }
         if ($active = $this->courseAssessments->activeAttempt($assessment, $trainee)) {
@@ -112,7 +112,7 @@ class CourseAssessmentService
 
     public function submit(CourseAssessmentAttempt $attempt, array $answers, Enrollment $enrollment, User $trainee): CourseAssessmentAttempt
     {
-        if ($attempt->user_id !== $trainee->id || $attempt->status !== 'in_progress') {
+        if ((int) $attempt->user_id !== (int) $trainee->id || $attempt->status !== 'in_progress') {
             throw new AuthorizationException('This course assessment attempt cannot be submitted.');
         }
 

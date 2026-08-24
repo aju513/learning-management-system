@@ -70,4 +70,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(AssessmentAttempt::class);
     }
+
+    public function assessmentAssignments(): HasMany
+    {
+        return $this->hasMany(AssessmentAssignment::class);
+    }
+
+    public function creditAwards(): HasMany
+    {
+        return $this->hasMany(CreditAward::class);
+    }
 }

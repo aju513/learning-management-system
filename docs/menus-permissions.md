@@ -65,3 +65,5 @@ php artisan admin:menu-regenerate
 ```
 
 The command validates every manifest and atomically replaces `bootstrap/cache/admin-menu.php`. The navigation service first selects the manifest for the user's exact fixed role, then filters it at request time with `$user->can(...)` and removes empty groups. It never merges menus from multiple roles. Route authorization remains mandatory even when an item is hidden.
+
+The Admin manifest groups operational links under People, Course Overview, Test Overview, and System Settings. Admins have code-owned permissions for course-wide visibility and enrollment assignment, course and test reports, quiz creation and results, category/fiscal-year settings, and the read-only trainee Credit Score Viewer. The Super Admin manifest keeps its separate oversight groups; the Access Matrix route remains protected but is intentionally not exposed in the sidebar.

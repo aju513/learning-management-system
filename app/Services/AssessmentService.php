@@ -95,9 +95,7 @@ class AssessmentService
 
     public function createQuestion(Assessment $assessment, array $data, User $actor): AssessmentQuestion
     {
-        if ($this->assessments->hasAttempts($assessment)) {
-            throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
-        }
+        $this->ensureEditable($assessment);
 
         return DB::transaction(function () use ($assessment, $data, $actor): AssessmentQuestion {
             $options = $this->optionsFromData($data);
@@ -120,9 +118,7 @@ class AssessmentService
 
     public function updateQuestion(AssessmentQuestion $question, array $data, User $actor): AssessmentQuestion
     {
-        if ($this->assessments->hasAttempts($question->assessment)) {
-            throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
-        }
+        $this->ensureEditable($question->assessment);
 
         return DB::transaction(function () use ($question, $data, $actor): AssessmentQuestion {
             $options = $this->optionsFromData($data);
@@ -137,9 +133,7 @@ class AssessmentService
 
     public function deleteQuestion(AssessmentQuestion $question, User $actor): void
     {
-        if ($this->assessments->hasAttempts($question->assessment)) {
-            throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
-        }
+        $this->ensureEditable($question->assessment);
 
         activity('lms')->causedBy($actor)->performedOn($question)->event('assessment-question.deleted')
             ->withProperties(['assessment_id' => $question->assessment_id])->log('Assessment question deleted');
@@ -215,7 +209,7 @@ class AssessmentService
 
     public function submit(AssessmentAttempt $attempt, array $answers, User $trainee): AssessmentAttempt
     {
-        if ($attempt->status !== AttemptStatus::InProgress || $attempt->user_id !== $trainee->id) {
+        if ($attempt->status !== AttemptStatus::InProgress || (int) $attempt->user_id !== (int) $trainee->id) {
             throw new AuthorizationException('This attempt cannot be submitted.');
         }
 
@@ -330,5 +324,15 @@ class AssessmentService
             'is_correct' => in_array($index, $correct, true),
             'position' => $index + 1,
         ])->all();
+    }
+
+    private function ensureEditable(Assessment $assessment): void
+    {
+        if ($assessment->status === AssessmentStatus::Published) {
+            throw ValidationException::withMessages(['question' => 'Published quizzes are locked. Close the quiz before changing its questions.']);
+        }
+        if ($this->assessments->hasAttempts($assessment)) {
+            throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
+        }
     }
 }

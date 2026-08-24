@@ -24,6 +24,7 @@ Route::prefix('instructor')->name('instructor.')->middleware(['auth', 'active', 
     Route::put('/courses/{course}', [CourseController::class, 'update'])->name('courses.update');
     Route::patch('/courses/{course}/status', [CourseController::class, 'status'])->name('courses.status');
     Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
+    Route::get('/courses/{course}/preview', [CourseController::class, 'preview'])->name('courses.preview');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::post('/courses/{course}/modules', [CourseModuleController::class, 'store'])->name('course-modules.store');
     Route::patch('/courses/{course}/modules/reorder', [CourseModuleController::class, 'reorder'])->name('course-modules.reorder');

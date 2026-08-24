@@ -13,10 +13,11 @@ class ShowAttemptRequest extends FormRequest
         $attempt->loadMissing('courseAssessment.material.chapter.module', 'trainee');
 
         return (bool) ($this->user()?->can('learning.view')
-            && $enrollment->user_id === $this->user()->id
+            && $enrollment->course?->isPublished()
+            && (int) $enrollment->user_id === (int) $this->user()->id
             && $enrollment->status->grantsLearningAccess()
-            && $attempt->user_id === $this->user()->id
-            && $attempt->courseAssessment->material->chapter->module->course_id === $enrollment->course_id);
+            && (int) $attempt->user_id === (int) $this->user()->id
+            && (int) $attempt->courseAssessment->material->chapter->module->course_id === (int) $enrollment->course_id);
     }
 
     public function rules(): array

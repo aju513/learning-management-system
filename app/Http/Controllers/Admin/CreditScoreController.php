@@ -5,15 +5,28 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreditScore\ClaimCreditScoreRequest;
 use App\Http\Requests\CreditScore\IndexCreditScoreRequest;
+use App\Http\Requests\CreditScore\IndexCreditScoreViewerRequest;
 use App\Http\Requests\CreditScore\RefreshAttendanceRequest;
 use App\Models\CreditAward;
 use App\Services\CreditScoreService;
+use App\Services\CreditScoreViewerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class CreditScoreController extends Controller
 {
-    public function __construct(private readonly CreditScoreService $service) {}
+    public function __construct(
+        private readonly CreditScoreService $service,
+        private readonly CreditScoreViewerService $viewer,
+    ) {}
+
+    public function viewer(IndexCreditScoreViewerRequest $request): View
+    {
+        return view('pages.admin.credit-scores.viewer', $this->viewer->pageData($request->validated()) + [
+            'title' => 'Credit Score Viewer',
+            'viewerRoute' => $request->routeIs('super-admin.*') ? 'super-admin.credit-scores.index' : 'admin.credit-scores.index',
+        ]);
+    }
 
     public function index(IndexCreditScoreRequest $request): View
     {

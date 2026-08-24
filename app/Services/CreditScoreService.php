@@ -111,7 +111,7 @@ class CreditScoreService
 
     public function claim(CreditAward $award, User $trainee): CreditAward
     {
-        if ($award->user_id !== $trainee->id) {
+        if ((int) $award->user_id !== (int) $trainee->id) {
             throw new AuthorizationException('You cannot claim another learner’s credit.');
         }
 
