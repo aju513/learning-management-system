@@ -91,6 +91,19 @@ test('catalog labels course assessment materials consistently and assignment sel
         ->assertOk()->assertSee($course->title);
 });
 
+test('catalog formats escaped description line breaks as separate paragraphs', function () {
+    $instructor = applicationUser('instructor');
+    $trainee = applicationUser('trainee');
+    [$course] = catalogCourse($instructor);
+    $course->update(['description' => 'First paragraph\\n\\nSecond paragraph']);
+
+    $this->actingAs($trainee)->get(route('learning.catalog.show', $course))
+        ->assertOk()
+        ->assertSee('<p class="whitespace-pre-line">First paragraph</p>', false)
+        ->assertSee('<p class="whitespace-pre-line">Second paragraph</p>', false)
+        ->assertDontSee('First paragraph\\n\\nSecond paragraph', false);
+});
+
 test('pending applications do not grant learning or standalone quiz access', function () {
     $instructor = applicationUser('instructor');
     $trainee = applicationUser('trainee');

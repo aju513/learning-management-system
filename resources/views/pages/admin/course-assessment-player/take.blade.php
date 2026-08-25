@@ -31,5 +31,22 @@
             </div>
         </form>
     </x-common.component-card>
+    <div x-cloak x-show="showSubmitModal" @keydown.escape.window="cancelSubmission()" class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="submit-assessment-title">
+        <div class="absolute inset-0 bg-gray-950/50" @click="cancelSubmission()"></div>
+        <div class="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900" @click.stop>
+            <div class="flex items-start gap-4">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning-100 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
+                <div>
+                    <h2 id="submit-assessment-title" class="text-lg font-semibold text-gray-900 dark:text-white">Submit assessment?</h2>
+                    <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300" x-text="submitMessage"></p>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">After submission, your answers cannot be changed.</p>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-wrap justify-end gap-3">
+                <button type="button" @click="cancelSubmission()" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:text-gray-200">Review answers</button>
+                <button type="button" x-ref="confirmSubmit" @click="confirmSubmission()" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white"><i class="bi bi-check2-circle" aria-hidden="true"></i><span>Confirm submission</span></button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

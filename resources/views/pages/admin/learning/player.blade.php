@@ -3,6 +3,7 @@
 @section('content')
 @php
     $orderedMaterials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
+    $materialContent = \App\Support\LearningContentFormatter::toSemanticLists($material->content);
     $completedMaterialIds = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
     $progressPercentage = $progress['percentage'];
     $currentChapter = $enrollment->course->modules->flatMap->chapters->first(fn ($chapter) => $chapter->materials->contains('id', $material->id));
@@ -22,7 +23,7 @@
                 <div class="hidden sm:block"><x-header.credit-summary /></div>
             @endif
             <div class="hidden items-center gap-3 md:flex">
-                <div class="w-56 rounded-lg bg-gray-50 px-3 py-2 dark:bg-white/[0.04]"><div class="flex items-end justify-between gap-2"><span class="text-[11px] font-semibold text-gray-700 dark:text-gray-200">Course progress</span><span class="text-sm font-bold text-brand-500">{{ $progressPercentage }}%</span></div><p class="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} course items complete</p><div class="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ $progressPercentage }}%"></div></div></div>
+                <div class="w-56 rounded-lg bg-gray-50 px-3 py-2 dark:bg-white/[0.04]"><div class="flex items-end justify-between gap-2"><span class="text-[11px] font-semibold text-gray-700 dark:text-gray-200">Course progress</span><span class="text-sm font-bold text-brand-500">{{ $progressPercentage }}%</span></div><p class="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} required items complete</p><div class="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ $progressPercentage }}%"></div></div></div>
                 <div class="hidden">
                     <div class="mb-1 flex justify-between text-[11px] text-gray-500"><span>Progress</span><span>{{ $progress['completed'] }} / {{ $progress['total'] }} · {{ number_format((float) $enrollment->progress_percentage, 0) }}%</span></div>
                     <div class="h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ min(100, max(0, (float) $progressPercentage)) }}%"></div></div>
@@ -47,7 +48,7 @@
                 <button type="button" @click="outlineOpen = false" class="text-xl text-gray-400 md:hidden" aria-label="Close contents">&times;</button>
             </div>
             <div class="mb-6 rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]">
-                <div class="flex items-end justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} course items complete</span><span class="text-lg font-bold text-brand-500">{{ $progressPercentage }}%</span></div>
+                <div class="flex items-end justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} required items complete <span class="text-gray-400">· {{ $progress['completedLessons'] }}/{{ $progress['totalLessons'] }} lessons</span></span><span class="text-lg font-bold text-brand-500">{{ $progressPercentage }}%</span></div>
                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-cyan-500" style="width: {{ min(100, max(0, (float) $progressPercentage)) }}%"></div></div>
             </div>
             <nav class="space-y-6">
@@ -59,7 +60,7 @@
                     @endphp
                     <section x-data="{ expanded: true }">
                         <div class="mb-3 flex items-start justify-between gap-3">
-                            <div><p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Module {{ $loop->iteration }}</p><h2 class="mt-1 text-sm font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h2><p class="mt-1 text-xs text-gray-500">{{ $moduleCompleted }} of {{ $moduleRequired->count() }} course items completed</p></div>
+                            <div><p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Module {{ $loop->iteration }}</p><h2 class="mt-1 text-sm font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h2><p class="mt-1 text-xs text-gray-500">{{ $moduleCompleted }} of {{ $moduleRequired->count() }} required items completed</p></div>
                             <button type="button" @click="expanded = !expanded" class="rounded p-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06]" :aria-expanded="expanded.toString()" aria-label="Toggle module contents"><span x-text="expanded ? '−' : '+'"></span></button>
                         </div>
                         <div x-show="expanded" x-collapse class="space-y-4">
@@ -120,15 +121,15 @@
                     <div class="p-6 sm:p-10">
                         @switch($material->type)
                             @case(\App\Enums\MaterialType::Article)
-                                <div class="prose max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $material->content !!}</div>
+                                <div class="prose max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $materialContent !!}</div>
                                 @break
                             @case(\App\Enums\MaterialType::Video)
-                                @if($material->content)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $material->content !!}</div>@endif
+                                @if($materialContent)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $materialContent !!}</div>@endif
                                 @if($material->video_url)<a href="{{ $material->video_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">Open video</a>@endif
                                 @if($material->file_path)<a href="{{ route('learning.courses.materials.download', [$enrollment, $material]) }}" class="ml-2 inline-flex rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Download video</a>@endif
                                 @break
                             @case(\App\Enums\MaterialType::File)
-                                @if($material->content)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $material->content !!}</div>@endif
+                                @if($materialContent)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $materialContent !!}</div>@endif
                                 @if($material->file_path)
                                     <div class="rounded-xl border border-dashed border-gray-300 p-10 text-center dark:border-gray-700"><p class="font-medium text-gray-800 dark:text-white">{{ $material->original_filename }}</p><p class="mt-1 text-sm uppercase text-gray-500">{{ $material->file_type === 'legacy' ? 'File' : $material->file_type }}</p><a href="{{ route('learning.courses.materials.download', [$enrollment, $material]) }}" class="mt-4 inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Download file</a></div>
                                 @else
@@ -136,13 +137,13 @@
                                 @endif
                                 @break
                             @case(\App\Enums\MaterialType::Link)
-                                @if($material->content)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $material->content !!}</div>@endif
+                                @if($materialContent)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $materialContent !!}</div>@endif
                                 <a href="{{ $material->external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Open external resource</a>
                                 @break
                             @case(\App\Enums\MaterialType::CourseAssessment)
-                                @if($material->content)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $material->content !!}</div>@endif
+                                @if($materialContent)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $materialContent !!}</div>@endif
                                 @php($assessmentAttempts = $material->courseAssessment?->attempts?->where('user_id', auth()->id()) ?? collect())
-                                <div class="rounded-xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-500/30 dark:bg-brand-500/10"><p class="font-semibold text-gray-800 dark:text-white">Course assessment</p><p class="mt-2 text-sm text-gray-600 dark:text-gray-300">{{ $material->courseAssessment?->questions?->count() ?? 0 }} {{ Str::plural('question', $material->courseAssessment?->questions?->count() ?? 0) }} · Passing score: {{ $material->courseAssessment?->passing_percentage ?? 60 }}% · Attempts allowed: Unlimited</p><p class="mt-2 text-xs font-medium {{ $assessmentAttempts->contains(fn ($attempt) => $attempt->passed) ? 'text-success-700' : 'text-brand-700' }}">Status: {{ $assessmentAttempts->contains(fn ($attempt) => $attempt->passed) ? 'Passed' : 'Available' }}</p>@if(! $enrollment->materialProgress->firstWhere('learning_material_id', $material->id)?->completed_at && $material->courseAssessment)<form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $material]) }}" class="mt-4" @submit="opening = true">@csrf<button type="submit" :disabled="opening" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"><span x-show="!opening"><i class="bi bi-clipboard-check" aria-hidden="true"></i><span>Start assessment</span></span><span x-cloak x-show="opening">Opening assessment…</span></button></form>@endif</div>
+                                <div class="rounded-xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-500/30 dark:bg-brand-500/10"><p class="font-semibold text-gray-800 dark:text-white">Course assessment</p><p class="mt-2 text-sm text-gray-600 dark:text-gray-300">{{ $material->courseAssessment?->questions?->count() ?? 0 }} {{ Str::plural('question', $material->courseAssessment?->questions?->count() ?? 0) }} · Passing score: {{ $material->courseAssessment?->passing_percentage ?? 60 }}% · Attempts allowed: Unlimited</p><p class="mt-2 text-xs font-medium {{ $assessmentAttempts->contains(fn ($attempt) => $attempt->passed) ? 'text-success-700' : 'text-brand-700' }}">Status: {{ $assessmentAttempts->contains(fn ($attempt) => $attempt->passed) ? 'Passed' : 'Available' }}</p>@if(! $enrollment->materialProgress->firstWhere('learning_material_id', $material->id)?->completed_at && $material->courseAssessment)<form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $material]) }}" class="mt-4" @submit="opening = true">@csrf<button type="submit" aria-label="Start assessment" :aria-busy="opening.toString()" :disabled="opening" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"><span x-show="!opening" class="inline-flex items-center gap-2"><i class="bi bi-clipboard-check" aria-hidden="true"></i><span>Start assessment</span></span><span x-cloak x-show="opening" class="inline-flex items-center gap-2"><i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Opening assessment…</span></span></button></form>@endif</div>
                                 @break
                             @default
                                 <p class="text-sm text-gray-500">This learning material is unavailable.</p>

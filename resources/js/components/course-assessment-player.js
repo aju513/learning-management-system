@@ -1,6 +1,8 @@
 export default function courseAssessmentPlayer({ draftKey, saveUrl, serverAnswers = {} }) {
     return {
         submitting: false,
+        showSubmitModal: false,
+        submitMessage: '',
         submitError: '',
         saveState: 'Not saved yet',
         saveTimer: null,
@@ -86,13 +88,25 @@ export default function courseAssessmentPlayer({ draftKey, saveUrl, serverAnswer
             return this.form().querySelectorAll('fieldset').length - Object.keys(this.collectAnswers()).length;
         },
 
-        async submitAssessment() {
+        submitAssessment() {
+            if (this.submitting) return;
+
             const unanswered = this.unansweredCount();
-            const message = unanswered
+            this.submitMessage = unanswered
                 ? `You have ${unanswered} unanswered question${unanswered === 1 ? '' : 's'}. Submit anyway? Your answers cannot be changed afterward.`
                 : 'You have answered all questions. Submit this course assessment? Your answers cannot be changed afterward.';
+            this.showSubmitModal = true;
+            this.$nextTick(() => this.$refs.confirmSubmit?.focus());
+        },
 
-            if (this.submitting || !window.confirm(message)) return;
+        cancelSubmission() {
+            this.showSubmitModal = false;
+        },
+
+        async confirmSubmission() {
+            if (this.submitting) return;
+
+            this.showSubmitModal = false;
 
             this.submitting = true;
             this.submitError = '';

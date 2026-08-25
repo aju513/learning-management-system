@@ -76,6 +76,8 @@ Starting a standalone quiz creates or resumes one in-progress attempt and record
 
 The application provides friendly 403 and 500 screens with an explanation and recovery actions. Operational Super Admins may use the protected `admin.maintenance.optimize-clear` POST route when command-line access is unavailable.
 
+Assessment submission now uses an in-page confirmation modal so trainees can review unanswered questions before the final request.
+
 ## Reporting
 
 Each portal has a separate dashboard query and view:

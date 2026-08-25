@@ -50,7 +50,7 @@
                 </div>
                 <div>
                     <div class="mb-2 flex items-center justify-between gap-3 text-xs text-gray-600 dark:text-gray-400">
-                        <span>{{ $courseProgress['completed'] }} of {{ $courseProgress['total'] }} course items complete</span>
+                        <span>{{ $courseProgress['completed'] }} of {{ $courseProgress['total'] }} required items complete · {{ $courseProgress['completedLessons'] }} of {{ $courseProgress['totalLessons'] }} lessons</span>
                         @if($courseProgress['remaining'] > 0)
                             <span>{{ $courseProgress['remaining'] }} {{ Str::plural('item', $courseProgress['remaining']) }} left</span>
                         @else

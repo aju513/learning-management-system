@@ -85,7 +85,8 @@ test('course assessment player keeps its Alpine controls visible', function () {
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $material]))
         ->assertOk()
         ->assertSee('Start assessment')
-        ->assertSee('bi-clipboard-check', false);
+        ->assertSee('bi-clipboard-check', false)
+        ->assertSee('aria-label="Start assessment"', false);
     $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))->assertRedirect();
     $attempt = CourseAssessmentAttempt::firstOrFail();
 
@@ -96,8 +97,11 @@ test('course assessment player keeps its Alpine controls visible', function () {
         ->assertSee('Submit assessment')
         ->assertSee('bi-check2-circle', false)
         ->assertSee('x-data="courseAssessmentPlayer(', false)
+        ->assertSee('role="dialog"', false)
+        ->assertSee('Confirm submission')
         ->assertDontSee(route('locale.update'), false)
-        ->assertDontSee('x-show="!submitting"', false);
+        ->assertDontSee('x-show="!submitting"', false)
+        ->assertDontSee('window.confirm', false);
 });
 
 test('course assessment failures can be retaken and passing completes the required material', function () {

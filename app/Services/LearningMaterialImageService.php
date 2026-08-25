@@ -7,6 +7,7 @@ use App\Models\LearningMaterial;
 use App\Models\LearningMaterialImage;
 use App\Models\User;
 use App\Repositories\Contracts\LearningMaterialImageRepositoryInterface;
+use App\Support\LearningContentFormatter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -72,7 +73,7 @@ class LearningMaterialImageService
         $allowed = '<p><br><strong><b><em><i><ul><ol><li><h2><h3><blockquote><img>';
         $clean = strip_tags($html, $allowed);
 
-        return (string) preg_replace_callback('/<\/?([a-z][a-z0-9]*)\b([^>]*)>/i', function (array $match) use ($routes): string {
+        $clean = (string) preg_replace_callback('/<\/?([a-z][a-z0-9]*)\b([^>]*)>/i', function (array $match) use ($routes): string {
             $tag = strtolower($match[1]);
             $closing = str_starts_with($match[0], '</');
 
@@ -97,6 +98,8 @@ class LearningMaterialImageService
 
             return '<img src="'.e(route('learning-material-images.show', $routes->get($uuid))).'" alt="'.$alt.'">';
         }, $clean);
+
+        return LearningContentFormatter::toSemanticLists($clean);
     }
 
     public function synchronize(LearningMaterial $material, ?string $content, CourseChapter $chapter, User $actor): Collection
