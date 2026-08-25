@@ -18,6 +18,9 @@
             </a>
             <div class="h-7 w-px bg-gray-200 dark:bg-gray-800"></div>
             <p class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-white">{{ $enrollment->course->title }}</p>
+            @if(auth()->user()?->can('credit-scores.view-own'))
+                <div class="hidden sm:block"><x-header.credit-summary /></div>
+            @endif
             <div class="hidden items-center gap-3 md:flex">
                 <div class="w-56 rounded-lg bg-gray-50 px-3 py-2 dark:bg-white/[0.04]"><div class="flex items-end justify-between gap-2"><span class="text-[11px] font-semibold text-gray-700 dark:text-gray-200">Course progress</span><span class="text-sm font-bold text-brand-500">{{ $progressPercentage }}%</span></div><p class="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} course items complete</p><div class="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ $progressPercentage }}%"></div></div></div>
                 <div class="hidden">

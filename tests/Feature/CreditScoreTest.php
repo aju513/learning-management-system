@@ -67,6 +67,19 @@ test('trainee dashboard renders the credit summary header', function () {
         ->assertSee('0.00 credits');
 });
 
+test('trainee credit summary is available on the enrolled courses page', function () {
+    $trainee = creditPortalUser('trainee');
+    FiscalYear::factory()->create([
+        'name' => 'FY 2026', 'starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active',
+    ]);
+
+    $this->actingAs($trainee)->get(route('learning.courses.index'))
+        ->assertOk()
+        ->assertSee(route('learning.credit-scores.index'), false)
+        ->assertSee('FY 2026')
+        ->assertSee('0.00 credits');
+});
+
 test('course completion credit is created only once for a learner and fiscal year', function () {
     $trainee = creditPortalUser('trainee');
     $course = Course::factory()->create(['credit_points' => 5]);

@@ -30,12 +30,12 @@ class CreditAwardRepository implements CreditAwardRepositoryInterface
             ->latest('eligible_at')->paginate($perPage)->withQueryString();
     }
 
-    public function eligibleForUser(User $user, ?FiscalYear $fiscalYear = null): LengthAwarePaginator
+    public function eligibleForUser(User $user, ?FiscalYear $fiscalYear = null, int $perPage = 10): LengthAwarePaginator
     {
         return CreditAward::query()->with(['course', 'assessment'])
             ->where('user_id', $user->id)->where('status', CreditAwardStatus::Eligible)
             ->when($fiscalYear, fn ($query) => $query->where('fiscal_year_id', $fiscalYear->id))
-            ->latest('eligible_at')->paginate(10, ['*'], 'eligible_page')->withQueryString();
+            ->latest('eligible_at')->paginate($perPage, ['*'], 'eligible_page')->withQueryString();
     }
 
     public function claimedTotal(User $user, ?FiscalYear $fiscalYear = null): float

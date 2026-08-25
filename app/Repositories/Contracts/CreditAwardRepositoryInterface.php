@@ -16,7 +16,7 @@ interface CreditAwardRepositoryInterface
 
     public function forUser(User $user, ?FiscalYear $fiscalYear = null, int $perPage = 15): LengthAwarePaginator;
 
-    public function eligibleForUser(User $user, ?FiscalYear $fiscalYear = null): LengthAwarePaginator;
+    public function eligibleForUser(User $user, ?FiscalYear $fiscalYear = null, int $perPage = 10): LengthAwarePaginator;
 
     public function claimedTotal(User $user, ?FiscalYear $fiscalYear = null): float;
 
