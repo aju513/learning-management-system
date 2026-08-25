@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CourseAssessment\DeleteQuestionRequest;
+use App\Http\Requests\CourseAssessment\EditQuestionRequest;
 use App\Http\Requests\CourseAssessment\ReorderQuestionsRequest;
 use App\Http\Requests\CourseAssessment\ShowCourseAssessmentRequest;
 use App\Http\Requests\CourseAssessment\StoreQuestionRequest;
@@ -38,7 +39,7 @@ class CourseAssessmentController extends Controller
         return back()->with('success', 'Course assessment question added.');
     }
 
-    public function edit(UpdateQuestionRequest $request, CourseAssessmentQuestion $courseAssessmentQuestion): View
+    public function edit(EditQuestionRequest $request, CourseAssessmentQuestion $courseAssessmentQuestion): View
     {
         return view('pages.admin.course-assessments.question-edit', [
             'question' => $this->courseAssessments->findQuestionForEdit($courseAssessmentQuestion),

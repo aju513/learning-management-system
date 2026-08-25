@@ -65,6 +65,25 @@ test('instructors can author only choice-based course assessment questions', fun
     expect($question->type->value)->toBe('multiple_choice')
         ->and($question->options->where('is_correct', true)->pluck('option_text')->all())->toBe(['First', 'Third']);
 
+    $this->actingAs($instructor)->get(route('instructor.course-assessment-questions.edit', $question))
+        ->assertOk()
+        ->assertSee('Edit Course Assessment Question')
+        ->assertSee('Which answers are valid?')
+        ->assertSee('value="First"', false)
+        ->assertSee('value="Second"', false);
+
+    $this->actingAs($instructor)->put(route('instructor.course-assessment-questions.update', $question), [
+        'prompt' => 'Which updated answers are valid?',
+        'type' => 'multiple_choice',
+        'marks' => 3,
+        'options' => ['Updated first', 'Updated second', 'Updated third'],
+        'correct_options' => [0, 2],
+    ])->assertRedirect();
+
+    expect($question->refresh()->prompt)->toBe('Which updated answers are valid?')
+        ->and($question->marks)->toBe('3.00')
+        ->and($question->options()->pluck('option_text')->all())->toBe(['Updated first', 'Updated second', 'Updated third']);
+
     $this->actingAs($instructor)->post(route('instructor.course-assessment-questions.store', $assessment), [
         'prompt' => 'Invalid question', 'type' => 'single_choice', 'marks' => 1,
         'options' => ['Only one'], 'correct_options' => [0],
