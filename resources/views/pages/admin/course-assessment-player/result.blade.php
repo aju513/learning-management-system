@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.learning')
 
 @section('content')
 <x-common.page-breadcrumb pageTitle="Assessment result" />

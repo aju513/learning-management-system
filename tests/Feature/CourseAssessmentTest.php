@@ -71,6 +71,31 @@ test('instructors can author only choice-based course assessment questions', fun
     ])->assertSessionHasErrors('options');
 });
 
+test('course assessment player keeps its Alpine controls visible', function () {
+    $instructor = assessmentPortalUser('instructor');
+    $trainee = assessmentPortalUser('trainee');
+    [$course, $material, $assessment] = courseAssessmentMaterial($instructor);
+
+    $this->actingAs($instructor)->post(route('instructor.course-assessment-questions.store', $assessment), [
+        'prompt' => 'What is correct?', 'type' => 'single_choice', 'marks' => 1,
+        'options' => ['Correct', 'Incorrect'], 'correct_options' => [0],
+    ])->assertRedirect();
+
+    $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create(['status' => 'active']);
+    $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))->assertRedirect();
+    $attempt = CourseAssessmentAttempt::firstOrFail();
+
+    $this->actingAs($trainee)->get(route('learning.course-assessment-attempts.show', [$enrollment, $attempt]))
+        ->assertOk()
+        ->assertSee('LMS')
+        ->assertSee('Course contents')
+        ->assertSee('Submit assessment')
+        ->assertSee('bi-check2-circle', false)
+        ->assertSee("data-answer-question='", false)
+        ->assertDontSee(route('locale.update'), false)
+        ->assertDontSee('x-show="!submitting"', false);
+});
+
 test('course assessment failures can be retaken and passing completes the required material', function () {
     $instructor = assessmentPortalUser('instructor');
     $trainee = assessmentPortalUser('trainee');

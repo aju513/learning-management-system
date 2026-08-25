@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.learning')
 
 @section('content')
 <div x-data="{
@@ -7,7 +7,7 @@
     saveState: 'Not saved yet',
     saveTimer: null,
     draftKey: 'course-assessment-attempt-{{ $attempt->id }}',
-    serverAnswers: @json($attempt->answers->mapWithKeys(fn ($answer) => [$answer->course_assessment_question_id => $answer->selected_option_ids])->all()),
+    serverAnswers: @js($attempt->answers->mapWithKeys(fn ($answer) => [$answer->course_assessment_question_id => $answer->selected_option_ids])->all()),
     init() { this.applyAnswers(this.serverAnswers); this.restoreDraft(); },
     form() { return this.$root.querySelector('form'); },
     collectAnswers() {
@@ -23,7 +23,7 @@
         return answers;
     },
     applyAnswers(answers) {
-        Object.entries(answers || {}).forEach(([id, value]) => this.form().querySelectorAll(`[data-answer-question="${id}"]`).forEach((input) => {
+        Object.entries(answers || {}).forEach(([id, value]) => this.form().querySelectorAll(`[data-answer-question='${id}']`).forEach((input) => {
             input.checked = Array.isArray(value) ? value.map(String).includes(String(input.value)) : String(value) === String(input.value);
         }));
     },
@@ -111,7 +111,7 @@
             @endforeach
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div><p class="text-xs text-gray-600 dark:text-gray-400" x-text="saveState"></p><p x-show="submitError" x-text="submitError" class="mt-1 text-sm text-error-600" role="alert"></p><button x-show="submitError" type="button" @click="submitAssessment()" class="mt-2 text-sm font-medium text-brand-600">Try again</button></div>
-                <button type="submit" class="rounded-lg bg-brand-500 px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitting"><span x-show="!submitting">Submit assessment</span><span x-show="submitting">Submitting assessment…</span></button>
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitting"><i class="bi bi-check2-circle" aria-hidden="true"></i><span x-text="submitting ? 'Submitting assessment…' : 'Submit assessment'">Submit assessment</span></button>
             </div>
         </form>
     </x-common.component-card>

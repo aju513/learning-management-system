@@ -12,6 +12,7 @@ use App\Models\LearningMaterial;
 use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
 use App\Services\CourseAssessmentService;
 use App\Services\CreditScoreService;
+use App\Services\LearningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -22,6 +23,7 @@ class CourseAssessmentPlayerController extends Controller
         private readonly CourseAssessmentRepositoryInterface $courseAssessments,
         private readonly CourseAssessmentService $service,
         private readonly CreditScoreService $credits,
+        private readonly LearningService $learning,
     ) {}
 
     public function start(StartCourseAssessmentRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): RedirectResponse
@@ -39,10 +41,14 @@ class CourseAssessmentPlayerController extends Controller
         $view = $attempt->status === 'in_progress'
             ? 'pages.admin.course-assessment-player.take'
             : 'pages.admin.course-assessment-player.result';
+        $learningContext = $this->learning->open(
+            $enrollment,
+            $attempt->courseAssessment->material,
+            $request->user(),
+        );
 
-        return view($view, [
+        return view($view, $learningContext + [
             'attempt' => $attempt,
-            'enrollment' => $enrollment,
             'creditAward' => $attempt->passed ? $this->credits->courseAward($course, $request->user()) : null,
             'courseCreditPoints' => (float) $course->credit_points,
             'title' => $attempt->courseAssessment->material->title,

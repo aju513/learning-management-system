@@ -19,7 +19,7 @@
     restoreDraft() {
         try {
             const answers = JSON.parse(localStorage.getItem(this.draftKey) || '{}');
-            Object.entries(answers).forEach(([id, value]) => this.form().querySelectorAll(`[data-answer-question="${id}"]`).forEach((input) => {
+            Object.entries(answers).forEach(([id, value]) => this.form().querySelectorAll(`[data-answer-question='${id}']`).forEach((input) => {
                 if (input.type === 'checkbox' || input.type === 'radio') input.checked = Array.isArray(value) ? value.includes(input.value) : value === input.value;
                 else input.value = value;
             }));
@@ -77,7 +77,7 @@
             @endforeach
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div><p class="text-xs text-gray-500" x-text="saveState"></p><p x-show="submitError" x-text="submitError" class="mt-1 text-sm text-error-600" role="alert"></p></div>
-                <button type="submit" class="rounded-lg bg-brand-500 px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitting"><span x-show="!submitting">{{ __('Submit assessment') }}</span><span x-show="submitting">{{ __('Submitting…') }}</span></button>
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitting"><i class="bi bi-check2-circle" aria-hidden="true"></i><span x-text="submitting ? '{{ __('Submitting…') }}' : '{{ __('Submit assessment') }}'">{{ __('Submit assessment') }}</span></button>
             </div>
         </form>
     </x-common.component-card>
