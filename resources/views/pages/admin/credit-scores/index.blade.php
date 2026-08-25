@@ -96,7 +96,7 @@
                 </div>
                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <div><x-ui.badge :color="$courseStatusColor">{{ $courseStatus }}</x-ui.badge><p class="mt-2 text-xs text-gray-500">{{ $course->required_training_key ? ($trainingNames[$course->required_training_key] ?? 'Required training') : 'Available to everyone' }}</p></div>
-                    @if($courseEnrollment)<a href="{{ route('learning.courses.index') }}" class="text-sm font-medium text-brand-500">Open course</a>@else<a href="{{ route('learning.catalog.show', $course) }}" class="text-sm font-medium text-brand-500">View course</a>@endif
+                    @if($courseAward && ! $courseAward->isClaimed())<form method="POST" action="{{ route('learning.credit-scores.claim', $courseAward) }}">@csrf<button type="submit" class="text-sm font-medium text-brand-500">Claim credit</button></form>@elseif($courseEnrollment?->status->value === 'completed')<form method="POST" action="{{ route('learning.credit-scores.course-claim', $courseEnrollment) }}">@csrf<button type="submit" class="text-sm font-medium text-brand-500">Claim credit</button></form>@elseif($courseEnrollment)<a href="{{ route('learning.courses.index') }}" class="text-sm font-medium text-brand-500">Open course</a>@else<a href="{{ route('learning.catalog.show', $course) }}" class="text-sm font-medium text-brand-500">View course</a>@endif
                 </div>
             </article>
         @empty

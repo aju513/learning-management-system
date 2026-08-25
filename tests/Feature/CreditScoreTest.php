@@ -173,6 +173,34 @@ test('enrolled course cards show assigned credit scores and claim state', functi
         ->assertSee('Claimed');
 });
 
+test('previously completed credit-bearing enrollments can recover and claim missing awards', function () {
+    $trainee = creditPortalUser('trainee');
+    FiscalYear::factory()->create(['starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active']);
+    $course = Course::factory()->published()->create(['title' => 'Earlier Completed Course', 'credit_points' => 4]);
+    $enrollment = Enrollment::factory()->create([
+        'course_id' => $course->id,
+        'user_id' => $trainee->id,
+        'status' => 'completed',
+        'progress_percentage' => 100,
+        'completed_at' => now()->subMonth(),
+    ]);
+
+    $this->actingAs($trainee)->get(route('learning.courses.index'))
+        ->assertOk()
+        ->assertSee('+4.00')
+        ->assertSee('Claim credit')
+        ->assertSee(route('learning.credit-scores.course-claim', $enrollment), false);
+
+    $this->actingAs($trainee)->post(route('learning.credit-scores.course-claim', $enrollment))->assertRedirect();
+    $this->assertDatabaseHas('credit_awards', [
+        'user_id' => $trainee->id,
+        'course_id' => $course->id,
+        'source_key' => 'course:'.$course->id,
+        'points' => 4,
+        'status' => 'claimed',
+    ]);
+});
+
 test('credit scores page shows detailed test credit opportunities', function () {
     $trainee = creditPortalUser('trainee');
     $instructor = creditPortalUser('instructor');

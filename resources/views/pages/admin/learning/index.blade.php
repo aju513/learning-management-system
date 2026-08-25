@@ -71,6 +71,8 @@
                                 <span class="text-xs font-semibold text-success-600">Claimed</span>
                             @elseif($courseProgress['creditAward'])
                                 <form method="POST" action="{{ route('learning.credit-scores.claim', $courseProgress['creditAward']) }}">@csrf<button type="submit" class="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white">Claim credit</button></form>
+                            @elseif($enrollment->status->value === 'completed')
+                                <form method="POST" action="{{ route('learning.credit-scores.course-claim', $enrollment) }}">@csrf<button type="submit" class="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white">Claim credit</button></form>
                             @else
                                 <span class="text-xs text-gray-600 dark:text-gray-400">Earn after course completion</span>
                             @endif

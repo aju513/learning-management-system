@@ -38,5 +38,6 @@ Route::prefix('learning')->name('learning.')->middleware(['auth', 'active', 'can
         Route::get('/credit-scores', [CreditScoreController::class, 'index'])->name('credit-scores.index');
         Route::post('/credit-scores/attendance/refresh', [CreditScoreController::class, 'refreshAttendance'])->middleware('can:credit-scores.refresh-attendance')->name('credit-scores.attendance.refresh');
         Route::post('/credit-scores/{credit_award}/claim', [CreditScoreController::class, 'claim'])->middleware('can:credit-scores.claim-own')->name('credit-scores.claim');
+        Route::post('/credit-scores/courses/{enrollment}/claim', [CreditScoreController::class, 'claimCourse'])->middleware('can:credit-scores.claim-own')->name('credit-scores.course-claim');
     });
 });

@@ -29,12 +29,19 @@
                         <p class="mt-2 text-sm font-medium text-success-700 dark:text-success-300">This credit score has already been claimed.</p>
                     @elseif($creditAward)
                         <p class="mt-2 text-sm text-brand-800 dark:text-brand-200">You passed the assessment and your course credit score is ready to claim.</p>
+                    @elseif($enrollment->status->value === 'completed')
+                        <p class="mt-2 text-sm text-brand-800 dark:text-brand-200">This course was completed earlier. Claim your course credit score now.</p>
                     @else
                         <p class="mt-2 text-sm text-brand-800 dark:text-brand-200">Complete the remaining course items to unlock this credit score.</p>
                     @endif
                 </div>
                 @if($creditAward && ! $creditAward->isClaimed())
                     <form method="POST" action="{{ route('learning.credit-scores.claim', $creditAward) }}">
+                        @csrf
+                        <button type="submit" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">Claim {{ number_format($courseCreditPoints, 2) }} credits</button>
+                    </form>
+                @elseif($enrollment->status->value === 'completed')
+                    <form method="POST" action="{{ route('learning.credit-scores.course-claim', $enrollment) }}">
                         @csrf
                         <button type="submit" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">Claim {{ number_format($courseCreditPoints, 2) }} credits</button>
                     </form>

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreditScore\ClaimCourseCreditRequest;
 use App\Http\Requests\CreditScore\ClaimCreditScoreRequest;
 use App\Http\Requests\CreditScore\IndexCreditScoreRequest;
 use App\Http\Requests\CreditScore\IndexCreditScoreViewerRequest;
 use App\Http\Requests\CreditScore\RefreshAttendanceRequest;
 use App\Models\CreditAward;
+use App\Models\Enrollment;
 use App\Services\CreditScoreService;
 use App\Services\CreditScoreViewerService;
 use Illuminate\Http\RedirectResponse;
@@ -38,6 +40,13 @@ class CreditScoreController extends Controller
         $this->service->claim($creditAward, $request->user());
 
         return back()->with('success', 'Credit score claimed successfully.');
+    }
+
+    public function claimCourse(ClaimCourseCreditRequest $request, Enrollment $enrollment): RedirectResponse
+    {
+        $this->service->claimCourseCompletion($enrollment, $request->user());
+
+        return back()->with('success', 'Course credit score claimed successfully.');
     }
 
     public function refreshAttendance(RefreshAttendanceRequest $request): RedirectResponse

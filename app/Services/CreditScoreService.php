@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Enums\CreditAwardStatus;
 use App\Enums\CreditSourceType;
+use App\Enums\EnrollmentStatus;
 use App\Enums\FiscalYearStatus;
 use App\Models\Assessment;
 use App\Models\AttendanceSnapshot;
 use App\Models\Course;
 use App\Models\CourseAssessment;
 use App\Models\CreditAward;
+use App\Models\Enrollment;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
@@ -128,6 +130,25 @@ class CreditScoreService
 
             return $claimed;
         });
+    }
+
+    public function claimCourseCompletion(Enrollment $enrollment, User $trainee): CreditAward
+    {
+        if ((int) $enrollment->user_id !== (int) $trainee->id) {
+            throw new AuthorizationException('You cannot claim another learner’s course credit.');
+        }
+
+        if ($enrollment->status !== EnrollmentStatus::Completed) {
+            throw ValidationException::withMessages(['course' => 'Complete the course before claiming its credit score.']);
+        }
+
+        $enrollment->loadMissing('course');
+        $award = $this->recordCourseCompletion($enrollment->course, $trainee, $enrollment->completed_at ?: now());
+        if (! $award) {
+            throw ValidationException::withMessages(['course' => 'This course does not have an active credit score available to claim.']);
+        }
+
+        return $this->claim($award, $trainee);
     }
 
     public function pageData(User $trainee): array
