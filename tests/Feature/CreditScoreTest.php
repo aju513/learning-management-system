@@ -80,6 +80,22 @@ test('trainee credit summary is available on the enrolled courses page', functio
         ->assertSee('0.00 credits');
 });
 
+test('fiscal year management links include their fiscal year parameter', function () {
+    $superAdmin = creditPortalUser('super-admin');
+    $admin = creditPortalUser('admin');
+    $fiscalYear = FiscalYear::factory()->create(['status' => 'draft']);
+
+    $this->actingAs($superAdmin)->get(route('super-admin.fiscal-years.index'))
+        ->assertOk()
+        ->assertSee(route('super-admin.fiscal-years.show', $fiscalYear), false)
+        ->assertSee(route('super-admin.fiscal-years.edit', $fiscalYear), false);
+
+    $this->actingAs($admin)->get(route('admin.fiscal-years.index'))
+        ->assertOk()
+        ->assertSee(route('admin.fiscal-years.show', $fiscalYear), false)
+        ->assertSee(route('admin.fiscal-years.edit', $fiscalYear), false);
+});
+
 test('course completion credit is created only once for a learner and fiscal year', function () {
     $trainee = creditPortalUser('trainee');
     $course = Course::factory()->create(['credit_points' => 5]);
