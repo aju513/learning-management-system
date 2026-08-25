@@ -201,6 +201,34 @@ test('previously completed credit-bearing enrollments can recover and claim miss
     ]);
 });
 
+test('completed catalog course details expose an existing eligible credit claim', function () {
+    $trainee = creditPortalUser('trainee');
+    $instructor = creditPortalUser('instructor');
+    $fiscalYear = FiscalYear::factory()->create(['starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active']);
+    $course = Course::factory()->published()->for($instructor, 'instructor')->create([
+        'title' => 'Completed Governance Course',
+        'credit_points' => 5,
+    ]);
+    $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create([
+        'status' => 'completed',
+        'progress_percentage' => 100,
+        'completed_at' => now()->subDay(),
+    ]);
+    $award = CreditAward::factory()->create([
+        'fiscal_year_id' => $fiscalYear->id,
+        'user_id' => $trainee->id,
+        'course_id' => $course->id,
+        'source_key' => 'course:'.$course->id,
+        'points' => 5,
+        'status' => 'eligible',
+    ]);
+
+    $this->actingAs($trainee)->get(route('learning.catalog.show', $course))
+        ->assertOk()
+        ->assertSee('Claim 5.00 credits')
+        ->assertSee(route('learning.credit-scores.claim', $award), false);
+});
+
 test('credit scores page shows detailed test credit opportunities', function () {
     $trainee = creditPortalUser('trainee');
     $instructor = creditPortalUser('instructor');

@@ -136,6 +136,7 @@ test('sequential learning records material and course completion', function () {
         ->assertOk()
         ->assertSee('Learning space')
         ->assertSee('Course contents')
+        ->assertSee('id="chapter-'.$materials[0]->chapter->id.'"', false)
         ->assertDontSee('Toggle Sidebar');
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[1]]))
         ->assertOk()->assertSee('Complete the previous required lesson first')->assertSee('Go to previous lesson');

@@ -60,6 +60,15 @@ class CourseAssessmentPlayerController extends Controller
         $attempt = $this->service->submit($courseAssessmentAttempt, $request->validated('answers', []), $enrollment, $request->user());
         $redirect = route('learning.course-assessment-attempts.show', [$enrollment, $attempt]);
 
+        if ($attempt->passed) {
+            $continuation = $this->learning->launch($enrollment, $request->user());
+            if ($continuation['summary'] ?? false) {
+                $redirect = route('learning.courses.summary', $enrollment);
+            } elseif ($continuation['material'] ?? null) {
+                $redirect = route('learning.courses.materials.show', [$continuation['enrollment'], $continuation['material']]);
+            }
+        }
+
         if ($request->expectsJson()) {
             return response()->json(['submitted' => true, 'redirect' => $redirect]);
         }

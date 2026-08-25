@@ -131,7 +131,7 @@ test('course assessment failures can be retaken and passing completes the requir
     $secondAttempt = CourseAssessmentAttempt::whereKeyNot($attempt->id)->firstOrFail();
     $this->actingAs($trainee)->post(route('learning.course-assessment-attempts.submit', [$enrollment, $secondAttempt]), [
         'answers' => [$question->id => $correct->id],
-    ])->assertRedirect();
+    ])->assertRedirect(route('learning.courses.materials.show', [$enrollment, $next]));
 
     expect($secondAttempt->refresh()->passed)->toBeTrue()
         ->and($enrollment->refresh()->materialProgress()->where('learning_material_id', $material->id)->first()->completed_at)->not->toBeNull();
@@ -141,7 +141,7 @@ test('course assessment failures can be retaken and passing completes the requir
 test('course assessment submission returns a retry-safe JSON redirect', function () {
     $instructor = assessmentPortalUser('instructor');
     $trainee = assessmentPortalUser('trainee');
-    [, $material, $assessment] = courseAssessmentMaterial($instructor);
+    [, $material, $assessment, $next] = courseAssessmentMaterial($instructor);
     $this->actingAs($instructor)->post(route('instructor.course-assessment-questions.store', $assessment), [
         'prompt' => 'What is correct?', 'type' => 'single_choice', 'marks' => 1,
         'options' => ['Correct', 'Incorrect'], 'correct_options' => [0],
@@ -155,7 +155,7 @@ test('course assessment submission returns a retry-safe JSON redirect', function
         'answers' => [$question->id => $question->options->first()->id],
     ]);
 
-    $response->assertOk()->assertJsonPath('submitted', true)->assertJsonPath('redirect', route('learning.course-assessment-attempts.show', [$enrollment, $attempt]));
+    $response->assertOk()->assertJsonPath('submitted', true)->assertJsonPath('redirect', route('learning.courses.materials.show', [$enrollment, $next]));
     $this->actingAs($trainee)->postJson(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
         'answers' => [$question->id => $question->options->first()->id],
     ])->assertOk()->assertJsonPath('submitted', true);
@@ -179,7 +179,7 @@ test('a passed course assessment prompts the trainee to claim the course credit 
     $attempt = CourseAssessmentAttempt::firstOrFail();
     $this->actingAs($trainee)->post(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
         'answers' => [$question->id => $question->options->first()->id],
-    ])->assertRedirect();
+    ])->assertRedirect(route('learning.courses.summary', $enrollment));
 
     $award = CreditAward::query()->where('user_id', $trainee->id)->where('source_key', 'course:'.$course->id)->firstOrFail();
     $this->actingAs($trainee)->get(route('learning.course-assessment-attempts.show', [$enrollment, $attempt]))

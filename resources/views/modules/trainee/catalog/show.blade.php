@@ -3,8 +3,8 @@
 @section('content')
 @php($application = $course->enrollments->firstWhere('course_id', $course->id))
 <x-common.page-breadcrumb :pageTitle="$course->title" :translate="false" />
-<div class="grid gap-6 xl:grid-cols-[1fr_360px]">
-    <div class="space-y-6">
+<div class="grid gap-4 xl:grid-cols-[1fr_360px]">
+    <div class="space-y-4">
         <x-common.component-card :title="$course->title" :desc="$course->short_description">
             @if ($course->thumbnail_path)<img src="{{ Storage::disk('public')->url($course->thumbnail_path) }}" alt="" class="mb-5 max-h-80 w-full rounded-xl object-cover">@endif
             <div class="mb-5 flex flex-wrap gap-2"><x-ui.badge color="light">{{ ucfirst($course->difficulty) }}</x-ui.badge><x-ui.badge color="primary">{{ $course->estimated_duration_minutes }} minutes</x-ui.badge><x-ui.badge color="light">{{ $course->modules->count() }} modules</x-ui.badge><x-ui.badge color="light">{{ $course->modules->flatMap->chapters->flatMap->materials->count() }} course items</x-ui.badge></div>
@@ -42,8 +42,12 @@
                         <div class="mb-4 rounded-xl bg-brand-50 p-4 dark:bg-brand-500/10"><div class="flex items-center justify-between gap-3"><p class="text-sm font-semibold text-gray-800 dark:text-white">Your progress</p><p class="text-lg font-bold text-brand-600 dark:text-brand-400">{{ $progress['percentage'] }}%</p></div><div class="mt-3 h-2.5 overflow-hidden rounded-full bg-brand-100 dark:bg-brand-500/20"><div class="h-full rounded-full bg-brand-500" style="width: {{ $progress['percentage'] }}%"></div></div><div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-300"><span>{{ $progress['completedLessons'] }} of {{ $progress['totalLessons'] }} lessons completed</span><span>Assessment: {{ $progress['assessmentStatus'] ?? 'Not included' }}</span></div></div>
                         @if($progress['assessment'] && ! $progress['assessmentPassed'] && $progress['assessmentStatus'] === 'Available')
                             <form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$application, $progress['assessmentMaterial']]) }}">@csrf<button class="w-full rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white">Take assessment</button></form>
+                        @elseif($progress['creditPoints'] > 0 && $application->status->value === 'completed' && $progress['creditAward'] && ! $progress['creditAward']->isClaimed())
+                            <form method="POST" action="{{ route('learning.credit-scores.claim', $progress['creditAward']) }}">@csrf<button class="w-full rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white">Claim {{ number_format($progress['creditPoints'], 2) }} credits</button></form>
                         @elseif($progress['creditPoints'] > 0 && $application->status->value === 'completed' && ! $progress['creditAward'])
                             <form method="POST" action="{{ route('learning.credit-scores.course-claim', $application) }}">@csrf<button class="w-full rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white">Claim {{ number_format($progress['creditPoints'], 2) }} credits</button></form>
+                        @elseif($progress['creditPoints'] > 0 && $application->status->value === 'completed' && $progress['creditAward']?->isClaimed())
+                            <div class="rounded-lg bg-success-50 px-4 py-3 text-center text-sm font-medium text-success-700 dark:bg-success-500/10 dark:text-success-300">Course credit claimed</div>
                         @else
                             <a href="{{ route('learning.courses.player', $application) }}" class="block rounded-lg bg-brand-500 px-4 py-3 text-center text-sm font-medium text-white">{{ $progress['isComplete'] ? 'Review course' : ($application->started_at ? 'Continue course' : 'Start course') }}</a>
                         @endif

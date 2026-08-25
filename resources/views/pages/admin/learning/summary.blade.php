@@ -7,7 +7,7 @@
     </x-slot:actions>
 </x-common.page-breadcrumb>
 
-<div class="mx-auto max-w-5xl space-y-6">
+<div class="mx-auto max-w-6xl space-y-4">
     <section class="overflow-hidden rounded-2xl bg-gradient-to-r from-brand-600 to-cyan-600 p-6 text-white shadow-theme-sm sm:p-8">
         <p class="text-sm font-medium text-white/75">Course completed</p>
         <h1 class="mt-2 text-3xl font-bold">{{ $enrollment->course->title }}</h1>

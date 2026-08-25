@@ -38,7 +38,7 @@
     </header>
 
     <div class="mx-auto flex max-w-[1600px]">
-        <aside class="fixed inset-y-16 left-0 z-30 w-[min(86vw,340px)] -translate-x-full overflow-y-auto border-r border-gray-200 bg-white p-5 transition-transform md:sticky md:top-16 md:block md:h-[calc(100vh-4rem)] md:w-80 md:translate-x-0 md:shrink-0 md:self-start dark:border-gray-800 dark:bg-gray-900" :class="outlineOpen ? 'translate-x-0' : ''">
+        <aside id="course-outline" class="fixed inset-y-16 left-0 z-30 w-[min(86vw,340px)] -translate-x-full overflow-y-auto border-r border-gray-200 bg-white p-5 transition-transform md:sticky md:top-16 md:block md:h-[calc(100vh-4rem)] md:w-80 md:translate-x-0 md:shrink-0 md:self-start dark:border-gray-800 dark:bg-gray-900" :class="outlineOpen ? 'translate-x-0' : ''">
             <div class="mb-6 flex items-start justify-between gap-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-500">Course contents</p>
@@ -64,7 +64,7 @@
                         </div>
                         <div x-show="expanded" x-collapse class="space-y-4">
                             @foreach($module->chapters as $chapter)
-                                <div>
+                                <div id="chapter-{{ $chapter->id }}" x-init="if ({{ $chapter->id === $currentChapter?->id ? 'true' : 'false' }}) { $nextTick(() => { const outline = $el.closest('aside'); if (outline) outline.scrollTo({ top: Math.max(0, $el.offsetTop - (outline.clientHeight / 3)), behavior: 'auto' }); }); }" class="{{ $chapter->id === $currentChapter?->id ? 'rounded-xl bg-brand-50/60 p-2 dark:bg-brand-500/10' : '' }}">
                                     <p class="mb-1 px-2 text-xs font-medium text-gray-500">{{ $chapter->title }}</p>
                                     <div class="space-y-1">
                                         @foreach($chapter->materials as $item)

@@ -38,7 +38,7 @@
         </header>
 
         <div class="mx-auto flex max-w-[1600px]">
-            <aside class="fixed inset-y-16 left-0 z-30 w-[min(86vw,340px)] -translate-x-full overflow-y-auto border-r border-gray-200 bg-white p-5 transition-transform md:sticky md:top-16 md:block md:h-[calc(100vh-4rem)] md:w-80 md:translate-x-0 md:shrink-0 md:self-start dark:border-gray-800 dark:bg-gray-900" :class="outlineOpen ? 'translate-x-0' : ''">
+            <aside id="course-outline" class="fixed inset-y-16 left-0 z-30 w-[min(86vw,340px)] -translate-x-full overflow-y-auto border-r border-gray-200 bg-white p-5 transition-transform md:sticky md:top-16 md:block md:h-[calc(100vh-4rem)] md:w-80 md:translate-x-0 md:shrink-0 md:self-start dark:border-gray-800 dark:bg-gray-900" :class="outlineOpen ? 'translate-x-0' : ''">
                 <div class="mb-6 flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-500">Course contents</p><h1 class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{{ $enrollment->course->title }}</h1></div><button type="button" @click="outlineOpen = false" class="text-xl text-gray-400 md:hidden" aria-label="Close contents">&times;</button></div>
                 <div class="mb-6 rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]"><div class="flex items-end justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} course items complete</span><span class="text-lg font-bold text-brand-500">{{ $progressPercentage }}%</span></div><div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-cyan-500" style="width: {{ min(100, max(0, (float) $progressPercentage)) }}%"></div></div></div>
                 <nav class="space-y-6">
@@ -48,7 +48,7 @@
                         @php($moduleCompleted = $moduleRequired->whereIn('id', $completedMaterialIds)->count())
                         <section x-data="{ expanded: true }"><div class="mb-3 flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Module {{ $loop->iteration }}</p><h2 class="mt-1 text-sm font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h2><p class="mt-1 text-xs text-gray-500">{{ $moduleCompleted }} of {{ $moduleRequired->count() }} course items completed</p></div><button type="button" @click="expanded = !expanded" class="rounded p-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06]" :aria-expanded="expanded.toString()" aria-label="Toggle module contents"><span x-text="expanded ? '−' : '+'"></span></button></div><div x-show="expanded" x-collapse class="space-y-4">
                             @foreach($module->chapters as $chapter)
-                                <div><p class="mb-1 px-2 text-xs font-medium text-gray-500">{{ $chapter->title }}</p><div class="space-y-1">
+                                <div id="chapter-{{ $chapter->id }}" x-init="if ({{ $chapter->id === $currentChapter?->id ? 'true' : 'false' }}) { $nextTick(() => { const outline = $el.closest('aside'); if (outline) outline.scrollTo({ top: Math.max(0, $el.offsetTop - (outline.clientHeight / 3)), behavior: 'auto' }); }); }" class="{{ $chapter->id === $currentChapter?->id ? 'rounded-xl bg-brand-50/60 p-2 dark:bg-brand-500/10' : '' }}"><p class="mb-1 px-2 text-xs font-medium text-gray-500">{{ $chapter->title }}</p><div class="space-y-1">
                                     @foreach($chapter->materials as $item)
                                         @php($done = $completedMaterialIds->contains($item->id))
                                         @php($itemIndex = $orderedMaterials->search(fn ($ordered) => (int) $ordered->id === (int) $item->id))
@@ -64,8 +64,8 @@
                 </nav>
             </aside>
 
-            <main class="min-w-0 flex-1 px-4 py-8 sm:px-8 lg:px-12">
-                <div class="mx-auto max-w-2xl">
+            <main class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-4xl">
                     @if (session('success'))<div class="mb-6 rounded-xl border border-success-500/30 bg-success-50 px-4 py-3 text-sm text-success-700 dark:bg-success-500/15 dark:text-success-400">{{ session('success') }}</div>@endif
                     @if ($errors->any())<div class="mb-6 rounded-xl border border-error-500/30 bg-error-50 px-4 py-3 text-sm text-error-700 dark:bg-error-500/15 dark:text-error-400">{{ $errors->first() }}</div>@endif
                     @yield('content')
