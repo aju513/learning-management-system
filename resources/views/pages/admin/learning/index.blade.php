@@ -82,7 +82,7 @@
                         @if($nextMaterial && $assessment && ! $assessmentPassed && ! $assessmentLocked)
                             <form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $assessmentMaterial]) }}" @submit="opening = true">
                                 @csrf
-                                <button type="submit" :disabled="opening" class="inline-flex items-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-70"><span x-show="!opening">Take assessment <span class="ml-2">→</span></span><span x-cloak x-show="opening">Opening assessment…</span></button>
+                                <button type="submit" :disabled="opening" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-70"><span x-show="!opening"><i class="bi bi-clipboard-check mr-1" aria-hidden="true"></i>Take assessment <span class="ml-1">→</span></span><span x-cloak x-show="opening">Opening assessment…</span></button>
                             </form>
                         @elseif($nextMaterial)
                             <a href="{{ $courseProgress['isComplete'] ? route('learning.courses.summary', $enrollment) : route('learning.courses.player', $enrollment) }}" @click="opening = true" class="inline-flex items-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2" :class="opening ? 'cursor-wait opacity-70' : ''"><span x-show="!opening">{{ $primaryAction }} <span class="ml-2">→</span></span><span x-cloak x-show="opening">Opening course…</span></a>

@@ -135,10 +135,6 @@ class CourseService
         if (blank($course->short_description) && blank($course->description)) {
             $issues[] = ['message' => 'Add a course description before publishing.'];
         }
-        if (blank($course->thumbnail_path)) {
-            $issues[] = ['message' => 'Add a course thumbnail before publishing.'];
-        }
-
         if ($course->modules->isEmpty()) {
             $issues[] = ['message' => 'Add at least one module before publishing.'];
 
@@ -169,8 +165,9 @@ class CourseService
 
                 foreach ($chapter->materials->where('type', MaterialType::CourseAssessment) as $material) {
                     $assessment = $material->courseAssessment;
-                    $minimumQuestions = (int) config('lms.course_assessment_min_questions', 10);
+                    $minimumQuestions = (int) config('lms.course_assessment_min_questions', 1);
                     if (! $assessment || $assessment->questions->count() < $minimumQuestions) {
+                        $questionLabel = $minimumQuestions === 1 ? 'question' : 'questions';
                         $issues[] = [
                             'module_id' => $module->id,
                             'chapter_id' => $chapter->id,
@@ -179,7 +176,7 @@ class CourseService
                             'chapter' => $chapter,
                             'material' => $material,
                             'assessment' => $assessment,
-                            'message' => "Course assessment \"{$material->title}\" needs {$minimumQuestions} questions before publishing (currently ".($assessment?->questions->count() ?? 0).').',
+                            'message' => "Course assessment \"{$material->title}\" needs {$minimumQuestions} {$questionLabel} before publishing (currently ".($assessment?->questions->count() ?? 0).').',
                         ];
 
                         continue;

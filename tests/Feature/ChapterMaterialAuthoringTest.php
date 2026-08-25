@@ -306,7 +306,7 @@ test('course publishing identifies incomplete assessment questions and links bac
         ->assertSessionHasErrors('status');
 
     $this->actingAs($instructor)->get(route('instructor.courses.show', $course))
-        ->assertSee('Course assessment &quot;Knowledge Check&quot; needs 10 questions before publishing (currently 0).', false)
+        ->assertSee('Course assessment &quot;Knowledge Check&quot; needs 1 question before publishing (currently 0).', false)
         ->assertSee(route('instructor.course-assessments.show', $assessment).'#chapter-'.$chapter->id, false)
         ->assertSee('Incomplete');
 });

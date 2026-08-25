@@ -5,7 +5,7 @@
     <x-common.page-breadcrumb :pageTitle="$attempt->courseAssessment->material->title" />
     <x-common.component-card :title="'Attempt '.$attempt->attempt_number" desc="Choose the answer or answers, then submit for automatic grading.">
         <div class="mb-6 rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]">
-            <div class="flex items-center justify-between gap-3 text-sm"><span class="font-medium text-gray-800 dark:text-white">Assessment unlocked</span><span class="text-gray-600 dark:text-gray-400">{{ $attempt->courseAssessment->questions->count() }} questions · Passing score {{ $attempt->courseAssessment->passing_percentage }}%</span></div>
+            <div class="flex items-center justify-between gap-3 text-sm"><span class="font-medium text-gray-800 dark:text-white">Assessment unlocked</span><span class="text-gray-600 dark:text-gray-400">{{ $attempt->courseAssessment->questions->count() }} {{ Str::plural('question', $attempt->courseAssessment->questions->count()) }} · Passing score {{ $attempt->courseAssessment->passing_percentage }}%</span></div>
             <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" :style="`width: ${(Object.keys(collectAnswers()).length / {{ max(1, $attempt->courseAssessment->questions->count()) }}) * 100}%`"></div></div>
             <p class="mt-2 text-xs text-gray-600 dark:text-gray-400">Answer saving status: <span class="font-medium" x-text="saveState"></span></p>
         </div>

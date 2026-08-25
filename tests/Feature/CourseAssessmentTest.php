@@ -82,6 +82,10 @@ test('course assessment player keeps its Alpine controls visible', function () {
     ])->assertRedirect();
 
     $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create(['status' => 'active']);
+    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $material]))
+        ->assertOk()
+        ->assertSee('Start assessment')
+        ->assertSee('bi-clipboard-check', false);
     $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))->assertRedirect();
     $attempt = CourseAssessmentAttempt::firstOrFail();
 
@@ -179,7 +183,7 @@ test('a passed course assessment prompts the trainee to claim the course credit 
     $attempt = CourseAssessmentAttempt::firstOrFail();
     $this->actingAs($trainee)->post(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
         'answers' => [$question->id => $question->options->first()->id],
-    ])->assertRedirect(route('learning.courses.summary', $enrollment));
+    ])->assertRedirect(route('learning.courses.materials.show', [$enrollment, $next]));
 
     $award = CreditAward::query()->where('user_id', $trainee->id)->where('source_key', 'course:'.$course->id)->firstOrFail();
     $this->actingAs($trainee)->get(route('learning.course-assessment-attempts.show', [$enrollment, $attempt]))

@@ -162,7 +162,7 @@ class CreditScoreService
             'eligibleAwards' => $this->awards->eligibleForUser($trainee, $fiscalYear),
             'history' => $this->awards->forUser($trainee, $fiscalYear),
             'claimedTotal' => $this->awards->claimedTotal($trainee, $fiscalYear),
-            'eligibleTotal' => $this->awards->eligibleTotal($trainee, $fiscalYear),
+            'eligibleTotal' => $fiscalYear ? $this->awards->eligibleTotal($trainee, $fiscalYear) : 0,
             'creditCourses' => $this->courses->creditCoursesForTrainee($trainee, $eligibleTrainingKeys, $fiscalYear?->id),
             'creditAssessments' => $this->assessments->creditAssessmentsForTrainee($trainee, $eligibleTrainingKeys, $fiscalYear?->id),
             'trainingNames' => $this->trainingCatalog->all()->pluck('name', 'key')->all(),
@@ -176,6 +176,7 @@ class CreditScoreService
         return [
             'fiscalYear' => $fiscalYear,
             'claimedTotal' => $this->awards->claimedTotal($trainee, $fiscalYear),
+            'eligibleTotal' => $this->awards->eligibleTotal($trainee, $fiscalYear),
             'eligibleCount' => $fiscalYear ? $this->awards->eligibleForUser($trainee, $fiscalYear, 1)->total() : 0,
         ];
     }

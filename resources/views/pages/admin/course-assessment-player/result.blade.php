@@ -60,7 +60,7 @@
                 </article>
             @endforeach
         </div>
-        <div class="mt-5 flex flex-wrap justify-end gap-3"><a href="{{ route('learning.courses.summary', $enrollment) }}" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Return to course</a>@if(! $attempt->passed)<form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $attempt->courseAssessment->material]) }}">@csrf<button class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white">Retake assessment</button></form>@endif</div>
+        <div class="mt-5 flex flex-wrap justify-end gap-3"><a href="{{ route('learning.courses.summary', $enrollment) }}" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Return to course</a>@if(! $attempt->passed)<form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $attempt->courseAssessment->material]) }}">@csrf<button class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white"><i class="bi bi-arrow-repeat" aria-hidden="true"></i><span>Retake assessment</span></button></form>@endif</div>
     </x-common.component-card>
 </div>
 @endsection

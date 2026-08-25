@@ -88,6 +88,34 @@ class LearningService
         return $this->open($enrollment, $material, $trainee);
     }
 
+    public function continueAfter(Enrollment $enrollment, LearningMaterial $completedMaterial, User $trainee): array
+    {
+        $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->assertPublishedCourse($enrollment);
+        $this->availability->assertAvailable($enrollment->course, $trainee);
+        $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
+        abort_unless($materials->isNotEmpty(), 404);
+
+        $completedIds = $this->progress($enrollment, $trainee)['completedIds'];
+        $currentIndex = $materials->search(fn (LearningMaterial $material): bool => (int) $material->id === (int) $completedMaterial->id);
+        $nextMaterial = $materials->slice($currentIndex === false ? 0 : $currentIndex + 1)
+            ->first(fn (LearningMaterial $material): bool => ! $completedIds->contains($material->id));
+
+        if (! $nextMaterial) {
+            $nextMaterial = $materials->first(fn (LearningMaterial $material): bool => ! $completedIds->contains($material->id));
+        }
+
+        if (! $nextMaterial) {
+            return [
+                'summary' => true,
+                'enrollment' => $enrollment,
+                'progress' => $this->progress($enrollment, $trainee),
+            ];
+        }
+
+        return $this->open($enrollment, $nextMaterial, $trainee);
+    }
+
     public function summary(Enrollment $enrollment, User $trainee): array
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);

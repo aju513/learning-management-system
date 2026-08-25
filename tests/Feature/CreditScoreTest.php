@@ -67,6 +67,30 @@ test('trainee dashboard renders the credit summary header', function () {
         ->assertSee('0.00 credits');
 });
 
+test('trainee navbar reflects eligible and claimed credit scores', function () {
+    $trainee = creditPortalUser('trainee');
+    $fiscalYear = FiscalYear::factory()->create([
+        'name' => 'FY 2026', 'starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active',
+    ]);
+    $award = CreditAward::factory()->create([
+        'fiscal_year_id' => $fiscalYear->id,
+        'user_id' => $trainee->id,
+        'points' => 5,
+        'status' => 'eligible',
+    ]);
+
+    $this->actingAs($trainee)->get(route('learning.dashboard'))
+        ->assertOk()
+        ->assertSee('+5.00 ready');
+
+    $this->actingAs($trainee)->post(route('learning.credit-scores.claim', $award))->assertRedirect();
+
+    $this->actingAs($trainee)->get(route('learning.dashboard'))
+        ->assertOk()
+        ->assertSee('5.00 credits')
+        ->assertDontSee('+5.00 ready');
+});
+
 test('trainee credit summary is available on the enrolled courses page', function () {
     $trainee = creditPortalUser('trainee');
     FiscalYear::factory()->create([

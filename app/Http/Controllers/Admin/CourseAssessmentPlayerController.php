@@ -61,7 +61,7 @@ class CourseAssessmentPlayerController extends Controller
         $redirect = route('learning.course-assessment-attempts.show', [$enrollment, $attempt]);
 
         if ($attempt->passed) {
-            $continuation = $this->learning->launch($enrollment, $request->user());
+            $continuation = $this->learning->continueAfter($enrollment, $attempt->courseAssessment->material, $request->user());
             if ($continuation['summary'] ?? false) {
                 $redirect = route('learning.courses.summary', $enrollment);
             } elseif ($continuation['material'] ?? null) {

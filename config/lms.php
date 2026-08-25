@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'course_assessment_min_questions' => 10,
+    'course_assessment_min_questions' => 1,
 
     'demo_login' => [
         'enabled' => env('LMS_DEMO_LOGIN_ENABLED', env('APP_ENV') === 'local'),

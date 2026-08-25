@@ -85,7 +85,6 @@ test('an Instructor builds an owned course but cannot edit another instructors c
     ]);
 
     $course = Course::where('title', 'Public Service Foundations')->firstOrFail();
-    $course->update(['thumbnail_path' => 'courses/test-thumbnail.jpg']);
     $response->assertRedirect(route('instructor.courses.show', $course));
     expect($course->instructor_id)->toBe($instructor->id)->and($course->status->value)->toBe('draft');
 
