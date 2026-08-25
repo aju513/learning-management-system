@@ -58,11 +58,13 @@ Instructor and Admin application review groups requests inside course-level coll
 
 Admin and Super Admin retain direct assignment. Assignment is idempotent for each trainee/course pair and supersedes pending, rejected, or cancelled state. Trainees see only active and completed enrollments in My Learning; pending/rejected/cancelled records remain in My Applications.
 
-Opening a material records the last view and starts the enrollment. A sequential-course request for a locked lesson returns a course-state screen identifying the blocking lesson and showing completed required lessons instead of a raw authorization error. Completing required materials recalculates progress as:
+Opening a material records the last view and starts the enrollment. A sequential-course request for a locked lesson returns a course-state screen identifying the blocking lesson, showing completed required items, and offering both the blocking item and course-contents recovery actions instead of a raw authorization error. Completing required materials recalculates progress as:
 
 ```text
 completed required materials / total required materials * 100
 ```
+
+Learner-facing progress uses one shared course-item summary. Required course items include the course assessment, while the supporting lesson metric excludes it and reports learning materials separately. Enrolled-course cards, catalog detail, the course player, assessment result, and completed-course summary therefore use the same numerator, denominator, percentage, assessment state, and next-action decision. Incomplete launches resume the most recently viewed unfinished required item; completed launches open a review summary, with an explicit start-from-beginning action.
 
 At 100 percent, the enrollment becomes completed and receives a completion timestamp. Sequential courses reject access when an earlier required material is incomplete. Required course-assessment materials are completed automatically after a passing attempt and cannot be manually completed before passing. Failed attempts can be retaken without a limit.
 
@@ -70,7 +72,7 @@ At 100 percent, the enrollment becomes completed and receives a completion times
 
 Standalone quizzes support draft, published, and closed states; duration; passing percentage; maximum attempts; availability dates; and direct trainee assignment. Questions support single choice, multiple choice, and true/false behavior using reusable option rows. They are not course materials.
 
-Starting a standalone quiz creates or resumes one in-progress attempt and records its integer-cast expiry duration. Course-assessment attempts are separate, unlimited, and choice-only. While a trainee works, answers are autosaved to the attempt and locally recovered in the browser. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Submission is idempotent so a retry after a lost browser response returns the existing result rather than creating duplicate answers. The player disables the submit action, confirms the final action, displays a recovery message on network failure, and redirects to the result/submitted state. Course-assessment results include the selected and correct options. Graded attempts are immutable through the application UI.
+Starting a standalone quiz creates or resumes one in-progress attempt and records its integer-cast expiry duration. Course-assessment attempts are separate, unlimited, and choice-only. While a trainee works, answers are autosaved to the attempt and locally recovered in the browser. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Submission is idempotent so a retry after a lost browser response returns the existing result rather than creating duplicate answers; the submission transaction locks the attempt row while grading. The player disables the submit action, warns about unanswered questions, confirms the final action, displays saving/submitting/recovery states, and redirects through an explicit JSON success URL. Course-assessment results include score, percentage, passing score, attempt date, and selected/correct options. Graded attempts are immutable through the application UI.
 
 The application provides friendly 403 and 500 screens with an explanation and recovery actions. Operational Super Admins may use the protected `admin.maintenance.optimize-clear` POST route when command-line access is unavailable.
 

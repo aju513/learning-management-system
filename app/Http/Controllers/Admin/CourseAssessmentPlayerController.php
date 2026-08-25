@@ -11,6 +11,7 @@ use App\Models\Enrollment;
 use App\Models\LearningMaterial;
 use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
 use App\Services\CourseAssessmentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -39,11 +40,16 @@ class CourseAssessmentPlayerController extends Controller
         return view($view, ['attempt' => $attempt, 'enrollment' => $enrollment, 'title' => $attempt->courseAssessment->material->title]);
     }
 
-    public function submit(SubmitAttemptRequest $request, Enrollment $enrollment, CourseAssessmentAttempt $courseAssessmentAttempt): RedirectResponse
+    public function submit(SubmitAttemptRequest $request, Enrollment $enrollment, CourseAssessmentAttempt $courseAssessmentAttempt): RedirectResponse|JsonResponse
     {
-        $this->service->submit($courseAssessmentAttempt, $request->validated('answers', []), $enrollment, $request->user());
+        $attempt = $this->service->submit($courseAssessmentAttempt, $request->validated('answers', []), $enrollment, $request->user());
+        $redirect = route('learning.course-assessment-attempts.show', [$enrollment, $attempt]);
 
-        return redirect()->route('learning.course-assessment-attempts.show', [$enrollment, $courseAssessmentAttempt])
+        if ($request->expectsJson()) {
+            return response()->json(['submitted' => true, 'redirect' => $redirect]);
+        }
+
+        return redirect()->to($redirect)
             ->with('success', 'Course assessment submitted.');
     }
 

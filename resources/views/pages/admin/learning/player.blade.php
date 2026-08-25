@@ -4,7 +4,7 @@
 @php
     $orderedMaterials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
     $completedMaterialIds = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
-    $progressPercentage = $progress['total'] > 0 ? round($progress['completed'] / $progress['total'] * 100) : (float) $enrollment->progress_percentage;
+    $progressPercentage = $progress['percentage'];
     $currentChapter = $enrollment->course->modules->flatMap->chapters->first(fn ($chapter) => $chapter->materials->contains('id', $material->id));
     $currentModule = $enrollment->course->modules->first(fn ($module) => $module->chapters->contains(fn ($chapter) => $chapter->materials->contains('id', $material->id)));
     $remainingMinutes = $orderedMaterials->filter(fn ($item) => ! $completedMaterialIds->contains($item->id))->sum(fn ($item) => (int) ($item->duration_minutes ?? 0));
@@ -19,11 +19,16 @@
             <div class="h-7 w-px bg-gray-200 dark:bg-gray-800"></div>
             <p class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-white">{{ $enrollment->course->title }}</p>
             <div class="hidden items-center gap-3 md:flex">
-                <div class="w-44">
+                <div class="w-56 rounded-lg bg-gray-50 px-3 py-2 dark:bg-white/[0.04]"><div class="flex items-end justify-between gap-2"><span class="text-[11px] font-semibold text-gray-700 dark:text-gray-200">Course progress</span><span class="text-sm font-bold text-brand-500">{{ $progressPercentage }}%</span></div><p class="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} course items complete</p><div class="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ $progressPercentage }}%"></div></div></div>
+                <div class="hidden">
                     <div class="mb-1 flex justify-between text-[11px] text-gray-500"><span>Progress</span><span>{{ $progress['completed'] }} / {{ $progress['total'] }} · {{ number_format((float) $enrollment->progress_percentage, 0) }}%</span></div>
-                    <div class="h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ min(100, max(0, (float) $progressPercentage)) }}%"></div></div>
+                    <div class="h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ min(100, max(0, (float) $progressPercentage)) }}%"></div></div>
                 </div>
-                <a href="{{ route('learning.courses.index') }}" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 hover:border-brand-300 hover:text-brand-500 dark:border-gray-700 dark:text-gray-300">Exit course</a>
+                <a href="{{ route('learning.courses.index') }}" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 hover:border-brand-300 hover:text-brand-500 dark:border-gray-700 dark:text-gray-300">Back to courses</a>
+                <a href="{{ route('learning.assessments.index') }}" class="hidden rounded-lg px-2 py-2 text-xs font-medium text-gray-500 hover:text-brand-500 xl:inline">Tests</a>
+                <a href="{{ route('learning.credit-scores.index') }}" class="hidden rounded-lg px-2 py-2 text-xs font-medium text-gray-500 hover:text-brand-500 xl:inline">Credit scores</a>
+                <a href="{{ route('account.profile.edit') }}" class="hidden rounded-lg px-2 py-2 text-xs font-medium text-gray-500 hover:text-brand-500 xl:inline">Profile</a>
+                <a href="{{ route('learning.courses.index') }}" class="rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white dark:bg-white dark:text-gray-900">Exit course</a>
             </div>
             <button type="button" @click="outlineOpen = !outlineOpen" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 md:hidden dark:border-gray-700 dark:text-gray-300">Contents</button>
         </div>
@@ -39,7 +44,7 @@
                 <button type="button" @click="outlineOpen = false" class="text-xl text-gray-400 md:hidden" aria-label="Close contents">&times;</button>
             </div>
             <div class="mb-6 rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]">
-                <div class="flex items-end justify-between"><span class="text-xs text-gray-500">{{ $progress['completed'] }} / {{ $progress['total'] }} lessons</span><span class="text-lg font-bold text-brand-500">{{ number_format((float) $enrollment->progress_percentage, 0) }}%</span></div>
+                <div class="flex items-end justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} course items complete</span><span class="text-lg font-bold text-brand-500">{{ $progressPercentage }}%</span></div>
                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-cyan-500" style="width: {{ min(100, max(0, (float) $progressPercentage)) }}%"></div></div>
             </div>
             <nav class="space-y-6">
@@ -51,7 +56,7 @@
                     @endphp
                     <section x-data="{ expanded: true }">
                         <div class="mb-3 flex items-start justify-between gap-3">
-                            <div><p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Module {{ $loop->iteration }}</p><h2 class="mt-1 text-sm font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h2><p class="mt-1 text-xs text-gray-500">{{ $moduleCompleted }} of {{ $moduleRequired->count() }} completed</p></div>
+                            <div><p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Module {{ $loop->iteration }}</p><h2 class="mt-1 text-sm font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h2><p class="mt-1 text-xs text-gray-500">{{ $moduleCompleted }} of {{ $moduleRequired->count() }} course items completed</p></div>
                             <button type="button" @click="expanded = !expanded" class="rounded p-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06]" :aria-expanded="expanded.toString()" aria-label="Toggle module contents"><span x-text="expanded ? '−' : '+'"></span></button>
                         </div>
                         <div x-show="expanded" x-collapse class="space-y-4">
@@ -69,7 +74,7 @@
                                             @endphp
                                             <a href="{{ route('learning.courses.materials.show', [$enrollment, $item]) }}" @click="outlineOpen = false" aria-label="{{ $item->title }} — {{ $stateLabel }}" class="flex items-start gap-2 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 {{ $item->id === $material->id ? 'bg-brand-50 font-medium text-brand-600 dark:bg-brand-500/10 dark:text-brand-400' : ($itemLocked ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]') }}">
                                                 <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] {{ $done ? 'border-success-500 bg-success-500 text-white' : 'border-gray-300 text-gray-400 dark:border-gray-700' }}">{{ $done ? '✓' : $loop->iteration }}</span>
-                                                <span class="min-w-0"><span class="block truncate">{{ $item->title }}</span><span class="mt-0.5 block text-[11px] {{ $item->id === $material->id ? 'text-brand-500' : 'text-gray-400' }}">{{ $stateLabel }}</span></span>
+                                                <span class="min-w-0"><span class="flex items-center gap-1.5"><span class="block truncate" title="{{ $item->title }}">{{ $item->title }}</span>@if($isAssessment)<span class="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">Assessment</span>@endif</span><span class="mt-0.5 block text-[11px] {{ $item->id === $material->id ? 'text-brand-500' : 'text-gray-400' }}">{{ $stateLabel }}</span></span>
                                             </a>
                                         @endforeach
                                     </div>
@@ -104,8 +109,8 @@
                         <h3 class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ __('Complete the previous required lesson first') }}</h3>
                         <p class="mt-3 text-sm leading-6 text-warning-800 dark:text-warning-200">{{ __('This lesson will unlock after you complete:') }} <strong>{{ $blockingMaterial->title }}</strong></p>
                         <div class="mt-5 h-2 overflow-hidden rounded-full bg-warning-200 dark:bg-warning-500/20"><div class="h-full rounded-full bg-warning-500" style="width: {{ $progress['total'] > 0 ? min(100, ($progress['completed'] / $progress['total']) * 100) : 0 }}%"></div></div>
-                        <p class="mt-2 text-xs text-warning-700 dark:text-warning-300">{{ $progress['completed'] }} {{ __('of') }} {{ $progress['total'] }} {{ __('required lessons completed') }}</p>
-                        <a href="{{ route('learning.courses.materials.show', [$enrollment, $blockingMaterial]) }}" class="mt-6 inline-flex rounded-lg bg-warning-500 px-4 py-2.5 text-sm font-medium text-white">{{ __('Go to previous lesson') }}</a>
+                        <p class="mt-2 text-xs text-warning-700 dark:text-warning-300">{{ $progress['completed'] }} {{ __('of') }} {{ $progress['total'] }} {{ __('required course items completed') }}</p>
+                        <div class="mt-6 flex flex-wrap gap-3"><a href="{{ route('learning.courses.materials.show', [$enrollment, $blockingMaterial]) }}" class="inline-flex rounded-lg bg-warning-500 px-4 py-2.5 text-sm font-medium text-white">{{ __('Go to previous lesson') }}</a><a href="{{ route('learning.courses.index') }}" class="inline-flex rounded-lg border border-warning-300 px-4 py-2.5 text-sm font-medium text-warning-800 dark:border-warning-500/40 dark:text-warning-200">{{ __('Back to course contents') }}</a></div>
                     </article>
                 @else
                 <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">

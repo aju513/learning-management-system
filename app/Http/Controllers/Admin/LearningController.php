@@ -8,13 +8,14 @@ use App\Http\Requests\Learning\DownloadLearningMaterialRequest;
 use App\Http\Requests\Learning\IndexLearningRequest;
 use App\Http\Requests\Learning\LaunchCourseRequest;
 use App\Http\Requests\Learning\ShowLearningMaterialRequest;
+use App\Http\Requests\Learning\ShowLearningSummaryRequest;
 use App\Models\Enrollment;
 use App\Models\LearningMaterial;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Services\LearningService;
 use App\Services\Training\TrainingAvailabilityService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -29,12 +30,29 @@ class LearningController extends Controller
 
     public function index(IndexLearningRequest $request): View
     {
-        return view('pages.admin.learning.index', ['enrollments' => $this->enrollments->forTrainee($request->user(), $this->availability->eligibleTrainingKeys($request->user())), 'title' => 'Enrolled Courses']);
+        $enrollments = $this->enrollments->forTrainee($request->user(), $this->availability->eligibleTrainingKeys($request->user()));
+
+        return view('pages.admin.learning.index', [
+            'enrollments' => $enrollments,
+            'progressByEnrollment' => $enrollments->mapWithKeys(fn (Enrollment $enrollment): array => [$enrollment->id => $this->service->progress($enrollment)]),
+            'title' => 'Enrolled Courses',
+        ]);
     }
 
-    public function player(LaunchCourseRequest $request, Enrollment $enrollment): View
+    public function player(LaunchCourseRequest $request, Enrollment $enrollment): View|RedirectResponse
     {
-        return view('pages.admin.learning.player', $this->service->launch($enrollment, $request->user()) + ['title' => $enrollment->course->title]);
+        $result = $this->service->launch($enrollment, $request->user());
+
+        if ($result['summary'] ?? false) {
+            return redirect()->route('learning.courses.summary', $enrollment);
+        }
+
+        return view('pages.admin.learning.player', $result + ['title' => $enrollment->course->title]);
+    }
+
+    public function summary(ShowLearningSummaryRequest $request, Enrollment $enrollment): View
+    {
+        return view('pages.admin.learning.summary', $this->service->summary($enrollment, $request->user()) + ['title' => $enrollment->course->title]);
     }
 
     public function show(ShowLearningMaterialRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): View

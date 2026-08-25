@@ -34,12 +34,8 @@ class LearningService
         }
         $index = $materials->search(fn (LearningMaterial $item) => (int) $item->id === (int) $material->id);
         $material = $materials[$index];
-        $completed = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
-        $requiredMaterials = $materials->where('is_required', true);
-        $progress = [
-            'completed' => $requiredMaterials->filter(fn (LearningMaterial $item) => $completed->contains($item->id))->count(),
-            'total' => $requiredMaterials->count(),
-        ];
+        $progress = $this->progress($enrollment);
+        $completed = $progress['completedIds'];
         if ($enrollment->course->navigation_mode === NavigationMode::Sequential) {
             $blockingMaterial = $materials->take($index)->first(fn (LearningMaterial $item) => $item->is_required && ! $completed->contains($item->id));
             if ($blockingMaterial) {
@@ -78,10 +74,89 @@ class LearningService
         $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
         abort_unless($materials->isNotEmpty(), 404);
 
-        $completedIds = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
-        $material = $materials->first(fn (LearningMaterial $item) => ! $completedIds->contains($item->id)) ?? $materials->first();
+        $progress = $this->progress($enrollment);
+        if ($progress['isComplete']) {
+            return [
+                'summary' => true,
+                'enrollment' => $enrollment,
+                'progress' => $progress,
+            ];
+        }
+
+        $material = $progress['nextMaterial'] ?? $materials->first();
 
         return $this->open($enrollment, $material, $trainee);
+    }
+
+    public function summary(Enrollment $enrollment, User $trainee): array
+    {
+        $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->assertPublishedCourse($enrollment);
+        $this->availability->assertAvailable($enrollment->course, $trainee);
+
+        return [
+            'enrollment' => $enrollment,
+            'progress' => $this->progress($enrollment),
+        ];
+    }
+
+    /**
+     * Return the single course-progress contract used by learner-facing pages.
+     * Required course items include the course assessment, while lesson counts
+     * intentionally exclude it for the supporting learning-material metric.
+     */
+    public function progress(Enrollment $enrollment): array
+    {
+        $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
+        $requiredMaterials = $materials->where('is_required', true)->values();
+        $lessonMaterials = $requiredMaterials->filter(fn (LearningMaterial $item) => $item->type !== MaterialType::CourseAssessment)->values();
+        $completedIds = $enrollment->materialProgress->whereNotNull('completed_at')->pluck('learning_material_id');
+        $completedCourseItems = $requiredMaterials->filter(fn (LearningMaterial $item) => $completedIds->contains($item->id))->count();
+        $completedLessons = $lessonMaterials->filter(fn (LearningMaterial $item) => $completedIds->contains($item->id))->count();
+        $assessmentMaterial = $materials->first(fn (LearningMaterial $item) => $item->type === MaterialType::CourseAssessment);
+        $assessment = $assessmentMaterial?->courseAssessment;
+        $attempts = $assessment?->attempts?->where('user_id', $enrollment->user_id) ?? collect();
+        $latestAttempt = $attempts->sortByDesc('submitted_at')->first() ?? $attempts->sortByDesc('id')->first();
+        $assessmentPassed = $attempts->contains(fn ($attempt) => (bool) $attempt->passed);
+        $remainingItems = max(0, $requiredMaterials->count() - $completedCourseItems);
+        $percentage = $requiredMaterials->count() > 0
+            ? (int) round($completedCourseItems / $requiredMaterials->count() * 100)
+            : 0;
+        $lastViewed = $enrollment->materialProgress
+            ->filter(fn ($item) => $item->last_viewed_at)
+            ->sortByDesc('last_viewed_at')
+            ->map(fn ($item) => $materials->firstWhere('id', $item->learning_material_id))
+            ->filter()
+            ->first();
+        $lastViewedIncomplete = $enrollment->materialProgress
+            ->filter(fn ($item) => $item->last_viewed_at && ! $completedIds->contains($item->learning_material_id))
+            ->sortByDesc('last_viewed_at')
+            ->map(fn ($item) => $requiredMaterials->firstWhere('id', $item->learning_material_id))
+            ->filter()
+            ->first();
+
+        return [
+            'materials' => $materials,
+            'requiredMaterials' => $requiredMaterials,
+            'lessonMaterials' => $lessonMaterials,
+            'completedIds' => $completedIds,
+            'completed' => $completedCourseItems,
+            'total' => $requiredMaterials->count(),
+            'remaining' => $remainingItems,
+            'percentage' => $percentage,
+            'isComplete' => $requiredMaterials->isNotEmpty() && $remainingItems === 0,
+            'completedLessons' => $completedLessons,
+            'totalLessons' => $lessonMaterials->count(),
+            'remainingLessons' => max(0, $lessonMaterials->count() - $completedLessons),
+            'assessmentMaterial' => $assessmentMaterial,
+            'assessment' => $assessment,
+            'assessmentAttempts' => $attempts,
+            'latestAssessmentAttempt' => $latestAttempt,
+            'assessmentPassed' => $assessmentPassed,
+            'assessmentStatus' => ! $assessment ? null : ($assessmentPassed ? 'Passed' : ($completedLessons < $lessonMaterials->count() ? 'Locked' : 'Available')),
+            'nextMaterial' => $lastViewedIncomplete ?? $requiredMaterials->first(fn (LearningMaterial $item) => ! $completedIds->contains($item->id)),
+            'lastViewed' => $lastViewed,
+        ];
     }
 
     public function complete(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
@@ -109,9 +184,10 @@ class LearningService
 
     public function recalculate(Enrollment $enrollment): Enrollment
     {
-        $enrollment->loadMissing('course');
-        $total = $this->enrollments->requiredMaterialCount($enrollment);
-        $completed = $this->enrollments->completedRequiredMaterialCount($enrollment);
+        $enrollment = $this->enrollments->findForLearning($enrollment);
+        $progress = $this->progress($enrollment);
+        $total = $progress['total'];
+        $completed = $progress['completed'];
         $percentage = $total === 0 ? 0 : round($completed / $total * 100, 2);
         $isComplete = $total > 0 && $completed >= $total;
 

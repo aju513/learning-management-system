@@ -147,6 +147,25 @@ test('sequential learning records material and course completion', function () {
     expect($enrollment->fresh()->status->value)->toBe('completed')->and((float) $enrollment->fresh()->progress_percentage)->toBe(100.0);
 });
 
+test('completed course launch opens the review summary instead of the first lesson', function () {
+    $admin = portalUser('admin');
+    $instructor = portalUser('instructor');
+    $trainee = portalUser('trainee');
+    [$course, , $materials] = publishedCourse($instructor, 2);
+
+    $this->actingAs($admin)->post(route('admin.enrollments.store'), ['course_id' => $course->id, 'trainees' => [$trainee->id]])->assertRedirect();
+    $enrollment = Enrollment::whereBelongsTo($trainee, 'trainee')->whereBelongsTo($course)->firstOrFail();
+    foreach ($materials as $material) {
+        $enrollment->materialProgress()->create(['learning_material_id' => $material->id, 'last_viewed_at' => now(), 'completed_at' => now()]);
+    }
+    $enrollment->update(['status' => 'completed', 'progress_percentage' => 100, 'completed_at' => now()]);
+
+    $this->actingAs($trainee)->get(route('learning.courses.player', $enrollment))
+        ->assertRedirect(route('learning.courses.summary', $enrollment));
+    $this->actingAs($trainee)->get(route('learning.courses.summary', $enrollment))
+        ->assertOk()->assertSee('Course completed')->assertSee('Start from beginning');
+});
+
 test('objective assessments enforce attempts and grade correct answers', function () {
     $instructor = portalUser('instructor');
     $trainee = portalUser('trainee');

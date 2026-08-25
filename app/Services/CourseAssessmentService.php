@@ -116,12 +116,11 @@ class CourseAssessmentService
             throw new AuthorizationException('This course assessment attempt cannot be submitted.');
         }
 
-        if ($attempt->status !== 'in_progress') {
-            return $this->courseAssessments->findAttemptForTaking($attempt);
-        }
-
         return DB::transaction(function () use ($attempt, $answers, $enrollment, $trainee): CourseAssessmentAttempt {
-            $attempt = $this->courseAssessments->findAttemptForTaking($attempt);
+            $attempt = $this->courseAssessments->findAttemptForSubmission($attempt);
+            if ($attempt->status !== 'in_progress') {
+                return $attempt;
+            }
             $earned = 0.0;
             $total = (float) $attempt->courseAssessment->questions->sum('marks');
 

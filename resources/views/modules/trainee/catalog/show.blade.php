@@ -7,7 +7,8 @@
     <div class="space-y-6">
         <x-common.component-card :title="$course->title" :desc="$course->short_description">
             @if ($course->thumbnail_path)<img src="{{ Storage::disk('public')->url($course->thumbnail_path) }}" alt="" class="mb-5 max-h-80 w-full rounded-xl object-cover">@endif
-            <div class="prose max-w-none text-sm text-gray-600 dark:text-gray-300">{{ $course->description ?: 'No extended description has been added yet.' }}</div>
+            <div class="mb-5 flex flex-wrap gap-2"><x-ui.badge color="light">{{ ucfirst($course->difficulty) }}</x-ui.badge><x-ui.badge color="primary">{{ $course->estimated_duration_minutes }} minutes</x-ui.badge><x-ui.badge color="light">{{ $course->modules->count() }} modules</x-ui.badge><x-ui.badge color="light">{{ $course->modules->flatMap->chapters->flatMap->materials->count() }} course items</x-ui.badge></div>
+            <div class="prose max-w-none text-sm leading-7 text-gray-600 dark:text-gray-300">{{ $course->description ?: 'No extended description has been added yet.' }}</div>
         </x-common.component-card>
         <x-common.component-card title="Curriculum preview" desc="Module and learning-item titles are visible before enrollment; content unlocks after approval.">
             <div class="space-y-4">
@@ -36,7 +37,14 @@
                 @elseif ($application->status->value === 'pending')
                     <div class="rounded-lg bg-warning-50 p-3 text-sm text-warning-700 dark:bg-warning-500/10">Your application is pending review.</div>
                 @else
-                    <a href="{{ route('learning.courses.index') }}" class="block rounded-lg bg-success-500 px-4 py-3 text-center text-sm font-medium text-white">Open My Learning</a>
+                    @if($progress)
+                        <div class="mb-4 rounded-xl bg-brand-50 p-4 dark:bg-brand-500/10"><div class="flex items-center justify-between gap-3"><p class="text-sm font-semibold text-gray-800 dark:text-white">Your progress</p><p class="text-lg font-bold text-brand-600 dark:text-brand-400">{{ $progress['percentage'] }}%</p></div><div class="mt-3 h-2.5 overflow-hidden rounded-full bg-brand-100 dark:bg-brand-500/20"><div class="h-full rounded-full bg-brand-500" style="width: {{ $progress['percentage'] }}%"></div></div><div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-300"><span>{{ $progress['completedLessons'] }} of {{ $progress['totalLessons'] }} lessons completed</span><span>Assessment: {{ $progress['assessmentStatus'] ?? 'Not included' }}</span></div></div>
+                        @if($progress['assessment'] && ! $progress['assessmentPassed'] && $progress['assessmentStatus'] === 'Available')
+                            <form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$application, $progress['assessmentMaterial']]) }}">@csrf<button class="w-full rounded-lg bg-brand-500 px-4 py-3 text-sm font-medium text-white">Take assessment</button></form>
+                        @else
+                            <a href="{{ route('learning.courses.player', $application) }}" class="block rounded-lg bg-brand-500 px-4 py-3 text-center text-sm font-medium text-white">{{ $progress['isComplete'] ? 'Review course' : ($application->started_at ? 'Continue course' : 'Start course') }}</a>
+                        @endif
+                    @endif
                 @endif
             </div>
         </x-common.component-card>

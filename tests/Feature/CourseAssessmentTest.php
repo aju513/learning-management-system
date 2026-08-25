@@ -111,6 +111,30 @@ test('course assessment failures can be retaken and passing completes the requir
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $next]))->assertOk();
 });
 
+test('course assessment submission returns a retry-safe JSON redirect', function () {
+    $instructor = assessmentPortalUser('instructor');
+    $trainee = assessmentPortalUser('trainee');
+    [, $material, $assessment] = courseAssessmentMaterial($instructor);
+    $this->actingAs($instructor)->post(route('instructor.course-assessment-questions.store', $assessment), [
+        'prompt' => 'What is correct?', 'type' => 'single_choice', 'marks' => 1,
+        'options' => ['Correct', 'Incorrect'], 'correct_options' => [0],
+    ])->assertRedirect();
+    $question = $assessment->questions()->with('options')->firstOrFail();
+    $enrollment = Enrollment::factory()->for($assessment->material->chapter->module->course)->for($trainee, 'trainee')->create(['status' => 'active']);
+
+    $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))->assertRedirect();
+    $attempt = CourseAssessmentAttempt::firstOrFail();
+    $response = $this->actingAs($trainee)->postJson(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
+        'answers' => [$question->id => $question->options->first()->id],
+    ]);
+
+    $response->assertOk()->assertJsonPath('submitted', true)->assertJsonPath('redirect', route('learning.course-assessment-attempts.show', [$enrollment, $attempt]));
+    $this->actingAs($trainee)->postJson(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
+        'answers' => [$question->id => $question->options->first()->id],
+    ])->assertOk()->assertJsonPath('submitted', true);
+    expect(CourseAssessmentAttempt::count())->toBe(1);
+});
+
 test('course assessment question authoring is owned by the course instructor', function () {
     $owner = assessmentPortalUser('instructor');
     $other = assessmentPortalUser('instructor');

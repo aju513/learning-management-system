@@ -45,6 +45,8 @@ interface CourseAssessmentRepositoryInterface
 
     public function findAttemptForTaking(CourseAssessmentAttempt $attempt): CourseAssessmentAttempt;
 
+    public function findAttemptForSubmission(CourseAssessmentAttempt $attempt): CourseAssessmentAttempt;
+
     public function activeAttempt(CourseAssessment $assessment, User $trainee): ?CourseAssessmentAttempt;
 
     public function nextAttemptNumber(CourseAssessment $assessment, User $trainee): int;

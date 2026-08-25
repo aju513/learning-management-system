@@ -110,6 +110,12 @@ class CourseAssessmentRepository implements CourseAssessmentRepositoryInterface
         return $attempt->load(['courseAssessment.material.chapter.module.course', 'courseAssessment.questions.options', 'answers.question.options', 'trainee']);
     }
 
+    public function findAttemptForSubmission(CourseAssessmentAttempt $attempt): CourseAssessmentAttempt
+    {
+        return CourseAssessmentAttempt::query()->whereKey($attempt->id)->lockForUpdate()->firstOrFail()
+            ->load(['courseAssessment.material.chapter.module.course', 'courseAssessment.questions.options', 'answers.question.options', 'trainee']);
+    }
+
     public function activeAttempt(CourseAssessment $assessment, User $trainee): ?CourseAssessmentAttempt
     {
         return $assessment->attempts()->where('user_id', $trainee->id)->where('status', 'in_progress')->latest('id')->first();

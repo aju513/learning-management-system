@@ -129,9 +129,10 @@ class CourseRepository implements CourseRepositoryInterface
         return $course->load([
             'category',
             'instructor',
-            'modules.chapters.materials:id,course_chapter_id,title,type,duration_minutes,position',
-            'modules.chapters.materials.courseAssessment:id,learning_material_id',
-            'enrollments' => fn ($query) => $query->where('user_id', $trainee->id),
+            'modules.chapters.materials:id,course_chapter_id,title,type,duration_minutes,position,is_required',
+            'modules.chapters.materials.courseAssessment:id,learning_material_id,passing_percentage',
+            'modules.chapters.materials.courseAssessment.attempts',
+            'enrollments' => fn ($query) => $query->where('user_id', $trainee->id)->with('materialProgress'),
         ]);
     }
 
