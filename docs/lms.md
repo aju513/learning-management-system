@@ -93,7 +93,7 @@ Super Admin manages explicit fiscal-year periods with draft, active, and closed 
 
 Courses, standalone assessments, and course assessments may each define credit points. A completed course or passed test creates one eligible credit award for the learner and fiscal year. Awards are idempotent per source activity and remain eligible until the trainee claims them. Claimed totals are calculated from the credit ledger rather than stored as a mutable balance.
 
-The trainee Fiscal Year Credit Score page shows the current attendance snapshot, for example `36 / 90`, eligible awards, claimed history, and total claimed credits. Attendance is refreshed through an `AttendanceProviderInterface`; the default local implementation is a sandbox provider configured through `TMIS_SANDBOX_PRESENT_DAYS`. A future TMIS REST provider can replace the adapter without changing the credit ledger.
+The trainee Fiscal Year Credit Score page shows the current attendance snapshot, for example `36 / 90`, eligible awards, claimed history, and total claimed credits. Credit-bearing course cards show the configured course credit value before completion and expose the claim action once the completion award is eligible; claimed awards are shown as claimed. Attendance is refreshed through an `AttendanceProviderInterface`; the default local implementation is a sandbox provider configured through `TMIS_SANDBOX_PRESENT_DAYS`. A future TMIS REST provider can replace the adapter without changing the credit ledger.
 
 The trainee navbar displays the active fiscal year and claimed total, while the dashboard highlights unclaimed awards. These alerts are calculated on demand and are not persisted notifications.
 

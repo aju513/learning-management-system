@@ -151,7 +151,7 @@ class CourseAssessmentService
 
             if ($passed) {
                 $this->enrollments->completeMaterial($enrollment, $attempt->courseAssessment->material);
-                $this->learning->recalculate($enrollment);
+                $this->learning->recalculate($enrollment, $trainee);
                 $this->credits->recordAssessmentPass($attempt->courseAssessment, $trainee, $attempt->submitted_at);
             }
 

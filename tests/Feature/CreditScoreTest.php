@@ -127,6 +127,36 @@ test('credit scores page shows course credit availability and taken state', func
         ->assertSee('Credit score taken');
 });
 
+test('enrolled course cards show assigned credit scores and claim state', function () {
+    $trainee = creditPortalUser('trainee');
+    $course = Course::factory()->published()->create(['title' => 'Credit Bearing Course', 'credit_points' => 7.5]);
+    Enrollment::factory()->create(['course_id' => $course->id, 'user_id' => $trainee->id, 'status' => 'active']);
+
+    $this->actingAs($trainee)->get(route('learning.courses.index'))
+        ->assertOk()
+        ->assertSee('+7.50')
+        ->assertSee('Earn after course completion');
+
+    $award = CreditAward::factory()->create([
+        'fiscal_year_id' => FiscalYear::factory()->create()->id,
+        'user_id' => $trainee->id,
+        'course_id' => $course->id,
+        'source_key' => 'course:'.$course->id,
+        'points' => 7.5,
+        'status' => 'eligible',
+    ]);
+
+    $this->actingAs($trainee)->get(route('learning.courses.index'))
+        ->assertOk()
+        ->assertSee('Claim credit')
+        ->assertSee(route('learning.credit-scores.claim', $award), false);
+
+    $award->update(['status' => 'claimed']);
+    $this->actingAs($trainee)->get(route('learning.courses.index'))
+        ->assertOk()
+        ->assertSee('Claimed');
+});
+
 test('credit scores page shows detailed test credit opportunities', function () {
     $trainee = creditPortalUser('trainee');
     $instructor = creditPortalUser('instructor');

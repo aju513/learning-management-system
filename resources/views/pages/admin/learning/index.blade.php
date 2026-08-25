@@ -64,6 +64,18 @@
                         <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/[0.04]"><strong class="block text-lg text-gray-800 dark:text-white">{{ $courseProgress['remainingLessons'] }}</strong><span class="text-[11px] text-gray-600 dark:text-gray-400">Remaining lessons</span></div>
                         <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/[0.04]"><strong class="block text-sm {{ $assessmentPassed ? 'text-success-600' : ($assessmentLocked ? 'text-warning-600' : 'text-brand-600') }}">{{ $assessmentStatus ?? 'None' }}</strong><span class="text-[11px] text-gray-600 dark:text-gray-400">Assessment</span></div>
                     </div>
+                    @if($courseProgress['creditPoints'] > 0)
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2.5 dark:border-brand-500/20 dark:bg-brand-500/10">
+                            <span class="text-xs text-brand-700 dark:text-brand-300">Course credit score <strong class="ml-1 text-sm">+{{ number_format($courseProgress['creditPoints'], 2) }}</strong></span>
+                            @if($courseProgress['creditAward']?->isClaimed())
+                                <span class="text-xs font-semibold text-success-600">Claimed</span>
+                            @elseif($courseProgress['creditAward'])
+                                <form method="POST" action="{{ route('learning.credit-scores.claim', $courseProgress['creditAward']) }}">@csrf<button type="submit" class="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white">Claim credit</button></form>
+                            @else
+                                <span class="text-xs text-gray-600 dark:text-gray-400">Earn after course completion</span>
+                            @endif
+                        </div>
+                    @endif
                     <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                         @if($nextMaterial && $assessment && ! $assessmentPassed && ! $assessmentLocked)
                             <form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $assessmentMaterial]) }}" @submit="opening = true">

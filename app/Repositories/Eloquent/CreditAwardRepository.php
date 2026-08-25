@@ -3,6 +3,7 @@
 namespace App\Repositories\Eloquent;
 
 use App\Enums\CreditAwardStatus;
+use App\Models\Course;
 use App\Models\CreditAward;
 use App\Models\FiscalYear;
 use App\Models\User;
@@ -20,6 +21,15 @@ class CreditAwardRepository implements CreditAwardRepositoryInterface
     public function findByKey(FiscalYear $fiscalYear, User $user, string $sourceKey): ?CreditAward
     {
         return CreditAward::query()->where('fiscal_year_id', $fiscalYear->id)->where('user_id', $user->id)->where('source_key', $sourceKey)->first();
+    }
+
+    public function findCourseAward(Course $course, User $user): ?CreditAward
+    {
+        return CreditAward::query()->with('fiscalYear')
+            ->where('user_id', $user->id)
+            ->where('source_key', 'course:'.$course->id)
+            ->latest('eligible_at')
+            ->first();
     }
 
     public function forUser(User $user, ?FiscalYear $fiscalYear = null, int $perPage = 15): LengthAwarePaginator

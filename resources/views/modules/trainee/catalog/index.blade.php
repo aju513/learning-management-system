@@ -26,7 +26,7 @@
                     <div>
                         <h2 class="text-lg font-semibold text-gray-800 dark:text-white">{{ $course->title }}</h2>
                         <p class="mt-1 text-sm text-gray-500">{{ Str::limit($course->short_description, 110) }}</p>
-                        <p class="mt-2 text-xs text-gray-400">{{ $course->instructor?->name ?? 'Instructor pending' }} · {{ $course->modules_count }} modules · {{ $course->estimated_duration_minutes }} min</p>
+                        <p class="mt-2 text-xs text-gray-500">{{ $course->instructor?->name ?? 'Instructor pending' }} · {{ $course->modules_count }} modules · {{ $course->estimated_duration_minutes }} min @if((float) $course->credit_points > 0) · <span class="font-semibold text-brand-600">+{{ number_format((float) $course->credit_points, 2) }} credits</span>@endif</p>
                     </div>
                     <div class="flex items-center justify-between gap-3">
                         <a href="{{ route('learning.catalog.show', $course) }}" class="text-sm font-medium text-brand-500">View details</a>

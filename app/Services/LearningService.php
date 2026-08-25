@@ -34,7 +34,7 @@ class LearningService
         }
         $index = $materials->search(fn (LearningMaterial $item) => (int) $item->id === (int) $material->id);
         $material = $materials[$index];
-        $progress = $this->progress($enrollment);
+        $progress = $this->progress($enrollment, $trainee);
         $completed = $progress['completedIds'];
         if ($enrollment->course->navigation_mode === NavigationMode::Sequential) {
             $blockingMaterial = $materials->take($index)->first(fn (LearningMaterial $item) => $item->is_required && ! $completed->contains($item->id));
@@ -74,7 +74,7 @@ class LearningService
         $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
         abort_unless($materials->isNotEmpty(), 404);
 
-        $progress = $this->progress($enrollment);
+        $progress = $this->progress($enrollment, $trainee);
         if ($progress['isComplete']) {
             return [
                 'summary' => true,
@@ -96,7 +96,7 @@ class LearningService
 
         return [
             'enrollment' => $enrollment,
-            'progress' => $this->progress($enrollment),
+            'progress' => $this->progress($enrollment, $trainee),
         ];
     }
 
@@ -105,7 +105,7 @@ class LearningService
      * Required course items include the course assessment, while lesson counts
      * intentionally exclude it for the supporting learning-material metric.
      */
-    public function progress(Enrollment $enrollment): array
+    public function progress(Enrollment $enrollment, ?User $trainee = null): array
     {
         $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
         $requiredMaterials = $materials->where('is_required', true)->values();
@@ -134,6 +134,7 @@ class LearningService
             ->map(fn ($item) => $requiredMaterials->firstWhere('id', $item->learning_material_id))
             ->filter()
             ->first();
+        $creditAward = $this->credits->courseAward($enrollment->course, $trainee ?? $enrollment->trainee);
 
         return [
             'materials' => $materials,
@@ -156,6 +157,8 @@ class LearningService
             'assessmentStatus' => ! $assessment ? null : ($assessmentPassed ? 'Passed' : ($completedLessons < $lessonMaterials->count() ? 'Locked' : 'Available')),
             'nextMaterial' => $lastViewedIncomplete ?? $requiredMaterials->first(fn (LearningMaterial $item) => ! $completedIds->contains($item->id)),
             'lastViewed' => $lastViewed,
+            'creditPoints' => (float) $enrollment->course->credit_points,
+            'creditAward' => $creditAward,
         ];
     }
 
@@ -171,7 +174,7 @@ class LearningService
 
         return DB::transaction(function () use ($enrollment, $material, $trainee): array {
             $this->enrollments->completeMaterial($enrollment, $material);
-            $enrollment = $this->recalculate($enrollment);
+            $enrollment = $this->recalculate($enrollment, $trainee);
             $award = $enrollment->status->value === 'completed'
                 ? $this->credits->recordCourseCompletion($enrollment->course, $trainee, $enrollment->completed_at)
                 : null;
@@ -182,10 +185,10 @@ class LearningService
         });
     }
 
-    public function recalculate(Enrollment $enrollment): Enrollment
+    public function recalculate(Enrollment $enrollment, ?User $trainee = null): Enrollment
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);
-        $progress = $this->progress($enrollment);
+        $progress = $this->progress($enrollment, $trainee);
         $total = $progress['total'];
         $completed = $progress['completed'];
         $percentage = $total === 0 ? 0 : round($completed / $total * 100, 2);

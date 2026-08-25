@@ -30,6 +30,7 @@
                 <div><dt class="text-gray-500">Category</dt><dd class="font-medium text-gray-800 dark:text-white">{{ $course->category?->name ?? 'General' }}</dd></div>
                 <div><dt class="text-gray-500">Difficulty</dt><dd class="font-medium text-gray-800 dark:text-white">{{ ucfirst($course->difficulty) }}</dd></div>
                 <div><dt class="text-gray-500">Duration</dt><dd class="font-medium text-gray-800 dark:text-white">{{ $course->estimated_duration_minutes }} minutes</dd></div>
+                @if((float) $course->credit_points > 0)<div><dt class="text-gray-500">Course credit score</dt><dd class="font-semibold text-brand-600 dark:text-brand-400">+{{ number_format((float) $course->credit_points, 2) }} credits</dd></div>@endif
             </dl>
             <div class="mt-6">
                 @if (! $application || in_array($application->status->value, ['rejected', 'cancelled'], true))

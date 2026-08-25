@@ -34,7 +34,7 @@ class LearningController extends Controller
 
         return view('pages.admin.learning.index', [
             'enrollments' => $enrollments,
-            'progressByEnrollment' => $enrollments->mapWithKeys(fn (Enrollment $enrollment): array => [$enrollment->id => $this->service->progress($enrollment)]),
+            'progressByEnrollment' => $enrollments->mapWithKeys(fn (Enrollment $enrollment): array => [$enrollment->id => $this->service->progress($enrollment, $request->user())]),
             'title' => 'Enrolled Courses',
         ]);
     }

@@ -40,7 +40,7 @@ class CatalogController extends Controller
 
         return view('modules.trainee.catalog.show', [
             'course' => $course,
-            'progress' => $enrollment ? $this->learning->progress($enrollment) : null,
+            'progress' => $enrollment ? $this->learning->progress($enrollment, $request->user()) : null,
             'title' => $course->title,
         ]);
     }
