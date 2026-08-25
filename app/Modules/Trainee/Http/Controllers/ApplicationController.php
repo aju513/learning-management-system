@@ -22,7 +22,7 @@ class ApplicationController extends Controller
     {
         return view('modules.trainee.applications.index', [
             'applications' => $this->enrollments->applicationsForTrainee($request->user()),
-            'title' => 'My Applications',
+            'title' => 'Applied Courses',
         ]);
     }
 

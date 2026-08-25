@@ -82,7 +82,7 @@ class UserController extends Controller
 
     public function destroy(DeleteUserRequest $request, User $user): RedirectResponse
     {
-        $isSelf = $request->user()->getAuthIdentifier() === $user->id;
+        $isSelf = (int) $request->user()->getAuthIdentifier() === (int) $user->id;
         $this->service->delete($user, $request->user());
         if ($isSelf) {
             auth()->logout();

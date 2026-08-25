@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Admin' }} | {{ config('app.name') }}</title>
+    <title>{{ __($title ?? 'Admin') }} | {{ config('app.name') }}</title>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -103,6 +103,8 @@ const checkMobile = () => {
     }
 };
 window.addEventListener('resize', checkMobile);">
+
+    <div class="fixed right-4 top-4 z-10"><x-common.locale-switcher /></div>
 
     {{-- preloader --}}
     <x-common.preloader/>

@@ -49,7 +49,7 @@
             id="{{ $id }}"
             name="{{ $name }}"
             value="{{ is_array($currentValue) ? '' : $currentValue }}"
-            placeholder="{{ $placeholder }}"
+            placeholder="{{ __($placeholder) }}"
             autocomplete="off"
             @required($required)
             @disabled($disabled)

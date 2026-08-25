@@ -14,7 +14,7 @@ class ReviewCourseApplicationRequest extends FormRequest
 
         return (bool) ($application->status === EnrollmentStatus::Pending
             && ($user?->can('course-applications.review-all')
-                || ($user?->can('course-applications.review-owned') && $application->course->instructor_id === $user->id)));
+                || ($user?->can('course-applications.review-owned') && (int) $application->course->instructor_id === (int) $user->id)));
     }
 
     /** @return array<string, mixed> */

@@ -53,7 +53,13 @@ interface AssessmentRepositoryInterface
 
     public function unassign(AssessmentAssignment $assignment): void;
 
-    public function availableFor(User $trainee): Collection;
+    public function availableFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
+
+    public function appliedFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
+
+    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
+
+    public function creditAssessmentsForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection;
 
     public function userCanTake(Assessment $assessment, User $trainee): bool;
 
@@ -68,6 +74,8 @@ interface AssessmentRepositoryInterface
     public function findAttemptForTaking(AssessmentAttempt $attempt): AssessmentAttempt;
 
     public function createAnswer(array $attributes): AttemptAnswer;
+
+    public function upsertAnswer(AssessmentAttempt $attempt, AssessmentQuestion $question, array $attributes): AttemptAnswer;
 
     public function updateAnswer(AttemptAnswer $answer, array $attributes): AttemptAnswer;
 

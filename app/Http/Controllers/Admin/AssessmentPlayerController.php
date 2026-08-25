@@ -11,16 +11,38 @@ use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Services\AssessmentService;
+use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class AssessmentPlayerController extends Controller
 {
-    public function __construct(private readonly AssessmentRepositoryInterface $assessments, private readonly AssessmentService $service) {}
+    public function __construct(
+        private readonly AssessmentRepositoryInterface $assessments,
+        private readonly AssessmentService $service,
+        private readonly TrainingAvailabilityService $availability,
+    ) {}
 
     public function index(IndexAssessmentPlayerRequest $request): View
     {
-        return view('pages.admin.assessment-player.index', ['assessments' => $this->assessments->availableFor($request->user()), 'title' => 'My Tests']);
+        return view('pages.admin.assessment-player.index', [
+            'assessments' => $this->assessments->enrolledFor($request->user(), $this->availability->eligibleTrainingKeys($request->user())),
+            'title' => 'Enrolled Tests',
+            'description' => 'All tests assigned to you, including tests waiting to be started.',
+            'emptyTitle' => 'No enrolled tests yet',
+            'emptyDescription' => 'Tests assigned directly to you will appear here.',
+        ]);
+    }
+
+    public function applied(IndexAssessmentPlayerRequest $request): View
+    {
+        return view('pages.admin.assessment-player.index', [
+            'assessments' => $this->assessments->appliedFor($request->user(), $this->availability->eligibleTrainingKeys($request->user())),
+            'title' => 'Applied Tests',
+            'description' => 'Tests assigned to you that you have not started yet.',
+            'emptyTitle' => 'No applied tests yet',
+            'emptyDescription' => 'Tests assigned directly to you will appear here.',
+        ]);
     }
 
     public function start(TakeAssessmentRequest $request, Assessment $assessment): RedirectResponse
@@ -52,5 +74,12 @@ class AssessmentPlayerController extends Controller
         $this->service->submit($assessmentAttempt, $request->validated('answers', []), $request->user());
 
         return redirect()->route('learning.assessments.attempts.show', $assessmentAttempt)->with('success', 'Quiz submitted successfully.');
+    }
+
+    public function save(SubmitAttemptRequest $request, AssessmentAttempt $assessmentAttempt): \Illuminate\Http\JsonResponse
+    {
+        $this->service->saveAnswers($assessmentAttempt, $request->validated('answers', []), $request->user());
+
+        return response()->json(['saved' => true]);
     }
 }

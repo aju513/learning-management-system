@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -24,10 +25,13 @@ class AssessmentService
         private readonly AssessmentRepositoryInterface $assessments,
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly UserRepositoryInterface $users,
+        private readonly CreditScoreService $credits,
+        private readonly TrainingAvailabilityService $availability,
     ) {}
 
     public function create(array $data, User $actor): Assessment
     {
+        unset($data['available_to_all']);
         $data['created_by'] = $actor->id;
         $data['status'] = AssessmentStatus::Draft;
         $assessment = $this->assessments->create($data);
@@ -38,6 +42,7 @@ class AssessmentService
 
     public function update(Assessment $assessment, array $data, User $actor): Assessment
     {
+        unset($data['available_to_all']);
         if ($assessment->questions()->where('type', QuestionType::QuestionAnswer->value)->exists()) {
             $data['show_results'] = true;
         }
@@ -90,9 +95,7 @@ class AssessmentService
 
     public function createQuestion(Assessment $assessment, array $data, User $actor): AssessmentQuestion
     {
-        if ($this->assessments->hasAttempts($assessment)) {
-            throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
-        }
+        $this->ensureEditable($assessment);
 
         return DB::transaction(function () use ($assessment, $data, $actor): AssessmentQuestion {
             $options = $this->optionsFromData($data);
@@ -115,9 +118,7 @@ class AssessmentService
 
     public function updateQuestion(AssessmentQuestion $question, array $data, User $actor): AssessmentQuestion
     {
-        if ($this->assessments->hasAttempts($question->assessment)) {
-            throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
-        }
+        $this->ensureEditable($question->assessment);
 
         return DB::transaction(function () use ($question, $data, $actor): AssessmentQuestion {
             $options = $this->optionsFromData($data);
@@ -132,9 +133,7 @@ class AssessmentService
 
     public function deleteQuestion(AssessmentQuestion $question, User $actor): void
     {
-        if ($this->assessments->hasAttempts($question->assessment)) {
-            throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
-        }
+        $this->ensureEditable($question->assessment);
 
         activity('lms')->causedBy($actor)->performedOn($question)->event('assessment-question.deleted')
             ->withProperties(['assessment_id' => $question->assessment_id])->log('Assessment question deleted');
@@ -184,7 +183,7 @@ class AssessmentService
     public function start(Assessment $assessment, User $trainee): AssessmentAttempt
     {
         $assessment = $this->assessments->findForAvailability($assessment);
-        if (! $assessment->isAvailable() || ! $this->assessments->userCanTake($assessment, $trainee)) {
+        if (! $assessment->isAvailable() || ! $this->assessments->userCanTake($assessment, $trainee) || ! $this->availability->isAvailable($assessment, $trainee)) {
             throw new AuthorizationException('This assessment is not currently available to you.');
         }
         if ($active = $this->assessments->activeAttempt($assessment, $trainee)) {
@@ -200,7 +199,7 @@ class AssessmentService
             'attempt_number' => $attemptCount + 1,
             'status' => AttemptStatus::InProgress,
             'started_at' => now(),
-            'expires_at' => now()->addMinutes($assessment->duration_minutes),
+            'expires_at' => now()->addMinutes((int) $assessment->duration_minutes),
         ]);
         activity('lms')->causedBy($trainee)->performedOn($attempt)->event('assessment-attempt.started')
             ->withProperties(['assessment_id' => $assessment->id, 'attempt_number' => $attempt->attempt_number])->log('Assessment attempt started');
@@ -210,8 +209,12 @@ class AssessmentService
 
     public function submit(AssessmentAttempt $attempt, array $answers, User $trainee): AssessmentAttempt
     {
-        if ($attempt->status !== AttemptStatus::InProgress || $attempt->user_id !== $trainee->id) {
+        if ((int) $attempt->user_id !== (int) $trainee->id) {
             throw new AuthorizationException('This attempt cannot be submitted.');
+        }
+
+        if ($attempt->status !== AttemptStatus::InProgress) {
+            return $this->assessments->findAttemptForTaking($attempt);
         }
 
         return DB::transaction(function () use ($attempt, $answers, $trainee): AssessmentAttempt {
@@ -220,7 +223,7 @@ class AssessmentService
             $total = (float) $attempt->assessment->questions->sum('marks');
             foreach ($attempt->assessment->questions as $question) {
                 if ($question->type === QuestionType::QuestionAnswer) {
-                    $this->assessments->createAnswer([
+                    $this->assessments->upsertAnswer($attempt, $question, [
                         'assessment_attempt_id' => $attempt->id,
                         'assessment_question_id' => $question->id,
                         'selected_option_ids' => null,
@@ -239,7 +242,7 @@ class AssessmentService
                 $isCorrect = $selected === $correct;
                 $marks = $isCorrect ? (float) $question->marks : 0.0;
                 $earned += $marks;
-                $this->assessments->createAnswer([
+                $this->assessments->upsertAnswer($attempt, $question, [
                     'assessment_attempt_id' => $attempt->id,
                     'assessment_question_id' => $question->id,
                     'selected_option_ids' => $selected,
@@ -258,11 +261,39 @@ class AssessmentService
                 'score_percentage' => $score,
                 'passed' => $requiresReview ? null : $score >= (float) $attempt->assessment->passing_percentage,
             ]);
+            if ($attempt->passed) {
+                $this->credits->recordAssessmentPass($attempt->assessment, $trainee, $attempt->submitted_at);
+            }
             activity('lms')->causedBy($trainee)->performedOn($attempt)->event($requiresReview ? 'assessment-attempt.submitted' : 'assessment-attempt.graded')
                 ->withProperties(['assessment_id' => $attempt->assessment_id, 'status' => $attempt->status->value])->log($requiresReview ? 'Assessment attempt submitted for review' : 'Assessment attempt graded');
 
             return $attempt;
         });
+    }
+
+    public function saveAnswers(AssessmentAttempt $attempt, array $answers, User $trainee): void
+    {
+        if ($attempt->status !== AttemptStatus::InProgress || (int) $attempt->user_id !== (int) $trainee->id) {
+            throw new AuthorizationException('This attempt is no longer available for saving.');
+        }
+
+        $attempt = $this->assessments->findAttemptForTaking($attempt);
+        foreach ($attempt->assessment->questions as $question) {
+            $key = (string) $question->id;
+            if (! array_key_exists($key, $answers) && ! array_key_exists($question->id, $answers)) {
+                continue;
+            }
+            $answer = $answers[$key] ?? $answers[$question->id];
+            $attributes = $question->type === QuestionType::QuestionAnswer
+                ? ['selected_option_ids' => null, 'text_answer' => trim((string) $answer)]
+                : ['selected_option_ids' => $this->selectedOptionIds($question, $answer), 'text_answer' => null];
+
+            $this->assessments->upsertAnswer($attempt, $question, [
+                ...$attributes,
+                'earned_marks' => 0,
+                'is_correct' => false,
+            ]);
+        }
     }
 
     public function review(AssessmentAttempt $attempt, array $reviews, User $reviewer): AssessmentAttempt
@@ -303,6 +334,9 @@ class AssessmentService
                 'score_percentage' => $score,
                 'passed' => $score >= (float) $attempt->assessment->passing_percentage,
             ]);
+            if ($attempt->passed) {
+                $this->credits->recordAssessmentPass($attempt->assessment, $attempt->trainee, $attempt->submitted_at);
+            }
             activity('lms')->causedBy($reviewer)->performedOn($attempt)->event('assessment-attempt.reviewed')
                 ->withProperties(['score' => $score, 'passed' => $attempt->passed])->log('Assessment attempt manually reviewed');
 
@@ -319,5 +353,23 @@ class AssessmentService
             'is_correct' => in_array($index, $correct, true),
             'position' => $index + 1,
         ])->all();
+    }
+
+    private function selectedOptionIds(AssessmentQuestion $question, mixed $answer): array
+    {
+        $selected = array_values(array_unique(array_map('intval', Arr::wrap($answer))));
+        sort($selected);
+
+        return array_values(array_intersect($selected, $question->options->pluck('id')->map(fn ($id) => (int) $id)->all()));
+    }
+
+    private function ensureEditable(Assessment $assessment): void
+    {
+        if ($assessment->status === AssessmentStatus::Published) {
+            throw ValidationException::withMessages(['question' => 'Published quizzes are locked. Close the quiz before changing its questions.']);
+        }
+        if ($this->assessments->hasAttempts($assessment)) {
+            throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
+        }
     }
 }

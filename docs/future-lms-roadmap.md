@@ -13,6 +13,18 @@ This document records agreed backlog items for a later LMS phase. It describes i
 - Let trainees view only their own scheduled-run history and attempts: schedule status and dates, attempt count, score, pass/fail result, and answer review when released. They must never see another trainee's data.
 - Configure result release per run as immediate after submission, after the run closes, or hidden. Answer review follows the same release rule.
 
+## TMIS enrollment integration
+
+Fiscal-year credit scores and the sandbox attendance adapter are delivered in the LMS. Training-restricted courses and assessments now persist a stable training key and resolve catalog/enrollment state through replaceable providers. The first implementation is configuration-backed for deterministic local testing; the TMIS adapter should preserve those provider contracts and map the LMS user to the corresponding TMIS identity.
+
+The remaining TMIS enrollment workflow is deferred until the external contract is available:
+
+- Add a stable LMS-to-TMIS user identifier mapping.
+- Replace the configuration training catalog with a TMIS training identifier/catalog adapter.
+- Check TMIS enrollment before activating an LMS enrollment.
+- Activate directly when TMIS confirms enrollment; otherwise retain an approval-required pending state.
+- Record provider failures without granting LMS access by accident.
+
 ## Academic ownership and collaboration
 
 - Courses and reusable tests have one permanent owner, which may be an Admin or Instructor. Admins may create their own courses and tests; those records remain under that Admin's ownership.

@@ -52,4 +52,6 @@ interface CourseAssessmentRepositoryInterface
     public function hasPassed(CourseAssessment $assessment, User $trainee): bool;
 
     public function createAnswer(array $attributes): CourseAssessmentAnswer;
+
+    public function upsertAnswer(CourseAssessmentAttempt $attempt, CourseAssessmentQuestion $question, array $attributes): CourseAssessmentAnswer;
 }

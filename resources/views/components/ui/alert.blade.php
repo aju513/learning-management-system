@@ -58,12 +58,12 @@
         <div class="flex-1">
             @if($title)
                 <h4 class="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    {{ $title }}
+                    {{ __($title) }}
                 </h4>
             @endif
 
             @if($message)
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $message }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __($message) }}</p>
             @endif
 
             @if($showLink)
@@ -71,7 +71,7 @@
                     href="{{ $linkHref }}" 
                     class="inline-block mt-3 text-sm font-medium text-gray-500 underline dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 >
-                    {{ $linkText }}
+                    {{ __($linkText) }}
                 </a>
             @endif
 

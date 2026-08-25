@@ -29,7 +29,7 @@
             $optionLabel = $option;
         }
 
-        $normalizedOptions[] = ['value' => (string) $optionValue, 'label' => (string) $optionLabel];
+        $normalizedOptions[] = ['value' => (string) $optionValue, 'label' => (string) (is_array($option) || is_object($option) ? $optionLabel : __($optionLabel))];
     }
 @endphp
 
@@ -71,14 +71,14 @@
                         <button type="button" @click.stop="remove(value)" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white" aria-label="Remove option">&times;</button>
                     </span>
                 </template>
-                <span x-show="selected.length === 0" class="text-gray-500 dark:text-gray-400">{{ $placeholder }}</span>
+            <span x-show="selected.length === 0" class="text-gray-500 dark:text-gray-400">{{ __($placeholder) }}</span>
             </span>
             <svg class="h-5 w-5 shrink-0 text-gray-500 transition" :class="open ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4.8 7.4 5.2 5.2 5.2-5.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </div>
 
         <div x-show="open" x-transition class="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900" style="display: none">
             <div class="border-b border-gray-100 p-2 dark:border-gray-800">
-                <input x-model="search" type="search" placeholder="Search options..." class="h-9 w-full rounded-md border border-gray-200 bg-transparent px-3 text-sm dark:border-gray-700 dark:text-white">
+                <input x-model="search" type="search" placeholder="{{ __('Search options...') }}" class="h-9 w-full rounded-md border border-gray-200 bg-transparent px-3 text-sm dark:border-gray-700 dark:text-white">
             </div>
             <div class="max-h-56 overflow-y-auto p-1">
                 <template x-for="option in filteredOptions" :key="option.value">
@@ -87,7 +87,7 @@
                         <span x-show="selected.includes(option.value)" class="text-brand-500" aria-hidden="true">✓</span>
                     </button>
                 </template>
-                <p x-show="filteredOptions.length === 0" class="px-3 py-2 text-sm text-gray-500">No options found.</p>
+                <p x-show="filteredOptions.length === 0" class="px-3 py-2 text-sm text-gray-500">{{ __('No options found.') }}</p>
             </div>
         </div>
     </div>

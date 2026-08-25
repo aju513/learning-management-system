@@ -4,12 +4,14 @@ namespace App\Http\Requests\Course;
 
 use App\Enums\NavigationMode;
 use App\Http\Requests\Concerns\AuthorizesLmsOwnership;
+use App\Http\Requests\Concerns\ValidatesTrainingAvailability;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateCourseRequest extends FormRequest
 {
     use AuthorizesLmsOwnership;
+    use ValidatesTrainingAvailability;
 
     public function authorize(): bool
     {
@@ -24,6 +26,8 @@ class UpdateCourseRequest extends FormRequest
             'instructor_id' => $this->user()->can('courses.edit-any') ? ['nullable', 'integer', 'exists:users,id'] : ['prohibited'],
             'difficulty' => ['required', Rule::in(['beginner', 'intermediate', 'advanced'])],
             'estimated_duration_minutes' => ['required', 'integer', 'min:0', 'max:100000'],
+            'credit_points' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            ...$this->trainingAvailabilityRules(),
             'navigation_mode' => ['required', Rule::enum(NavigationMode::class)], 'thumbnail' => ['nullable', 'image', 'max:4096'],
         ];
     }

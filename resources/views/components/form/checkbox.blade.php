@@ -32,8 +32,8 @@
             {{ $attributes }}
         >
         <span>
-            @if($label)<span class="block font-medium">{{ $label }}</span>@endif
-            @if($description)<span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{{ $description }}</span>@endif
+            @if($label)<span class="block font-medium">{{ __($label) }}</span>@endif
+            @if($description)<span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{{ __($description) }}</span>@endif
         </span>
     </label>
     @if($error ?: ($oldName ? $errors->first($oldName) : null))

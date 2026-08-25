@@ -21,7 +21,7 @@
     </div>
 
     <nav class="flex-1 overflow-y-auto no-scrollbar">
-        <p class="mb-4 text-xs uppercase text-gray-400" x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">Menu</p>
+        <p class="mb-4 text-xs uppercase text-gray-400" x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">{{ __('Menu') }}</p>
         <ul class="flex flex-col gap-1">
             @foreach ($menuItems as $item)
                 @php
@@ -34,18 +34,18 @@
                             class="menu-item group w-full {{ $childActive ? 'menu-item-active' : 'menu-item-inactive' }}"
                             :class="!$store.sidebar.isExpanded && !$store.sidebar.isHovered ? 'xl:justify-center' : 'xl:justify-start'">
                             <x-common.menu-icon :name="$item['icon'] ?? 'dashboard'" class="menu-item-icon" />
-                            <span class="menu-item-text" x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">{{ $item['label'] }}</span>
+                            <span class="menu-item-text" x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">{{ __($item['label']) }}</span>
                             <svg x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="ml-auto h-5 w-5" :class="open === '{{ $item['key'] }}' && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg>
                         </button>
                         <ul x-show="open === '{{ $item['key'] }}' && ($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen)" class="ml-9 mt-2 space-y-1">
                             @foreach ($item['children'] as $child)
-                                <li><a href="{{ route($child['route']) }}" class="menu-dropdown-item group {{ request()->routeIs($child['route']) ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive' }}"><x-common.menu-icon :name="$child['icon'] ?? 'dashboard'" class="h-4 w-4" />{{ $child['label'] }}</a></li>
+                                <li><a href="{{ route($child['route']) }}" class="menu-dropdown-item group {{ request()->routeIs($child['route']) ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive' }}"><x-common.menu-icon :name="$child['icon'] ?? 'dashboard'" class="h-4 w-4" />{{ __($child['label']) }}</a></li>
                             @endforeach
                         </ul>
                     @else
                         <a href="{{ route($item['route']) }}" class="menu-item group {{ request()->routeIs($item['route']) ? 'menu-item-active' : 'menu-item-inactive' }}" :class="!$store.sidebar.isExpanded && !$store.sidebar.isHovered ? 'xl:justify-center' : 'xl:justify-start'">
                             <x-common.menu-icon :name="$item['icon'] ?? 'dashboard'" class="menu-item-icon" />
-                            <span class="menu-item-text" x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">{{ $item['label'] }}</span>
+                            <span class="menu-item-text" x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">{{ __($item['label']) }}</span>
                         </a>
                     @endif
                 </li>

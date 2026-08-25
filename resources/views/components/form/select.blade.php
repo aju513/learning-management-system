@@ -19,16 +19,16 @@
     foreach ($options as $optionKey => $option) {
         if (is_array($option)) {
             $optionValue = $option['value'] ?? $option['id'] ?? $optionKey;
-            $optionLabel = $option['label'] ?? $option['name'] ?? $optionValue;
+            $optionLabel = $option['label'] ?? $option['name'] ?? $option['title'] ?? $optionValue;
         } elseif (is_object($option)) {
             $optionValue = $option->value ?? $option->id ?? $optionKey;
-            $optionLabel = $option->label ?? $option->name ?? $optionValue;
+            $optionLabel = $option->label ?? $option->name ?? $option->title ?? $optionValue;
         } else {
             $optionValue = $optionKey;
             $optionLabel = $option;
         }
 
-        $normalizedOptions[] = ['value' => $optionValue, 'label' => $optionLabel];
+        $normalizedOptions[] = ['value' => $optionValue, 'label' => is_array($option) || is_object($option) ? $optionLabel : __($optionLabel)];
     }
 
     $selectClasses = 'h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800';
@@ -44,10 +44,10 @@
             {{ $attributes->merge(['class' => $selectClasses]) }}
         >
             @if($placeholder)
-                <option value="">{{ $placeholder }}</option>
+                <option value="">{{ __($placeholder) }}</option>
             @endif
             @foreach($normalizedOptions as $option)
-                <option value="{{ $option['value'] }}" @selected((string) $currentValue === (string) $option['value'])>{{ $option['label'] }}</option>
+                <option value="{{ $option['value'] }}" @selected((string) $currentValue === (string) $option['value'])>{{ __($option['label']) }}</option>
             @endforeach
         </select>
         <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-700 dark:text-gray-400" aria-hidden="true">

@@ -87,13 +87,35 @@ class ReportRepository implements ReportRepositoryInterface
 
     public function reports(): array
     {
+        $courseReports = $this->courseReports();
+        $testReports = $this->testReports();
+
+        return [
+            ...$courseReports,
+            ...$testReports,
+            'trainees' => User::query()->permission('learning.view')->select(['users.id', 'users.name', 'users.email'])
+                ->withCount(['enrollments', 'enrollments as completed_count' => fn ($query) => $query->where('status', 'completed')])
+                ->orderBy('name')->get(),
+            'summary' => [
+                'completion_rate' => round((float) (Enrollment::where('status', 'completed')->count() / max(Enrollment::count(), 1) * 100), 1),
+                'pass_rate' => round((float) (AssessmentAttempt::where('passed', true)->count() / max(AssessmentAttempt::where('status', 'graded')->count(), 1) * 100), 1),
+                'average_progress' => round((float) Enrollment::avg('progress_percentage'), 1),
+            ],
+        ];
+    }
+
+    public function courseReports(): array
+    {
         return [
             'courses' => Course::query()->select(['courses.id', 'courses.title', 'courses.status'])
                 ->withCount(['enrollments', 'enrollments as completed_count' => fn ($query) => $query->where('status', 'completed')])
                 ->orderBy('title')->get(),
-            'trainees' => User::query()->permission('learning.view')->select(['users.id', 'users.name', 'users.email'])
-                ->withCount(['enrollments', 'enrollments as completed_count' => fn ($query) => $query->where('status', 'completed')])
-                ->orderBy('name')->get(),
+        ];
+    }
+
+    public function testReports(): array
+    {
+        return [
             'assessments' => Assessment::query()->select(['assessments.id', 'assessments.title'])
                 ->withCount([
                     'attempts as attempts_count' => fn ($query) => $query->where('status', 'graded'),
@@ -101,11 +123,6 @@ class ReportRepository implements ReportRepositoryInterface
                     'attempts as fail_count' => fn ($query) => $query->where('status', 'graded')->where('passed', false),
                 ])->addSelect(['average_score' => AssessmentAttempt::query()->selectRaw('ROUND(AVG(score_percentage), 2)')->whereColumn('assessment_id', 'assessments.id')->where('status', 'graded')])
                 ->orderBy('title')->get(),
-            'summary' => [
-                'completion_rate' => round((float) (Enrollment::where('status', 'completed')->count() / max(Enrollment::count(), 1) * 100), 1),
-                'pass_rate' => round((float) (AssessmentAttempt::where('passed', true)->count() / max(AssessmentAttempt::where('status', 'graded')->count(), 1) * 100), 1),
-                'average_progress' => round((float) Enrollment::avg('progress_percentage'), 1),
-            ],
         ];
     }
 }

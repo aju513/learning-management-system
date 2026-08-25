@@ -65,10 +65,14 @@ class CourseRepository implements CourseRepositoryInterface
             ->latest('id')->paginate($perPage)->withQueryString();
     }
 
-    public function paginatePublishedCatalog(array $filters, User $trainee, int $perPage = 12): LengthAwarePaginator
+    public function paginatePublishedCatalog(array $filters, User $trainee, array $eligibleTrainingKeys = [], int $perPage = 12): LengthAwarePaginator
     {
         return Course::query()
             ->where('status', 'published')
+            ->where(function ($query) use ($eligibleTrainingKeys): void {
+                $query->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                    ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+            })
             ->with(['category', 'instructor', 'enrollments' => fn ($query) => $query->where('user_id', $trainee->id)])
             ->withCount('modules')
             ->when($filters['search'] ?? null, fn ($query, string $search) => $query->where(function ($query) use ($search): void {
@@ -81,14 +85,52 @@ class CourseRepository implements CourseRepositoryInterface
             ->withQueryString();
     }
 
-    public function findPublishedCatalogCourse(Course $course, User $trainee): Course
+    public function availableForOverview(User $trainee, array $eligibleTrainingKeys = [], int $limit = 8): Collection
     {
-        abort_unless($course->isPublished(), 404);
+        return Course::query()
+            ->where('status', 'published')
+            ->where(function ($query) use ($eligibleTrainingKeys): void {
+                $query->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                    ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+            })
+            ->with(['category', 'instructor', 'enrollments' => fn ($query) => $query->where('user_id', $trainee->id)])
+            ->withCount('modules')
+            ->latest('published_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function creditCoursesForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection
+    {
+        return Course::query()
+            ->where('status', 'published')
+            ->where('credit_points', '>', 0)
+            ->where(function ($query) use ($eligibleTrainingKeys): void {
+                $query->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                    ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+            })
+            ->with([
+                'category',
+                'instructor',
+                'enrollments' => fn ($query) => $query->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed']),
+                'creditAwards' => fn ($query) => $query->where('user_id', $trainee->id)->when($fiscalYearId, fn ($awardQuery) => $awardQuery->where('fiscal_year_id', $fiscalYearId)),
+            ])
+            ->latest('published_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function findPublishedCatalogCourse(Course $course, User $trainee, array $eligibleTrainingKeys = []): Course
+    {
+        $scope = $course->availability_scope?->value ?? $course->availability_scope;
+        abort_unless($course->isPublished() && (in_array($scope, ['all', null], true)
+            || ($scope === 'training' && in_array($course->required_training_key, $eligibleTrainingKeys, true))), 404);
 
         return $course->load([
             'category',
             'instructor',
             'modules.chapters.materials:id,course_chapter_id,title,type,duration_minutes,position',
+            'modules.chapters.materials.courseAssessment:id,learning_material_id',
             'enrollments' => fn ($query) => $query->where('user_id', $trainee->id),
         ]);
     }
@@ -131,7 +173,11 @@ class CourseRepository implements CourseRepositoryInterface
 
     public function findCourseDetails(Course $course): Course
     {
-        return $course->load(['category', 'instructor', 'modules.chapters.images', 'modules.chapters.materials.courseAssessment', 'modules.chapters.materials.images'])
+        return $course->load([
+            'category', 'instructor', 'modules.chapters.images',
+            'modules.chapters.materials.courseAssessment.questions.options',
+            'modules.chapters.materials.images',
+        ])
             ->loadCount('enrollments');
     }
 

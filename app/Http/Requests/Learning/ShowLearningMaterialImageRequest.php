@@ -16,12 +16,12 @@ class ShowLearningMaterialImageRequest extends FormRequest
         }
 
         if (! $image->learning_material_id) {
-            return $image->uploaded_by === $user->id;
+            return (int) $image->uploaded_by === (int) $user->id;
         }
 
         $course = $image->material->chapter->module->course;
         $canEdit = $user->can('materials.edit')
-            && ($user->can('courses.edit-any') || $course->instructor_id === $user->id);
+            && ($user->can('courses.edit-any') || (int) $course->instructor_id === (int) $user->id);
         $isEnrolled = $user->can('learning.view')
             && app(\App\Repositories\Contracts\EnrollmentRepositoryInterface::class)->findForCourseAndTrainee($course, $user) !== null;
 

@@ -1,0 +1,7 @@
+@extends('layouts.app')
+@section('content')
+<x-common.page-breadcrumb pageTitle="Course Reports" />
+<x-common.component-card title="Course enrollment report" desc="Review enrollment volume and completion for every course.">
+    <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800"><thead><tr class="text-left text-xs uppercase text-gray-500"><th class="px-4 py-3">{{ __('Course') }}</th><th class="px-4 py-3">{{ __('Status') }}</th><th class="px-4 py-3">{{ __('Enrolled') }}</th><th class="px-4 py-3">{{ __('Completed') }}</th><th class="px-4 py-3">{{ __('Completion') }}</th></tr></thead><tbody class="divide-y divide-gray-100 dark:divide-gray-800">@forelse($courses as $course)<tr><td class="px-4 py-4 font-medium text-gray-800 dark:text-white">{{ $course->title }}</td><td class="px-4 py-4"><x-ui.badge>{{ __($course->status->value) }}</x-ui.badge></td><td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{{ $course->enrollments_count }}</td><td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{{ $course->completed_count }}</td><td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{{ $course->enrollments_count ? round($course->completed_count / $course->enrollments_count * 100, 1) : 0 }}%</td></tr>@empty<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">{{ __('No courses.') }}</td></tr>@endforelse</tbody></table></div>
+</x-common.component-card>
+@endsection

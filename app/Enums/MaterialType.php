@@ -12,13 +12,13 @@ enum MaterialType: string
 
     public function label(): string
     {
-        return match ($this) {
+        return __(match ($this) {
             self::File => 'File',
             self::Link => 'External link',
             self::Article => 'Article',
             self::Video => 'Video',
             self::CourseAssessment => 'Course assessment',
-        };
+        });
     }
 
     public function needsFile(): bool

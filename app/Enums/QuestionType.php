@@ -11,12 +11,12 @@ enum QuestionType: string
 
     public function label(): string
     {
-        return match ($this) {
+        return __(match ($this) {
             self::SingleChoice => 'Single choice',
             self::MultipleChoice => 'Multiple select',
             self::TrueFalse => 'Yes / no',
             self::QuestionAnswer => 'Question & answer',
-        };
+        });
     }
 
     public function usesOptions(): bool

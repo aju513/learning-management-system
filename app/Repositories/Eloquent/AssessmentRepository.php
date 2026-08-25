@@ -10,6 +10,7 @@ use App\Models\AttemptAnswer;
 use App\Models\User;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class AssessmentRepository implements AssessmentRepositoryInterface
@@ -131,12 +132,51 @@ class AssessmentRepository implements AssessmentRepositoryInterface
         $assignment->delete();
     }
 
-    public function availableFor(User $trainee): Collection
+    public function availableFor(User $trainee, array $eligibleTrainingKeys = []): Collection
+    {
+        return $this->traineeAssessmentsQuery($trainee, $eligibleTrainingKeys)->get();
+    }
+
+    public function appliedFor(User $trainee, array $eligibleTrainingKeys = []): Collection
+    {
+        return $this->traineeAssessmentsQuery($trainee, $eligibleTrainingKeys)
+            ->whereDoesntHave('attempts', fn ($query) => $query->where('user_id', $trainee->id))
+            ->get();
+    }
+
+    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = []): Collection
+    {
+        return $this->traineeAssessmentsQuery($trainee, $eligibleTrainingKeys)->get();
+    }
+
+    public function creditAssessmentsForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection
+    {
+        return Assessment::query()->where('status', 'published')->where('credit_points', '>', 0)
+            ->where(function ($query) use ($eligibleTrainingKeys): void {
+                $query->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                    ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+            })
+            ->whereHas('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id))
+            ->with([
+                'assignments' => fn ($query) => $query->where('user_id', $trainee->id),
+                'attempts' => fn ($query) => $query->where('user_id', $trainee->id)->latest('submitted_at'),
+                'creditAwards' => fn ($query) => $query->where('user_id', $trainee->id)->when($fiscalYearId, fn ($awardQuery) => $awardQuery->where('fiscal_year_id', $fiscalYearId)),
+            ])
+            ->withCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)])
+            ->orderBy('ends_at')->orderBy('title')->limit($limit)->get();
+    }
+
+    private function traineeAssessmentsQuery(User $trainee, array $eligibleTrainingKeys = []): Builder
     {
         return Assessment::query()->where('status', 'published')
+            ->where(function ($query) use ($eligibleTrainingKeys): void {
+                $query->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                    ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+            })
             ->whereHas('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id))
+            ->with(['assignments' => fn ($query) => $query->where('user_id', $trainee->id)])
             ->withCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)])
-            ->orderBy('ends_at')->orderBy('title')->get();
+            ->orderBy('ends_at')->orderBy('title');
     }
 
     public function userCanTake(Assessment $assessment, User $trainee): bool
@@ -172,6 +212,14 @@ class AssessmentRepository implements AssessmentRepositoryInterface
     public function createAnswer(array $attributes): AttemptAnswer
     {
         return AttemptAnswer::query()->create($attributes);
+    }
+
+    public function upsertAnswer(AssessmentAttempt $attempt, AssessmentQuestion $question, array $attributes): AttemptAnswer
+    {
+        return AttemptAnswer::query()->updateOrCreate(
+            ['assessment_attempt_id' => $attempt->id, 'assessment_question_id' => $question->id],
+            $attributes,
+        );
     }
 
     public function updateAnswer(AttemptAnswer $answer, array $attributes): AttemptAnswer

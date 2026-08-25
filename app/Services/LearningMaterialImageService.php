@@ -189,10 +189,10 @@ class LearningMaterialImageService
         }
 
         foreach ($images as $image) {
-            $belongsToMaterial = $material && $image->learning_material_id === $material->id;
+            $belongsToMaterial = $material && (int) $image->learning_material_id === (int) $material->id;
             $isPendingUpload = $image->learning_material_id === null
-                && $image->course_chapter_id === $chapter->id
-                && $image->uploaded_by === $actor->id;
+                && (int) $image->course_chapter_id === (int) $chapter->id
+                && (int) $image->uploaded_by === (int) $actor->id;
             if (! $belongsToMaterial && ! $isPendingUpload) {
                 throw ValidationException::withMessages(['content' => 'One or more embedded images are not available to this material.']);
             }

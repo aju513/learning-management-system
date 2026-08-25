@@ -36,7 +36,11 @@ class CourseAssessmentRepository implements CourseAssessmentRepositoryInterface
 
     public function findForManagement(CourseAssessment $assessment): CourseAssessment
     {
-        return $assessment->load(['material.chapter.module.course', 'questions.options'])->loadCount('attempts');
+        return $assessment->load(['material.chapter.module.course', 'questions.options'])
+            ->loadCount([
+                'attempts',
+                'attempts as started_attempts' => fn ($query) => $query->whereNotNull('started_at'),
+            ]);
     }
 
     public function hasAttempts(CourseAssessment $assessment): bool
@@ -124,5 +128,13 @@ class CourseAssessmentRepository implements CourseAssessmentRepositoryInterface
     public function createAnswer(array $attributes): CourseAssessmentAnswer
     {
         return CourseAssessmentAnswer::query()->create($attributes);
+    }
+
+    public function upsertAnswer(CourseAssessmentAttempt $attempt, CourseAssessmentQuestion $question, array $attributes): CourseAssessmentAnswer
+    {
+        return CourseAssessmentAnswer::query()->updateOrCreate(
+            ['course_assessment_attempt_id' => $attempt->id, 'course_assessment_question_id' => $question->id],
+            $attributes,
+        );
     }
 }

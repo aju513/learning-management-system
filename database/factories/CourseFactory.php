@@ -24,6 +24,8 @@ class CourseFactory extends Factory
             'estimated_duration_minutes' => 60,
             'status' => 'draft',
             'navigation_mode' => 'free',
+            'availability_scope' => 'all',
+            'required_training_key' => null,
         ];
     }
 

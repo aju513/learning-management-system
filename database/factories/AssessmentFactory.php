@@ -19,6 +19,8 @@ class AssessmentFactory extends Factory
             'max_attempts' => 1,
             'status' => 'draft',
             'show_results' => true,
+            'availability_scope' => 'all',
+            'required_training_key' => null,
         ];
     }
 

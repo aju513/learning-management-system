@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Course;
+use App\Models\CourseAssessment;
 use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
@@ -280,7 +281,7 @@ test('material creation and editing use dedicated preview pages and clean incomp
 
 test('publishing requires every module and chapter to contain learning material', function () {
     $instructor = chapterAuthor();
-    $course = Course::factory()->for($instructor, 'instructor')->create();
+    $course = Course::factory()->for($instructor, 'instructor')->create(['thumbnail_path' => 'courses/test-thumbnail.jpg']);
 
     $this->actingAs($instructor)->post(route('instructor.course-modules.store', $course), ['title' => 'Empty module'])->assertRedirect();
     $chapter = $course->modules()->firstOrFail()->chapters()->firstOrFail();
@@ -291,6 +292,23 @@ test('publishing requires every module and chapter to contain learning material'
     LearningMaterial::factory()->for($chapter, 'chapter')->create();
     $this->actingAs($instructor)->patch(route('instructor.courses.status', $course), ['status' => 'published'])->assertRedirect();
     expect($course->fresh()->status->value)->toBe('published');
+});
+
+test('course publishing identifies incomplete assessment questions and links back to the editor', function () {
+    $instructor = chapterAuthor();
+    $course = Course::factory()->for($instructor, 'instructor')->create(['thumbnail_path' => 'courses/test-thumbnail.jpg']);
+    $module = CourseModule::factory()->for($course)->create(['title' => 'Module One']);
+    $chapter = CourseChapter::factory()->for($module, 'module')->create(['title' => 'Assessment Chapter']);
+    $material = LearningMaterial::factory()->for($chapter, 'chapter')->create(['title' => 'Knowledge Check', 'type' => 'course_assessment']);
+    $assessment = CourseAssessment::create(['learning_material_id' => $material->id, 'passing_percentage' => 70]);
+
+    $this->actingAs($instructor)->patch(route('instructor.courses.status', $course), ['status' => 'published'])
+        ->assertSessionHasErrors('status');
+
+    $this->actingAs($instructor)->get(route('instructor.courses.show', $course))
+        ->assertSee('Course assessment &quot;Knowledge Check&quot; needs 10 questions before publishing (currently 0).', false)
+        ->assertSee(route('instructor.course-assessments.show', $assessment).'#chapter-'.$chapter->id, false)
+        ->assertSee('Incomplete');
 });
 
 test('owners can create the canonical material types and course assessment materials', function () {
@@ -354,7 +372,8 @@ test('trainee navigation shows chapters while the catalog keeps a flat module pr
         ->assertDontSee('Private Chapter Alpha')
         ->assertDontSee('Private Chapter Beta');
 
-    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $second]))->assertForbidden();
+    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $second]))
+        ->assertOk()->assertSee('Lesson locked')->assertSee('First item');
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $first]))
         ->assertOk()
         ->assertSee('Private Chapter Alpha')

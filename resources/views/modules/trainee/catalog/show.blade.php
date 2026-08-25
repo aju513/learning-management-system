@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-@php($application = $course->enrollments->first())
-<x-common.page-breadcrumb :pageTitle="$course->title" />
+@php($application = $course->enrollments->firstWhere('course_id', $course->id))
+<x-common.page-breadcrumb :pageTitle="$course->title" :translate="false" />
 <div class="grid gap-6 xl:grid-cols-[1fr_360px]">
     <div class="space-y-6">
         <x-common.component-card :title="$course->title" :desc="$course->short_description">
@@ -14,7 +14,7 @@
                 @forelse ($course->modules as $module)
                     <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
                         <h3 class="font-semibold text-gray-800 dark:text-white">{{ $loop->iteration }}. {{ $module->title }}</h3>
-                        <ul class="mt-2 space-y-1 text-sm text-gray-500">@foreach ($module->chapters->flatMap->materials as $material)<li>{{ $material->title }} · {{ str($material->type->value)->replace('_', ' ')->title() }}</li>@endforeach</ul>
+                        <ul class="mt-2 space-y-1 text-sm text-gray-500">@foreach ($module->chapters->flatMap->materials as $material)<li>{{ $material->title }} · {{ $material->courseAssessment ? __('Course assessment') : $material->type->label() }}</li>@endforeach</ul>
                     </div>
                 @empty
                     <p class="text-sm text-gray-500">Curriculum details are being prepared.</p>

@@ -2,6 +2,7 @@
 
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
+use App\Models\AttemptAnswer;
 use App\Models\Course;
 use App\Models\CourseChapter;
 use App\Models\CourseModule;
@@ -84,6 +85,7 @@ test('an Instructor builds an owned course but cannot edit another instructors c
     ]);
 
     $course = Course::where('title', 'Public Service Foundations')->firstOrFail();
+    $course->update(['thumbnail_path' => 'courses/test-thumbnail.jpg']);
     $response->assertRedirect(route('instructor.courses.show', $course));
     expect($course->instructor_id)->toBe($instructor->id)->and($course->status->value)->toBe('draft');
 
@@ -130,7 +132,13 @@ test('sequential learning records material and course completion', function () {
     $this->actingAs($admin)->post(route('admin.enrollments.store'), ['course_id' => $course->id, 'trainees' => [$trainee->id]])->assertRedirect();
     $enrollment = Enrollment::whereBelongsTo($trainee, 'trainee')->whereBelongsTo($course)->firstOrFail();
 
-    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[1]]))->assertForbidden();
+    $this->actingAs($trainee)->get(route('learning.courses.player', $enrollment))
+        ->assertOk()
+        ->assertSee('Learning space')
+        ->assertSee('Course contents')
+        ->assertDontSee('Toggle Sidebar');
+    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[1]]))
+        ->assertOk()->assertSee('Complete the previous required lesson first')->assertSee('Go to previous lesson');
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[0]]))->assertOk();
     $this->actingAs($trainee)->post(route('learning.courses.materials.complete', [$enrollment, $materials[0]]))->assertRedirect();
     expect((float) $enrollment->fresh()->progress_percentage)->toBe(50.0);
@@ -151,17 +159,33 @@ test('objective assessments enforce attempts and grade correct answers', functio
         'options' => ['First', 'Second', 'Third', 'Fourth'], 'correct_options' => [1],
     ])->assertRedirect();
     $this->actingAs($instructor)->patch(route('instructor.assessments.status', $assessment), ['status' => 'published'])->assertRedirect();
+    $this->actingAs($instructor)->get(route('instructor.assessments.show', $assessment))
+        ->assertSee('Questions are locked because this quiz is published.')
+        ->assertDontSee('name="prompt"', false);
+    $this->actingAs($instructor)->post(route('instructor.assessment-questions.store', $assessment), [
+        'prompt' => 'A locked question', 'type' => 'single_choice', 'marks' => 1,
+        'options' => ['First', 'Second'], 'correct_options' => [0],
+    ])->assertSessionHasErrors('question');
     $this->actingAs($instructor)->post(route('instructor.assessment-assignments.store', $assessment), ['trainees' => [$trainee->id]])->assertRedirect();
 
     $this->actingAs($trainee)->post(route('learning.assessments.start', $assessment))->assertRedirect();
     $attempt = AssessmentAttempt::whereBelongsTo($trainee, 'trainee')->firstOrFail();
     $question = $assessment->questions()->with('options')->firstOrFail();
     $correctOption = $question->options->firstWhere('is_correct', true);
+    $this->actingAs($trainee)->patchJson(route('learning.assessments.attempts.answers.save', $attempt), [
+        'answers' => [$question->id => [$correctOption->id]],
+    ])->assertOk()->assertJson(['saved' => true]);
+    expect(AttemptAnswer::where('assessment_attempt_id', $attempt->id)->count())->toBe(1);
+    $this->actingAs($trainee)->post(route('learning.assessments.attempts.submit', $attempt), [
+        'answers' => [$question->id => [$correctOption->id]],
+    ])->assertRedirect(route('learning.assessments.attempts.show', $attempt));
     $this->actingAs($trainee)->post(route('learning.assessments.attempts.submit', $attempt), [
         'answers' => [$question->id => [$correctOption->id]],
     ])->assertRedirect(route('learning.assessments.attempts.show', $attempt));
 
-    expect($attempt->fresh()->passed)->toBeTrue()->and((float) $attempt->fresh()->score_percentage)->toBe(100.0);
+    expect($attempt->fresh()->passed)->toBeTrue()
+        ->and((float) $attempt->fresh()->score_percentage)->toBe(100.0)
+        ->and(AttemptAnswer::where('assessment_attempt_id', $attempt->id)->count())->toBe(1);
 });
 
 test('Instructor assessment assignment is limited to trainees related through owned courses', function () {

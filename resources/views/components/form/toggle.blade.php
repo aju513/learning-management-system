@@ -33,7 +33,7 @@
                 <span class="block h-6 w-11 rounded-full transition" :class="checked ? 'bg-brand-500' : 'bg-gray-200 dark:bg-white/10'" aria-hidden="true"></span>
                 <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-theme-sm transition" :class="checked ? 'translate-x-full' : 'translate-x-0'" aria-hidden="true"></span>
             </span>
-            {{ $label }}
+            {{ __($label) }}
         </label>
     </div>
 </x-form.field>

@@ -42,13 +42,13 @@ Assessment
 
 ## Course authoring
 
-Courses support draft, published, and archived states; beginner/intermediate/advanced difficulty; estimated duration; thumbnail; category; instructor ownership; and free or sequential navigation. Before publication, a course must have at least one module, every module must have a chapter, and every chapter must contain learning material.
+Courses support draft, published, and archived states; beginner/intermediate/advanced difficulty; estimated duration; thumbnail; category; instructor ownership; and free or sequential navigation. Before publication, a course must have a title, description, thumbnail, at least one module, every module must have a chapter, and every chapter must contain learning material. The instructor editor shows module/chapter/material/question counts and a publishing-readiness summary with links to each blocker.
 
 Modules, chapters, and materials use persisted integer positions. New modules receive an editable `Chapter 1`, every published module and chapter must contain content, and non-empty chapters cannot be deleted. Module and chapter creation uses dedicated modal forms triggered by the bottom Add buttons; the shared modal backdrop dims the page without blur and closes on outside click or Escape. The authoring UI presents modules and chapters as independently collapsible accordions; focusing a target module or chapter closes sibling panels, and URL anchors reopen the relevant panel after material or modal edits. Authorized authors can drag modules within a course, chapters within their current module, and materials within their chapter; all drops autosave through validated service/repository boundaries. Materials display dynamic `Page 1`, `Page 2`, and similar labels that update after reordering.
 
 Learning materials are created and edited on dedicated authoring pages. The form shows only fields relevant to the selected material type and provides a live, read-only trainee-style preview beside the form. The enrolled learning player displays the full Module -> Chapter -> Material hierarchy; the public catalog keeps its compact module-level material list.
 
-Supported new materials are article, video URL/upload, file, and course assessment. External-link and legacy records remain supported for compatibility. Course assessments allow only single-choice and multiple-choice questions, use a configurable passing percentage, allow unlimited retakes, and show selected/correct answers after submission. Uploaded learning files and rich-text images are stored on the private local disk and are served only through authorized routes. Rich-text images are tracked per learning material, limited to JPEG, PNG, and WebP files up to 5 MB, and removed when no longer referenced. Thumbnail images use the public disk. Article and material-note HTML is reduced to a small safe tag set, protected image sources are retained, and unsafe attributes or external image URLs are stripped before storage.
+Supported new materials are article, video URL/upload, file, and course assessment. External-link and legacy records remain supported for compatibility. Course assessments allow only single-choice and multiple-choice questions, require ten questions before course publishing, use a configurable passing percentage, allow unlimited retakes, and show selected/correct answers after submission. Course-assessment question editing remains available until the first trainee attempt. Uploaded learning files and rich-text images are stored on the private local disk and are served only through authorized routes. Rich-text images are tracked per learning material, limited to JPEG, PNG, and WebP files up to 5 MB, and removed when no longer referenced. Thumbnail images use the public disk. Article and material-note HTML is reduced to a small safe tag set, protected image sources are retained, and unsafe attributes or external image URLs are stripped before storage. A deployment migration normalizes legacy materials that already have a course-assessment record but an incorrect material type.
 
 ## Applications, enrollment, and learning
 
@@ -58,7 +58,7 @@ Instructor and Admin application review groups requests inside course-level coll
 
 Admin and Super Admin retain direct assignment. Assignment is idempotent for each trainee/course pair and supersedes pending, rejected, or cancelled state. Trainees see only active and completed enrollments in My Learning; pending/rejected/cancelled records remain in My Applications.
 
-Opening a material records the last view and starts the enrollment. Completing required materials recalculates progress as:
+Opening a material records the last view and starts the enrollment. A sequential-course request for a locked lesson returns a course-state screen identifying the blocking lesson and showing completed required lessons instead of a raw authorization error. Completing required materials recalculates progress as:
 
 ```text
 completed required materials / total required materials * 100
@@ -70,7 +70,9 @@ At 100 percent, the enrollment becomes completed and receives a completion times
 
 Standalone quizzes support draft, published, and closed states; duration; passing percentage; maximum attempts; availability dates; and direct trainee assignment. Questions support single choice, multiple choice, and true/false behavior using reusable option rows. They are not course materials.
 
-Starting a standalone quiz creates or resumes one in-progress attempt and records its expiry. Course-assessment attempts are separate, unlimited, and choice-only. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Course-assessment results include the selected and correct options. Graded attempts are immutable through the application UI.
+Starting a standalone quiz creates or resumes one in-progress attempt and records its integer-cast expiry duration. Course-assessment attempts are separate, unlimited, and choice-only. While a trainee works, answers are autosaved to the attempt and locally recovered in the browser. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Submission is idempotent so a retry after a lost browser response returns the existing result rather than creating duplicate answers. The player disables the submit action, confirms the final action, displays a recovery message on network failure, and redirects to the result/submitted state. Course-assessment results include the selected and correct options. Graded attempts are immutable through the application UI.
+
+The application provides friendly 403 and 500 screens with an explanation and recovery actions. Operational Super Admins may use the protected `admin.maintenance.optimize-clear` POST route when command-line access is unavailable.
 
 ## Reporting
 
@@ -82,6 +84,30 @@ Each portal has a separate dashboard query and view:
 - Trainee sees pending applications, approved learning, completion, and passed-test metrics.
 
 The reports page contains basic course completion, trainee completion, and assessment pass/fail/average-score reports.
+
+## Fiscal-year credit scores
+
+Super Admin manages explicit fiscal-year periods with draft, active, and closed states. Periods cannot overlap and only one period may be active. Each fiscal year defines the attendance threshold and fixed attendance credit value.
+
+Courses, standalone assessments, and course assessments may each define credit points. A completed course or passed test creates one eligible credit award for the learner and fiscal year. Awards are idempotent per source activity and remain eligible until the trainee claims them. Claimed totals are calculated from the credit ledger rather than stored as a mutable balance.
+
+The trainee Fiscal Year Credit Score page shows the current attendance snapshot, for example `36 / 90`, eligible awards, claimed history, and total claimed credits. Attendance is refreshed through an `AttendanceProviderInterface`; the default local implementation is a sandbox provider configured through `TMIS_SANDBOX_PRESENT_DAYS`. A future TMIS REST provider can replace the adapter without changing the credit ledger.
+
+The trainee navbar displays the active fiscal year and claimed total, while the dashboard highlights unclaimed awards. These alerts are calculated on demand and are not persisted notifications.
+
+Admins and Super Admins can open the **Credit Score Viewer** from their portal navigation. It defaults to the active fiscal year and supports fiscal-year selection and trainee search. The summary table shows course, quiz, overall, and claimed/ready totals for every active trainee. Opening a trainee provides three read-only tabs: **Overall** combines all awards and the attendance snapshot, **Courses** lists course activity and completion awards, and **Quizzes** lists standalone and course-embedded quiz attempts with pass results and credit awarded.
+
+The trainee sidebar contains **Overview**, a **Courses** group, a **Tests** group, and **Credit Scores**. Courses contains Course Catalog, Applied Courses, and Enrolled Courses. Tests contains Applied Tests and Enrolled Tests: applied tests are assigned tests not yet started, while enrolled tests include every assigned test and show its current attempt state. Credit Scores is shared by both learning types and separates Course Credit Scores from Test Credit Scores, showing the source module, points, training eligibility, enrollment/attempt progress, pass state, and claim status.
+
+Starting or continuing an enrolled course opens the dedicated course player in a new tab. Learning URLs are enrollment-scoped (`/learning/enrollments/{enrollment}/...`) so an enrollment ID cannot be mistaken for a course ID. The player uses a focused learning layout without the portal sidebar or regular navbar, and provides its own course outline, progress indicator, material content, completion controls, assessment actions, and previous/next lesson navigation. My Learning only includes active or completed enrollments whose course is still published; stale assignments to draft courses are not exposed or playable.
+
+Instructor course authoring includes a full-course trainee preview, a completeness checklist, chapter material counts, module progress indicators, expand/collapse-all controls with remembered state, and direct links from publishing blockers to incomplete course assessments. Course assessment authoring shares the choice-question editor with standalone quizzes. Course assessments require ten questions before publishing; question editing locks after the first started attempt, while standalone quiz questions lock when the quiz is published or has attempt history. Instructor trainee management consolidates course progress with assigned quizzes, due dates, attempts, scores, and completion state.
+
+### Training-restricted content
+
+Courses and standalone assessments can be marked as available to everyone or restricted to one required training. The authoring form uses a fixed training catalog from `config/training.php`, and the sandbox enrollment provider uses the same file's user-to-training mapping. Trainee catalog, enrollment, learning, assessment listing, and assessment-start workflows enforce the restriction server-side. Course-embedded assessments inherit their parent course restriction.
+
+The provider interfaces under `App\Services\Training` are intentionally separate from the content models so the configuration providers can later be replaced by TMIS catalog and enrollment API adapters without changing course or assessment records.
 
 ## Local demo data
 
@@ -104,4 +130,4 @@ The root specification describes user-specific permissions, but this repository 
 
 The agreed backlog for reusable test schedules and history, academic ownership and collaboration, and scoped Admin access is recorded in the [Future LMS Roadmap](future-lms-roadmap.md). These behaviors are documentation-only and are not part of the delivered MVP.
 
-SSO/OIDC, TMIS synchronization, certificates, notifications, SCORM/xAPI, live classes, assignments, manual grading, question banks, randomized exams, and exports remain future phases. The LMS tables reference local user IDs only at the authentication boundary, so a future stable TMIS/OIDC subject mapping can be introduced without changing course, learning, or assessment rules.
+SSO/OIDC, live TMIS synchronization, TMIS training enrollment mapping, certificates, persisted notifications, SCORM/xAPI, live classes, assignments, manual grading, question banks, randomized exams, and exports remain future phases. The LMS tables reference local user IDs only at the authentication boundary, so a future stable TMIS/OIDC subject mapping can be introduced without changing course, learning, or assessment rules.

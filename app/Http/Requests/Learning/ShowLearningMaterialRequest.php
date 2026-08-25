@@ -12,9 +12,10 @@ class ShowLearningMaterialRequest extends FormRequest
         $material = $this->route('learning_material');
 
         return (bool) ($this->user()?->can('learning.view')
-            && $enrollment->user_id === $this->user()->id
+            && $enrollment->course?->isPublished()
+            && (int) $enrollment->user_id === (int) $this->user()->id
             && $enrollment->status->grantsLearningAccess()
-            && $material->chapter->module->course_id === $enrollment->course_id);
+            && (int) $material->chapter->module->course_id === (int) $enrollment->course_id);
     }
 
     public function rules(): array

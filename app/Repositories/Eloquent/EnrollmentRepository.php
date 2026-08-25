@@ -41,7 +41,15 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
         return Enrollment::query()
             ->whereIn('status', ['active', 'completed'])
             ->whereHas('course', fn ($query) => $query->where('instructor_id', $instructor->id))
-            ->with(['course', 'trainee'])
+            ->with([
+                'course',
+                'trainee.assessmentAssignments' => fn ($query) => $query
+                    ->whereHas('assessment', fn ($assessment) => $assessment->where('created_by', $instructor->id))
+                    ->with('assessment'),
+                'trainee.assessmentAttempts' => fn ($query) => $query
+                    ->whereHas('assessment', fn ($assessment) => $assessment->where('created_by', $instructor->id))
+                    ->with('assessment'),
+            ])
             ->when($filters['search'] ?? null, fn ($query, string $search) => $query->whereHas('trainee', fn ($trainee) => $trainee->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
             ->when($filters['course_id'] ?? null, fn ($query, int|string $course) => $query->where('course_id', $course))
             ->orderBy('enrolled_at')
@@ -116,17 +124,30 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
         $enrollment->delete();
     }
 
-    public function forTrainee(User $trainee): Collection
+    public function forTrainee(User $trainee, array $eligibleTrainingKeys = []): Collection
     {
         return Enrollment::query()->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed'])
-            ->with(['course.category', 'course.instructor', 'course.modules.chapters.materials'])->latest('enrolled_at')->get();
+            ->whereHas('course', function ($query) use ($eligibleTrainingKeys): void {
+                $query->where('status', 'published')
+                    ->where(function ($availability) use ($eligibleTrainingKeys): void {
+                        $availability->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                            ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+                    });
+            })
+            ->with([
+                'course.category',
+                'course.instructor',
+                'course.modules.chapters.materials.courseAssessment.questions',
+                'course.modules.chapters.materials.courseAssessment.attempts',
+                'materialProgress',
+            ])->latest('enrolled_at')->get();
     }
 
     public function applicationsForTrainee(User $trainee): Collection
     {
         return Enrollment::query()
             ->where('user_id', $trainee->id)
-            ->whereIn('status', ['pending', 'rejected', 'cancelled'])
+            ->whereIn('status', ['pending', 'active', 'completed', 'rejected', 'cancelled'])
             ->with(['course.category', 'course.instructor', 'reviewer'])
             ->latest('requested_at')
             ->get();
@@ -134,7 +155,11 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
 
     public function findForLearning(Enrollment $enrollment): Enrollment
     {
-        return $enrollment->load(['course.modules.chapters.materials.courseAssessment', 'materialProgress']);
+        return $enrollment->load([
+            'course.modules.chapters.materials.courseAssessment.questions',
+            'course.modules.chapters.materials.courseAssessment.attempts',
+            'materialProgress',
+        ]);
     }
 
     public function findForCourseAndTrainee(Course $course, User $trainee): ?Enrollment

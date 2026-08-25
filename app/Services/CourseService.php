@@ -58,11 +58,13 @@ class CourseService
     public function createCourse(array $data, User $actor): Course
     {
         return DB::transaction(function () use ($data, $actor): Course {
+            unset($data['available_to_all']);
             $thumbnail = Arr::pull($data, 'thumbnail');
             $data['slug'] = $this->uniqueCourseSlug($data['title']);
             $data['instructor_id'] = $actor->can('courses.edit-any') && filled($data['instructor_id'] ?? null)
                 ? $data['instructor_id'] : $actor->id;
             $data['status'] = CourseStatus::Draft;
+            $data['credit_points'] = $data['credit_points'] ?? 0;
             if ($thumbnail instanceof UploadedFile) {
                 $data['thumbnail_path'] = $thumbnail->store('lms/thumbnails', 'public');
             }
@@ -77,6 +79,7 @@ class CourseService
     public function updateCourse(Course $course, array $data, User $actor): Course
     {
         return DB::transaction(function () use ($course, $data, $actor): Course {
+            unset($data['available_to_all']);
             $oldThumbnail = $course->thumbnail_path;
             $thumbnail = Arr::pull($data, 'thumbnail');
             $data['slug'] = $this->uniqueCourseSlug($data['title'], $course);
@@ -101,26 +104,9 @@ class CourseService
     {
         if ($status === CourseStatus::Published) {
             $course = $this->courses->findCourseDetails($course);
-            if ($course->modules->isEmpty()) {
-                throw ValidationException::withMessages(['status' => 'Add at least one module before publishing.']);
-            }
-            if ($course->modules->contains(fn (CourseModule $module) => $module->chapters->isEmpty())) {
-                throw ValidationException::withMessages(['status' => 'Every module needs at least one chapter before publishing.']);
-            }
-            if ($course->modules->flatMap->chapters->contains(fn (CourseChapter $chapter) => $chapter->materials->isEmpty())) {
-                throw ValidationException::withMessages(['status' => 'Every chapter needs at least one learning material before publishing.']);
-            }
-            foreach ($course->modules->flatMap->chapters->flatMap->materials->where('type', MaterialType::CourseAssessment) as $material) {
-                $assessment = $material->courseAssessment?->load('questions.options');
-                if (! $assessment || $assessment->questions->isEmpty()) {
-                    throw ValidationException::withMessages(['status' => 'Every course assessment needs at least one question before publishing.']);
-                }
-                foreach ($assessment->questions as $question) {
-                    $correctCount = $question->options->where('is_correct', true)->count();
-                    if ($question->options->count() < 2 || $correctCount < 1 || ($question->type->value === 'single_choice' && $correctCount !== 1)) {
-                        throw ValidationException::withMessages(['status' => 'Every course assessment question needs valid answer options before publishing.']);
-                    }
-                }
+            $issues = $this->publishingIssues($course);
+            if ($issues !== []) {
+                throw ValidationException::withMessages(['status' => $issues[0]['message']]);
             }
         }
         $course = $this->courses->updateCourse($course, [
@@ -131,6 +117,95 @@ class CourseService
             ->withProperties(['status' => $status->value])->log('Course status changed');
 
         return $course;
+    }
+
+    public function previewCourse(Course $course): Course
+    {
+        return $this->courses->findCourseDetails($course);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function publishingIssues(Course $course): array
+    {
+        $issues = [];
+
+        if (blank($course->title)) {
+            $issues[] = ['message' => 'Add a course title before publishing.'];
+        }
+        if (blank($course->short_description) && blank($course->description)) {
+            $issues[] = ['message' => 'Add a course description before publishing.'];
+        }
+        if (blank($course->thumbnail_path)) {
+            $issues[] = ['message' => 'Add a course thumbnail before publishing.'];
+        }
+
+        if ($course->modules->isEmpty()) {
+            $issues[] = ['message' => 'Add at least one module before publishing.'];
+
+            return $issues;
+        }
+
+        foreach ($course->modules as $module) {
+            if ($module->chapters->isEmpty()) {
+                $issues[] = [
+                    'module_id' => $module->id,
+                    'module' => $module,
+                    'message' => "Module \"{$module->title}\" needs at least one chapter before publishing.",
+                ];
+
+                continue;
+            }
+
+            foreach ($module->chapters as $chapter) {
+                if ($chapter->materials->isEmpty()) {
+                    $issues[] = [
+                        'module_id' => $module->id,
+                        'chapter_id' => $chapter->id,
+                        'module' => $module,
+                        'chapter' => $chapter,
+                        'message' => "Chapter \"{$chapter->title}\" needs at least one learning material before publishing.",
+                    ];
+                }
+
+                foreach ($chapter->materials->where('type', MaterialType::CourseAssessment) as $material) {
+                    $assessment = $material->courseAssessment;
+                    $minimumQuestions = (int) config('lms.course_assessment_min_questions', 10);
+                    if (! $assessment || $assessment->questions->count() < $minimumQuestions) {
+                        $issues[] = [
+                            'module_id' => $module->id,
+                            'chapter_id' => $chapter->id,
+                            'material_id' => $material->id,
+                            'module' => $module,
+                            'chapter' => $chapter,
+                            'material' => $material,
+                            'assessment' => $assessment,
+                            'message' => "Course assessment \"{$material->title}\" needs {$minimumQuestions} questions before publishing (currently ".($assessment?->questions->count() ?? 0).').',
+                        ];
+
+                        continue;
+                    }
+
+                    foreach ($assessment->questions as $question) {
+                        $correctCount = $question->options->where('is_correct', true)->count();
+                        if ($question->options->count() < 2 || $correctCount < 1 || ($question->type->value === 'single_choice' && $correctCount !== 1)) {
+                            $issues[] = [
+                                'module_id' => $module->id,
+                                'chapter_id' => $chapter->id,
+                                'material_id' => $material->id,
+                                'module' => $module,
+                                'chapter' => $chapter,
+                                'material' => $material,
+                                'assessment' => $assessment,
+                                'question' => $question,
+                                'message' => "Question \"{$question->prompt}\" in \"{$material->title}\" needs valid answer options before publishing.",
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        return $issues;
     }
 
     public function deleteCourse(Course $course, User $actor): void
@@ -287,6 +362,7 @@ class CourseService
         try {
             return DB::transaction(function () use ($chapter, $data, $actor): LearningMaterial {
                 $passingPercentage = Arr::pull($data, 'passing_percentage');
+                $creditPoints = Arr::pull($data, 'credit_points', 0);
                 $material = $this->courses->createMaterial([
                     ...$data,
                     'course_chapter_id' => $chapter->id,
@@ -296,6 +372,7 @@ class CourseService
                     $this->courseAssessments->create([
                         'learning_material_id' => $material->id,
                         'passing_percentage' => $passingPercentage,
+                        'credit_points' => $creditPoints,
                     ]);
                 }
                 $this->materialImages->synchronize($material, $data['content'] ?? null, $chapter, $actor);
@@ -324,13 +401,14 @@ class CourseService
         try {
             $material = DB::transaction(function () use ($material, $data, $actor, &$removedImages): LearningMaterial {
                 $passingPercentage = Arr::pull($data, 'passing_percentage');
+                $creditPoints = Arr::pull($data, 'credit_points', 0);
                 $existingCourseAssessment = $this->courseAssessments->findForMaterial($material);
                 $material = $this->courses->updateMaterial($material, $data);
                 if ($material->type === MaterialType::CourseAssessment) {
                     if ($existingCourseAssessment) {
-                        $this->courseAssessments->update($existingCourseAssessment, ['passing_percentage' => $passingPercentage]);
+                        $this->courseAssessments->update($existingCourseAssessment, ['passing_percentage' => $passingPercentage, 'credit_points' => $creditPoints]);
                     } else {
-                        $this->courseAssessments->create(['learning_material_id' => $material->id, 'passing_percentage' => $passingPercentage]);
+                        $this->courseAssessments->create(['learning_material_id' => $material->id, 'passing_percentage' => $passingPercentage, 'credit_points' => $creditPoints]);
                     }
                 } elseif ($existingCourseAssessment) {
                     $this->courseAssessments->delete($existingCourseAssessment);
