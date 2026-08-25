@@ -11,6 +11,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { Calendar } from '@fullcalendar/core';
 import learningMaterialEditor from './components/learning-material-editor';
 import curriculumReorder from './components/curriculum-reorder';
+import courseAssessmentPlayer from './components/course-assessment-player';
 import { initializeQuillEditors } from './components/quill-editor';
 
 
@@ -23,6 +24,7 @@ window.FullCalendar = Calendar;
 Alpine.plugin(collapse);
 Alpine.data('learningMaterialEditor', learningMaterialEditor);
 Alpine.data('curriculumReorder', curriculumReorder);
+Alpine.data('courseAssessmentPlayer', courseAssessmentPlayer);
 Alpine.start();
 
 // Initialize components on DOM ready

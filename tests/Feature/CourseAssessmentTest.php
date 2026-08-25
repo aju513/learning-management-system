@@ -91,7 +91,7 @@ test('course assessment player keeps its Alpine controls visible', function () {
         ->assertSee('Course contents')
         ->assertSee('Submit assessment')
         ->assertSee('bi-check2-circle', false)
-        ->assertSee("data-answer-question='", false)
+        ->assertSee('x-data="courseAssessmentPlayer(', false)
         ->assertDontSee(route('locale.update'), false)
         ->assertDontSee('x-show="!submitting"', false);
 });
