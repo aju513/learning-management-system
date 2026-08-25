@@ -19,6 +19,30 @@
         </div>
     </x-common.component-card>
 
+    @if($attempt->passed && $courseCreditPoints > 0)
+        <section class="rounded-2xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-500/30 dark:bg-brand-500/10 sm:p-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-300">Course credit score</p>
+                    <h2 class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">+{{ number_format($courseCreditPoints, 2) }} credits</h2>
+                    @if($creditAward?->isClaimed())
+                        <p class="mt-2 text-sm font-medium text-success-700 dark:text-success-300">This credit score has already been claimed.</p>
+                    @elseif($creditAward)
+                        <p class="mt-2 text-sm text-brand-800 dark:text-brand-200">You passed the assessment and your course credit score is ready to claim.</p>
+                    @else
+                        <p class="mt-2 text-sm text-brand-800 dark:text-brand-200">Complete the remaining course items to unlock this credit score.</p>
+                    @endif
+                </div>
+                @if($creditAward && ! $creditAward->isClaimed())
+                    <form method="POST" action="{{ route('learning.credit-scores.claim', $creditAward) }}">
+                        @csrf
+                        <button type="submit" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">Claim {{ number_format($courseCreditPoints, 2) }} credits</button>
+                    </form>
+                @endif
+            </div>
+        </section>
+    @endif
+
     <x-common.component-card :title="$attempt->courseAssessment->material->title" desc="Review the selected and correct answers.">
         <div class="space-y-4">
             @foreach($attempt->courseAssessment->questions as $question)

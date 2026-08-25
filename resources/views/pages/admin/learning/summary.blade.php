@@ -21,6 +21,30 @@
         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]"><p class="text-2xl font-bold {{ $progress['assessmentPassed'] ? 'text-success-600' : 'text-gray-900 dark:text-white' }}">{{ $progress['assessment'] ? ($progress['assessmentPassed'] ? 'Passed' : 'Complete') : '—' }}</p><p class="mt-1 text-sm text-gray-500">Assessment</p></div>
     </div>
 
+    @if($progress['creditPoints'] > 0)
+        <section class="mb-6 rounded-2xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-500/30 dark:bg-brand-500/10 sm:p-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-300">Course credit score</p>
+                    <h2 class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">+{{ number_format($progress['creditPoints'], 2) }} credits</h2>
+                    @if($progress['creditAward']?->isClaimed())
+                        <p class="mt-2 text-sm font-medium text-success-700 dark:text-success-300">This credit score has already been claimed.</p>
+                    @elseif($progress['creditAward'])
+                        <p class="mt-2 text-sm text-brand-800 dark:text-brand-200">Your course is complete. Claim your credit score now.</p>
+                    @else
+                        <p class="mt-2 text-sm text-brand-800 dark:text-brand-200">Your credit score is being prepared and will be available shortly.</p>
+                    @endif
+                </div>
+                @if($progress['creditAward'] && ! $progress['creditAward']->isClaimed())
+                    <form method="POST" action="{{ route('learning.credit-scores.claim', $progress['creditAward']) }}">
+                        @csrf
+                        <button type="submit" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">Claim {{ number_format($progress['creditPoints'], 2) }} credits</button>
+                    </form>
+                @endif
+            </div>
+        </section>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-[1fr_340px]">
         <x-common.component-card title="Review your course" desc="Choose where you want to continue reviewing this completed course.">
             <div class="space-y-3">

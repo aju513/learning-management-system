@@ -6,7 +6,9 @@ use App\Models\CourseAssessmentAttempt;
 use App\Models\CourseAssessmentQuestion;
 use App\Models\CourseChapter;
 use App\Models\CourseModule;
+use App\Models\CreditAward;
 use App\Models\Enrollment;
+use App\Models\FiscalYear;
 use App\Models\LearningMaterial;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
@@ -23,9 +25,9 @@ function assessmentPortalUser(string $role): User
     return $user;
 }
 
-function courseAssessmentMaterial(User $instructor): array
+function courseAssessmentMaterial(User $instructor, array $courseAttributes = []): array
 {
-    $course = Course::factory()->published()->for($instructor, 'instructor')->create(['navigation_mode' => 'sequential']);
+    $course = Course::factory()->published()->for($instructor, 'instructor')->create(['navigation_mode' => 'sequential', ...$courseAttributes]);
     $module = CourseModule::factory()->for($course)->create();
     $chapter = CourseChapter::factory()->for($module, 'module')->create();
     $material = LearningMaterial::factory()->for($chapter, 'chapter')->create([
@@ -133,6 +135,40 @@ test('course assessment submission returns a retry-safe JSON redirect', function
         'answers' => [$question->id => $question->options->first()->id],
     ])->assertOk()->assertJsonPath('submitted', true);
     expect(CourseAssessmentAttempt::count())->toBe(1);
+});
+
+test('a passed course assessment prompts the trainee to claim the course credit score', function () {
+    $instructor = assessmentPortalUser('instructor');
+    $trainee = assessmentPortalUser('trainee');
+    FiscalYear::factory()->create(['starts_on' => '2026-01-01', 'ends_on' => '2026-12-31', 'status' => 'active']);
+    [$course, $material, $assessment, $next] = courseAssessmentMaterial($instructor, ['credit_points' => 7.5]);
+    $next->update(['is_required' => false]);
+    $this->actingAs($instructor)->post(route('instructor.course-assessment-questions.store', $assessment), [
+        'prompt' => 'What is correct?', 'type' => 'single_choice', 'marks' => 1,
+        'options' => ['Correct', 'Incorrect'], 'correct_options' => [0],
+    ])->assertRedirect();
+    $question = $assessment->questions()->with('options')->firstOrFail();
+    $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create(['status' => 'active']);
+
+    $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))->assertRedirect();
+    $attempt = CourseAssessmentAttempt::firstOrFail();
+    $this->actingAs($trainee)->post(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
+        'answers' => [$question->id => $question->options->first()->id],
+    ])->assertRedirect();
+
+    $award = CreditAward::query()->where('user_id', $trainee->id)->where('source_key', 'course:'.$course->id)->firstOrFail();
+    $this->actingAs($trainee)->get(route('learning.course-assessment-attempts.show', [$enrollment, $attempt]))
+        ->assertOk()
+        ->assertSee('Course credit score')
+        ->assertSee('+7.50 credits')
+        ->assertSee('Claim 7.50 credits')
+        ->assertSee(route('learning.credit-scores.claim', $award), false);
+
+    $this->actingAs($trainee)->post(route('learning.credit-scores.claim', $award))->assertRedirect();
+    $this->actingAs($trainee)->get(route('learning.courses.summary', $enrollment))
+        ->assertOk()
+        ->assertSee('+7.50 credits')
+        ->assertSee('This credit score has already been claimed.');
 });
 
 test('course assessment question authoring is owned by the course instructor', function () {

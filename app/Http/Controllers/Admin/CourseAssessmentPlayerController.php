@@ -11,6 +11,7 @@ use App\Models\Enrollment;
 use App\Models\LearningMaterial;
 use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
 use App\Services\CourseAssessmentService;
+use App\Services\CreditScoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -20,6 +21,7 @@ class CourseAssessmentPlayerController extends Controller
     public function __construct(
         private readonly CourseAssessmentRepositoryInterface $courseAssessments,
         private readonly CourseAssessmentService $service,
+        private readonly CreditScoreService $credits,
     ) {}
 
     public function start(StartCourseAssessmentRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): RedirectResponse
@@ -33,11 +35,18 @@ class CourseAssessmentPlayerController extends Controller
     public function show(ShowAttemptRequest $request, Enrollment $enrollment, CourseAssessmentAttempt $courseAssessmentAttempt): View
     {
         $attempt = $this->courseAssessments->findAttemptForTaking($courseAssessmentAttempt);
+        $course = $enrollment->course;
         $view = $attempt->status === 'in_progress'
             ? 'pages.admin.course-assessment-player.take'
             : 'pages.admin.course-assessment-player.result';
 
-        return view($view, ['attempt' => $attempt, 'enrollment' => $enrollment, 'title' => $attempt->courseAssessment->material->title]);
+        return view($view, [
+            'attempt' => $attempt,
+            'enrollment' => $enrollment,
+            'creditAward' => $attempt->passed ? $this->credits->courseAward($course, $request->user()) : null,
+            'courseCreditPoints' => (float) $course->credit_points,
+            'title' => $attempt->courseAssessment->material->title,
+        ]);
     }
 
     public function submit(SubmitAttemptRequest $request, Enrollment $enrollment, CourseAssessmentAttempt $courseAssessmentAttempt): RedirectResponse|JsonResponse
