@@ -42,6 +42,8 @@ The protected `/admin/ui-kit` page is the executable catalog. New shared compone
 
 Forms use the reusable `x-form.*` controls and always render server validation errors through the authenticated layout or auth form feedback.
 
+The trainee course player uses a full-width shell so the course contents sidebar stays attached to the viewport edge on wide screens. Its lesson area fills the remaining space while retaining a readable `max-w-5xl` content column and responsive horizontal padding.
+
 Page headers use `<x-common.page-breadcrumb>` for a consistently left-aligned title and breadcrumb. Pages with a header action should pass it through the component's `actions` slot so the action remains aligned on the right at desktop widths and stacks cleanly on small screens.
 
 Learning-material create and edit pages use the shared two-column authoring pattern: the type-specific form occupies the main column and a read-only trainee-style preview is sticky in the right column on desktop. On smaller screens the preview stacks below the form. Preview cards must not open URLs, download files, start assessments, or mutate learning progress; server validation and sanitization remain authoritative.

@@ -38,7 +38,7 @@
         </div>
     </header>
 
-    <div class="mx-auto flex max-w-[1600px]">
+    <div class="flex w-full">
         <aside id="course-outline" class="fixed inset-y-16 left-0 z-30 w-[min(86vw,340px)] -translate-x-full overflow-y-auto border-r border-gray-200 bg-white p-5 transition-transform md:sticky md:top-16 md:block md:h-[calc(100vh-4rem)] md:w-80 md:translate-x-0 md:shrink-0 md:self-start dark:border-gray-800 dark:bg-gray-900" :class="outlineOpen ? 'translate-x-0' : ''">
             <div class="mb-6 flex items-start justify-between gap-3">
                 <div>
@@ -91,7 +91,7 @@
         </aside>
 
         <main class="min-w-0 flex-1 px-4 py-8 sm:px-8 lg:px-12">
-            <div class="mx-auto max-w-2xl">
+            <div class="mx-auto w-full max-w-5xl">
                 @if(session('credit_award_id'))
                     <div x-data="{ open: true }" x-show="open" x-cloak class="mb-6 rounded-2xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-500/30 dark:bg-brand-500/10">
                         <div class="flex items-start justify-between gap-4"><div><p class="font-semibold text-brand-800 dark:text-brand-200">Claim your course credit score</p><p class="mt-1 text-sm text-brand-700 dark:text-brand-300">You completed this course and have <strong>+{{ number_format($progress['creditPoints'], 2) }} credits</strong> ready to claim.</p></div><button type="button" @click="open = false" class="text-brand-600" aria-label="Close">&times;</button></div>
