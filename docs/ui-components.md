@@ -15,6 +15,8 @@
 - `<x-ui.alert>` supports success, warning, error, and information feedback.
 - `<x-common.menu-icon>` renders the named SVG icon used by the generated sidebar menu.
 
+The application typography uses Karla for body and content text, with Montserrat for headings (`h1` through `h6`). Both fonts are loaded from Google Fonts and exposed through the `font-karla` and `font-montserrat` theme utilities.
+
 ## Form components
 
 CRUD forms must compose the reusable `x-form.*` components below instead of duplicating input markup:

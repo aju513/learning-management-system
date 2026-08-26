@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap') layer(base);
+@import url('https://fonts.googleapis.com/css2?family=Karla:wght@200..800&family=Montserrat:wght@100..900&display=swap') layer(base);
 @import 'prismjs/themes/prism.min.css';
 @import 'quill/dist/quill.snow.css';
 @import 'tailwindcss';
@@ -14,7 +14,8 @@
 
 @theme {
   --font-*: initial;
-  --font-outfit: Outfit, sans-serif;
+  --font-karla: Karla, sans-serif;
+  --font-montserrat: Montserrat, sans-serif;
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;
@@ -190,7 +191,15 @@
     cursor: pointer;
   }
   body {
-    @apply relative font-normal font-outfit z-1 bg-gray-50;
+    @apply relative z-1 bg-gray-50 font-karla font-normal;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-montserrat);
   }
 }
 
