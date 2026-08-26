@@ -50,9 +50,15 @@ class LearningController extends Controller
         return view('pages.admin.learning.player', $result + ['title' => $enrollment->course->title]);
     }
 
-    public function summary(ShowLearningSummaryRequest $request, Enrollment $enrollment): View
+    public function summary(ShowLearningSummaryRequest $request, Enrollment $enrollment): View|RedirectResponse
     {
-        return view('pages.admin.learning.summary', $this->service->summary($enrollment, $request->user()) + ['title' => $enrollment->course->title]);
+        $summary = $this->service->summary($enrollment, $request->user());
+
+        if ($summary['redirectToPlayer']) {
+            return redirect()->route('learning.courses.player', $enrollment);
+        }
+
+        return view('pages.admin.learning.summary', $summary + ['title' => $enrollment->course->title]);
     }
 
     public function show(ShowLearningMaterialRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): View
@@ -69,7 +75,14 @@ class LearningController extends Controller
                 'completed' => true,
                 'progress_percentage' => (float) $result['enrollment']->progress_percentage,
                 'status' => $result['enrollment']->status->value,
+                'course_completed' => $result['enrollment']->status->value === 'completed',
+                'summary_url' => route('learning.courses.summary', $enrollment),
             ]);
+        }
+
+        if ($result['enrollment']->status->value === 'completed') {
+            return redirect()->route('learning.courses.summary', $enrollment)
+                ->with('success', 'Congratulations! You completed the course.');
         }
 
         $redirect = back()->with('success', 'Material marked complete.');

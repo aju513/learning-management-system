@@ -165,6 +165,65 @@ test('course assessment failures can be retaken and passing completes the requir
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $next]))->assertOk();
 });
 
+test('course assessments obey the course sequence and continue to the next item after passing', function () {
+    $instructor = assessmentPortalUser('instructor');
+    $trainee = assessmentPortalUser('trainee');
+    [$course, $material, $assessment, $next] = courseAssessmentMaterial($instructor);
+    $previous = LearningMaterial::factory()->for($material->chapter, 'chapter')->create([
+        'title' => 'Read this first',
+        'position' => 1,
+    ]);
+    $material->update(['position' => 2]);
+    $next->update(['position' => 3]);
+    $this->actingAs($instructor)->post(route('instructor.course-assessment-questions.store', $assessment), [
+        'prompt' => 'What is correct?', 'type' => 'single_choice', 'marks' => 1,
+        'options' => ['Correct', 'Incorrect'], 'correct_options' => [0],
+    ])->assertRedirect();
+    $question = $assessment->questions()->with('options')->firstOrFail();
+    $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create(['status' => 'active']);
+
+    $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))
+        ->assertSessionHasErrors('assessment');
+
+    $this->actingAs($trainee)->post(route('learning.courses.materials.complete', [$enrollment, $previous]))->assertRedirect();
+    $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))->assertRedirect();
+    $attempt = CourseAssessmentAttempt::firstOrFail();
+    $response = $this->actingAs($trainee)->postJson(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
+        'answers' => [$question->id => $question->options->firstWhere('is_correct', true)->id],
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('course_completed', false)
+        ->assertJsonPath('redirect', route('learning.courses.materials.show', [$enrollment, $next]));
+});
+
+test('passing the final course assessment exposes the course completion dialog and summary link', function () {
+    $instructor = assessmentPortalUser('instructor');
+    $trainee = assessmentPortalUser('trainee');
+    [$course, $material, $assessment, $next] = courseAssessmentMaterial($instructor);
+    $next->delete();
+    $this->actingAs($instructor)->post(route('instructor.course-assessment-questions.store', $assessment), [
+        'prompt' => 'What is correct?', 'type' => 'single_choice', 'marks' => 1,
+        'options' => ['Correct', 'Incorrect'], 'correct_options' => [0],
+    ])->assertRedirect();
+    $question = $assessment->questions()->with('options')->firstOrFail();
+    $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create(['status' => 'active']);
+
+    $this->actingAs($trainee)->post(route('learning.courses.materials.course-assessment.start', [$enrollment, $material]))->assertRedirect();
+    $attempt = CourseAssessmentAttempt::firstOrFail();
+    $this->actingAs($trainee)->get(route('learning.course-assessment-attempts.show', [$enrollment, $attempt]))
+        ->assertOk()
+        ->assertSee('Congratulations on completing the course!')
+        ->assertSee('View the course summary');
+
+    $this->actingAs($trainee)->postJson(route('learning.course-assessment-attempts.submit', [$enrollment, $attempt]), [
+        'answers' => [$question->id => $question->options->firstWhere('is_correct', true)->id],
+    ])->assertOk()
+        ->assertJsonPath('course_completed', true)
+        ->assertJsonPath('redirect', route('learning.courses.summary', $enrollment))
+        ->assertJsonPath('summary_url', route('learning.courses.summary', $enrollment));
+});
+
 test('course assessment submission returns a retry-safe JSON redirect', function () {
     $instructor = assessmentPortalUser('instructor');
     $trainee = assessmentPortalUser('trainee');

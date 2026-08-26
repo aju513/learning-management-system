@@ -194,7 +194,7 @@ test('enrolled course cards show assigned credit scores and claim state', functi
     $award->update(['status' => 'claimed']);
     $this->actingAs($trainee)->get(route('learning.courses.index'))
         ->assertOk()
-        ->assertSee('Claimed');
+        ->assertSee('Credit claimed');
 });
 
 test('previously completed credit-bearing enrollments can recover and claim missing awards', function () {

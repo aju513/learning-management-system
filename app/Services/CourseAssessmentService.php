@@ -83,6 +83,7 @@ class CourseAssessmentService
     public function start(CourseAssessment $assessment, Enrollment $enrollment, User $trainee): CourseAssessmentAttempt
     {
         $assessment = $this->courseAssessments->findForManagement($assessment);
+        $this->learning->assertMaterialCanBeStarted($enrollment, $assessment->material, $trainee);
         $this->availability->assertAvailable($assessment->material->chapter->module->course, $trainee);
         if ((int) $enrollment->user_id !== (int) $trainee->id || (int) $assessment->material->chapter->module->course_id !== (int) $enrollment->course_id) {
             throw new AuthorizationException('This course assessment is not part of your enrollment.');

@@ -5,6 +5,8 @@ export default function courseAssessmentPlayer({ draftKey, saveUrl, serverAnswer
         submitMessage: '',
         submitError: '',
         saveState: 'Not saved yet',
+        courseCompleted: false,
+        completionSummaryUrl: '',
         saveTimer: null,
         draftKey,
         saveUrl,
@@ -125,6 +127,14 @@ export default function courseAssessmentPlayer({ draftKey, saveUrl, serverAnswer
                 const data = await response.json();
                 localStorage.removeItem(this.draftKey);
                 this.saveState = 'Assessment submitted successfully';
+
+                if (data.course_completed) {
+                    this.courseCompleted = true;
+                    this.completionSummaryUrl = data.summary_url || data.redirect;
+                    this.saveState = 'Course completed';
+                    return;
+                }
+
                 window.location.assign(data.redirect);
             } catch (error) {
                 this.submitting = false;

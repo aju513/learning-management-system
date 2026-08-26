@@ -18,14 +18,9 @@
         @php
             $courseProgress = $progressByEnrollment[$enrollment->id];
             $nextMaterial = $courseProgress['nextMaterial'];
-            $assessmentMaterial = $courseProgress['assessmentMaterial'];
-            $assessment = $courseProgress['assessment'];
             $assessmentPassed = $courseProgress['assessmentPassed'];
-            $assessmentLocked = $assessment && $courseProgress['remainingLessons'] > 0;
             $assessmentStatus = $courseProgress['assessmentStatus'];
-            $primaryAction = $assessment && ! $assessmentPassed && ! $assessmentLocked
-                ? 'Take assessment'
-                : ($courseProgress['isComplete'] ? 'Review course' : ($enrollment->started_at ? 'Continue course' : 'Start course'));
+            $primaryAction = $courseProgress['isComplete'] ? 'Review course' : ($enrollment->started_at ? 'Continue course' : 'Start course');
         @endphp
         <article x-data="{ opening: false }" class="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs transition hover:-translate-y-0.5 hover:shadow-theme-md dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="relative min-h-[170px] overflow-hidden bg-brand-50 dark:bg-brand-500/10">
@@ -62,13 +57,13 @@
                         <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/[0.04]"><strong class="block text-lg text-gray-800 dark:text-white">{{ $courseProgress['completedLessons'] }}</strong><span class="text-[11px] text-gray-600 dark:text-gray-400">Completed lessons</span></div>
                         <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/[0.04]"><strong class="block text-lg text-gray-800 dark:text-white">{{ $courseProgress['totalLessons'] }}</strong><span class="text-[11px] text-gray-600 dark:text-gray-400">Total lessons</span></div>
                         <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/[0.04]"><strong class="block text-lg text-gray-800 dark:text-white">{{ $courseProgress['remainingLessons'] }}</strong><span class="text-[11px] text-gray-600 dark:text-gray-400">Remaining lessons</span></div>
-                        <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/[0.04]"><strong class="block text-sm {{ $assessmentPassed ? 'text-success-600' : ($assessmentLocked ? 'text-warning-600' : 'text-brand-600') }}">{{ $assessmentStatus ?? 'None' }}</strong><span class="text-[11px] text-gray-600 dark:text-gray-400">Assessment</span></div>
+                        <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/[0.04]"><strong class="block text-sm {{ $assessmentPassed ? 'text-success-600' : (($assessmentStatus ?? null) === 'Locked' ? 'text-warning-600' : 'text-brand-600') }}">{{ $assessmentStatus ?? 'None' }}</strong><span class="text-[11px] text-gray-600 dark:text-gray-400">Assessment</span></div>
                     </div>
                     @if($courseProgress['creditPoints'] > 0)
                         <div class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2.5 dark:border-brand-500/20 dark:bg-brand-500/10">
                             <span class="text-xs text-brand-700 dark:text-brand-300">Course credit score <strong class="ml-1 text-sm">+{{ number_format($courseProgress['creditPoints'], 2) }}</strong></span>
                             @if($courseProgress['creditAward']?->isClaimed())
-                                <span class="text-xs font-semibold text-success-600">Claimed</span>
+                                <x-ui.badge color="success" size="sm">Credit claimed</x-ui.badge>
                             @elseif($courseProgress['creditAward'])
                                 <form method="POST" action="{{ route('learning.credit-scores.claim', $courseProgress['creditAward']) }}">@csrf<button type="submit" class="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white">Claim credit</button></form>
                             @elseif($enrollment->status->value === 'completed')
@@ -79,15 +74,12 @@
                         </div>
                     @endif
                     <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                        @if($nextMaterial && $assessment && ! $assessmentPassed && ! $assessmentLocked)
-                            <form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $assessmentMaterial]) }}" @submit="opening = true">
-                                @csrf
-                                <button type="submit" :disabled="opening" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-70"><span x-show="!opening"><i class="bi bi-clipboard-check mr-1" aria-hidden="true"></i>Take assessment <span class="ml-1">→</span></span><span x-cloak x-show="opening">Opening assessment…</span></button>
-                            </form>
+                        @if($courseProgress['isComplete'])
+                            <a href="{{ route('learning.courses.summary', $enrollment) }}" @click="opening = true" class="inline-flex items-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2" :class="opening ? 'cursor-wait opacity-70' : ''"><span x-show="!opening">Review course <span class="ml-2">→</span></span><span x-cloak x-show="opening">Opening summary…</span></a>
                         @elseif($nextMaterial)
                             <a href="{{ $courseProgress['isComplete'] ? route('learning.courses.summary', $enrollment) : route('learning.courses.player', $enrollment) }}" @click="opening = true" class="inline-flex items-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2" :class="opening ? 'cursor-wait opacity-70' : ''"><span x-show="!opening">{{ $primaryAction }} <span class="ml-2">→</span></span><span x-cloak x-show="opening">Opening course…</span></a>
                         @else
-                            <span class="text-sm text-gray-600 dark:text-gray-400">Course curriculum is being prepared.</span>
+                            <a href="{{ $courseProgress['isComplete'] ? route('learning.courses.summary', $enrollment) : route('learning.courses.index') }}" class="inline-flex items-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">{{ $courseProgress['isComplete'] ? 'Review course' : 'Course curriculum is being prepared.' }}</a>
                         @endif
                         <span class="text-xs text-gray-500">{{ $enrollment->course->estimated_duration_minutes }} min · {{ ucfirst($enrollment->course->difficulty) }}</span>
                     </div>

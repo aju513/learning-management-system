@@ -13,6 +13,7 @@ use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class LearningService
 {
@@ -88,6 +89,34 @@ class LearningService
         return $this->open($enrollment, $material, $trainee);
     }
 
+    public function assertMaterialCanBeStarted(Enrollment $enrollment, LearningMaterial $material, User $trainee): void
+    {
+        $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->assertPublishedCourse($enrollment);
+        $this->availability->assertAvailable($enrollment->course, $trainee);
+
+        $materials = $enrollment->course->modules->flatMap->chapters->flatMap->materials->values();
+        $index = $materials->search(fn (LearningMaterial $item): bool => (int) $item->id === (int) $material->id);
+
+        if ($index === false) {
+            throw new AuthorizationException('This material is not part of the enrolled course.');
+        }
+
+        if ($enrollment->course->navigation_mode !== NavigationMode::Sequential) {
+            return;
+        }
+
+        $completedIds = $this->progress($enrollment, $trainee)['completedIds'];
+        $blockingMaterial = $materials->take($index)
+            ->first(fn (LearningMaterial $item): bool => $item->is_required && ! $completedIds->contains($item->id));
+
+        if ($blockingMaterial) {
+            throw ValidationException::withMessages([
+                'assessment' => 'Complete "'.$blockingMaterial->title.'" before starting this assessment.',
+            ]);
+        }
+    }
+
     public function continueAfter(Enrollment $enrollment, LearningMaterial $completedMaterial, User $trainee): array
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);
@@ -122,9 +151,12 @@ class LearningService
         $this->assertPublishedCourse($enrollment);
         $this->availability->assertAvailable($enrollment->course, $trainee);
 
+        $progress = $this->progress($enrollment, $trainee);
+
         return [
             'enrollment' => $enrollment,
-            'progress' => $this->progress($enrollment, $trainee),
+            'progress' => $progress,
+            'redirectToPlayer' => ! $progress['isComplete'],
         ];
     }
 

@@ -59,9 +59,11 @@ class CourseAssessmentPlayerController extends Controller
     {
         $attempt = $this->service->submit($courseAssessmentAttempt, $request->validated('answers', []), $enrollment, $request->user());
         $redirect = route('learning.course-assessment-attempts.show', [$enrollment, $attempt]);
+        $courseCompleted = false;
 
         if ($attempt->passed) {
             $continuation = $this->learning->continueAfter($enrollment, $attempt->courseAssessment->material, $request->user());
+            $courseCompleted = (bool) ($continuation['summary'] ?? false);
             if ($continuation['summary'] ?? false) {
                 $redirect = route('learning.courses.summary', $enrollment);
             } elseif ($continuation['material'] ?? null) {
@@ -70,7 +72,12 @@ class CourseAssessmentPlayerController extends Controller
         }
 
         if ($request->expectsJson()) {
-            return response()->json(['submitted' => true, 'redirect' => $redirect]);
+            return response()->json([
+                'submitted' => true,
+                'redirect' => $redirect,
+                'course_completed' => $courseCompleted,
+                'summary_url' => route('learning.courses.summary', $enrollment),
+            ]);
         }
 
         return redirect()->to($redirect)

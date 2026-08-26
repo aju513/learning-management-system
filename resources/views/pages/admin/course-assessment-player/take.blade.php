@@ -48,5 +48,14 @@
             </div>
         </div>
     </div>
+    <div x-cloak x-show="courseCompleted" @keydown.escape.window="courseCompleted = false" class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="course-completed-title">
+        <div class="absolute inset-0 bg-gray-950/50"></div>
+        <div class="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-7 text-center shadow-theme-xl dark:border-gray-800 dark:bg-gray-900" @click.stop>
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success-100 text-2xl text-success-600 dark:bg-success-500/15 dark:text-success-300"><i class="bi bi-trophy" aria-hidden="true"></i></div>
+            <h2 id="course-completed-title" class="mt-5 text-2xl font-bold text-gray-900 dark:text-white">Congratulations on completing the course!</h2>
+            <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">You passed the assessment and completed every required course item.</p>
+            <a :href="completionSummaryUrl" class="mt-6 inline-flex rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white">View the course summary</a>
+        </div>
+    </div>
 </div>
 @endsection

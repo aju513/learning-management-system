@@ -137,14 +137,23 @@ test('sequential learning records material and course completion', function () {
         ->assertSee('Course contents')
         ->assertSee('id="chapter-'.$materials[0]->chapter->id.'"', false)
         ->assertDontSee('Toggle Sidebar');
+    $this->actingAs($trainee)->get(route('learning.courses.summary', $enrollment))
+        ->assertRedirect(route('learning.courses.player', $enrollment));
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[1]]))
         ->assertOk()->assertSee('Complete the previous required lesson first')->assertSee('Go to previous lesson');
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[0]]))->assertOk();
     $this->actingAs($trainee)->post(route('learning.courses.materials.complete', [$enrollment, $materials[0]]))->assertRedirect();
     expect((float) $enrollment->fresh()->progress_percentage)->toBe(50.0);
 
-    $this->actingAs($trainee)->post(route('learning.courses.materials.complete', [$enrollment, $materials[1]]))->assertRedirect();
+    $this->actingAs($trainee)->postJson(route('learning.courses.materials.complete', [$enrollment, $materials[1]]))
+        ->assertOk()
+        ->assertJsonPath('course_completed', true)
+        ->assertJsonPath('summary_url', route('learning.courses.summary', $enrollment));
     expect($enrollment->fresh()->status->value)->toBe('completed')->and((float) $enrollment->fresh()->progress_percentage)->toBe(100.0);
+    $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[1]]))
+        ->assertOk()
+        ->assertSee('Congratulations on completing the course!')
+        ->assertSee('View the course summary');
 });
 
 test('completed course launch opens the review summary instead of the first lesson', function () {

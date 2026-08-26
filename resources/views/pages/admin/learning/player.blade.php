@@ -10,7 +10,7 @@
     $currentModule = $enrollment->course->modules->first(fn ($module) => $module->chapters->contains(fn ($chapter) => $chapter->materials->contains('id', $material->id)));
     $remainingMinutes = $orderedMaterials->filter(fn ($item) => ! $completedMaterialIds->contains($item->id))->sum(fn ($item) => (int) ($item->duration_minutes ?? 0));
 @endphp
-<div class="min-h-screen" x-data="{ outlineOpen: false, completing: false, completed: {{ $completedMaterialIds->contains($material->id) ? 'true' : 'false' }}, progressPercentage: {{ $progressPercentage }}, completionError: '', async completeLesson(event) { if (this.completing || this.completed) return; this.completing = true; this.completionError = ''; try { const response = await fetch(event.target.action, { method: 'POST', credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': event.target.querySelector('[name=_token]').value } }); if (!response.ok) throw new Error('Completion failed'); const data = await response.json(); this.completed = data.completed; this.progressPercentage = data.progress_percentage; } catch (error) { this.completionError = 'We could not save this lesson yet. Please try again.'; } finally { this.completing = false; } } }">
+<div class="min-h-screen" x-data="{ outlineOpen: false, completing: false, completed: {{ $completedMaterialIds->contains($material->id) ? 'true' : 'false' }}, progressPercentage: {{ $progressPercentage }}, completionError: '', courseCompleted: false, summaryUrl: @js(route('learning.courses.summary', $enrollment)), async completeLesson(event) { if (this.completing || this.completed) return; this.completing = true; this.completionError = ''; try { const response = await fetch(event.target.action, { method: 'POST', credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': event.target.querySelector('[name=_token]').value } }); if (!response.ok) throw new Error('Completion failed'); const data = await response.json(); this.completed = data.completed; this.progressPercentage = data.progress_percentage; if (data.course_completed) this.courseCompleted = true; } catch (error) { this.completionError = 'We could not save this lesson yet. Please try again.'; } finally { this.completing = false; } } }">
     <header class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
         <div class="flex h-16 items-center gap-3 px-4 sm:px-6">
             <a href="{{ route('learning.courses.index') }}" class="flex shrink-0 items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200" aria-label="Back to enrolled courses">
@@ -169,6 +169,15 @@
                 </div>
             </div>
         </main>
+        <div x-cloak x-show="courseCompleted" @keydown.escape.window="courseCompleted = false" class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="course-completed-title">
+            <div class="absolute inset-0 bg-gray-950/50"></div>
+            <div class="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-7 text-center shadow-theme-xl dark:border-gray-800 dark:bg-gray-900" @click.stop>
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success-100 text-2xl text-success-600 dark:bg-success-500/15 dark:text-success-300"><i class="bi bi-trophy" aria-hidden="true"></i></div>
+                <h2 id="course-completed-title" class="mt-5 text-2xl font-bold text-gray-900 dark:text-white">Congratulations on completing the course!</h2>
+                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">You completed every required course item.</p>
+                <a :href="summaryUrl" class="mt-6 inline-flex rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white">View the course summary</a>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
