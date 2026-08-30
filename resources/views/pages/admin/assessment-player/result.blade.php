@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(request()->routeIs('learning.*') ? 'layouts.trainee.app' : 'layouts.app')
 @section('content')
 <x-common.page-breadcrumb pageTitle="Assessment Result" />
 @php($correctAnswers = $attempt->answers->where('is_correct', true)->count())

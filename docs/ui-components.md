@@ -3,6 +3,7 @@
 ## Layouts
 
 - `layouts.app` is the authenticated shell: responsive sidebar, header, flash/error feedback, dark mode, and content container.
+- `layouts.trainee.app` is the trainee portal shell: a responsive top tab navigation for Course, My Courses, Tests, My Tests, and the disabled Feedback placeholder. It does not render the portal sidebar. Trainee-only layout files live under `resources/views/layouts/trainee/`.
 - `layouts.fullscreen-layout` is for login and password-reset screens.
 - Page views set a title, extend a layout, and render content through `@section('content')`.
 
@@ -46,6 +47,8 @@ Forms use the reusable `x-form.*` controls and always render server validation e
 
 The trainee course player uses a full-width shell so the course contents sidebar stays attached to the viewport edge on wide screens. Its lesson area fills the remaining space with responsive horizontal padding.
 
+The trainee portal uses the reusable `<x-trainee::navigation>` component for its primary tabs. Course Catalog and Applied Courses are grouped under Course, while applied tests, assigned tests, attempts, and results are grouped under Tests and My Tests. Feedback is currently a disabled placeholder until its workflow is implemented. The tabs remain horizontally scrollable on small screens and expose the current destination with `aria-current="page"`.
+
 Page headers use `<x-common.page-breadcrumb>` for a consistently left-aligned title and breadcrumb. Pages with a header action should pass it through the component's `actions` slot so the action remains aligned on the right at desktop widths and stacks cleanly on small screens.
 
 Learning-material create and edit pages use the shared two-column authoring pattern: the type-specific form occupies the main column and a read-only trainee-style preview is sticky in the right column on desktop. On smaller screens the preview stacks below the form. Preview cards must not open URLs, download files, start assessments, or mutate learning progress; server validation and sanitization remain authoritative.
@@ -54,4 +57,4 @@ Staff course index cards use a responsive 3:2 thumbnail presentation (up to 600p
 
 The trainee overview uses the reusable `<x-trainee.course-card>` component for featured learning cards. It accepts a course, optional shared learning progress, and a featured state; it renders the thumbnail, category, instructor, lesson/duration metadata, progress state, and the appropriate course action. Overview-only tabs that do not yet have a destination are presented as disabled placeholders until their designs and workflows are added.
 
-The trainee My Courses page uses `<x-trainee.enrolled-course-card>` for compact enrolled-course cards. The page provides GET search, progress-status filters, and recently-added/name sorting; the card keeps progress, completion, credit-score, and course-player actions accessible on every state.
+The trainee My Courses page reuses `<x-trainee::course-card>` with an enrollment-specific input. The page provides GET search, progress-status filters, and recently-added/name sorting; the shared card keeps progress, completion, credit-score, and course-player actions accessible on every state.

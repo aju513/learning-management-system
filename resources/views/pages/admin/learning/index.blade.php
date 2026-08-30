@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.trainee.app')
 
 @section('content')
     @php
@@ -55,7 +55,11 @@
 
     <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         @forelse($enrollments as $enrollment)
-            <x-trainee.enrolled-course-card :enrollment="$enrollment" :progress="$progressByEnrollment[$enrollment->id]" />
+            <x-trainee::course-card
+                :course="$enrollment->course"
+                :progress="$progressByEnrollment[$enrollment->id]"
+                :enrollment="$enrollment"
+            />
         @empty
             <div class="col-span-full rounded-2xl border border-dashed border-gray-300 bg-white p-14 text-center dark:border-gray-700 dark:bg-white/[0.03]">
                 <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-3xl text-brand-500 dark:bg-brand-500/10">📚</div>

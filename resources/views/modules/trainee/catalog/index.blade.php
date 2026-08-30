@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.trainee.app')
 
 @section('content')
 <x-common.page-breadcrumb pageTitle="Course Catalog" />

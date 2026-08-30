@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(auth()->user()?->can('portals.trainee.access') ? 'layouts.trainee.app' : 'layouts.app')
 
 @section('content')
 <x-common.page-breadcrumb pageTitle="Change Password" />

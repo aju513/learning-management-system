@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(request()->routeIs('learning.*') ? 'layouts.trainee.app' : 'layouts.app')
 @section('content')
 <x-common.page-breadcrumb pageTitle="Assessment Results" />
 <x-common.component-card title="Attempt history" desc="Scores and pass/fail outcomes are immutable after grading.">

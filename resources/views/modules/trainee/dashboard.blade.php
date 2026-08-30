@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.trainee.app')
 
 @section('content')
     @php
@@ -23,17 +23,6 @@
         </div>
     </div>
 
-    <nav class="mb-6 overflow-x-auto border-b border-gray-200 dark:border-gray-800" aria-label="{{ __('Trainee overview sections') }}">
-        <div class="flex min-w-max gap-8">
-            <a href="{{ route('learning.dashboard') }}" aria-current="page" class="border-b-2 border-brand-500 px-0.5 pb-4 text-sm font-semibold text-brand-500">{{ __('Course') }}</a>
-            <a href="{{ route('learning.courses.index') }}" class="border-b-2 border-transparent px-0.5 pb-4 text-sm font-medium text-gray-500 transition hover:border-gray-300 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">{{ __('My Courses') }}</a>
-            <a href="{{ route('learning.assessments.index') }}" class="border-b-2 border-transparent px-0.5 pb-4 text-sm font-medium text-gray-500 transition hover:border-gray-300 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">{{ __('Tests & Assessments') }}</a>
-            @foreach (['Schedule', 'Learning Materials', 'Certificates', 'Feedback'] as $tab)
-                <span aria-disabled="true" title="{{ __('Coming soon') }}" class="cursor-not-allowed border-b-2 border-transparent px-0.5 pb-4 text-sm font-medium text-gray-400 dark:text-gray-600">{{ __($tab) }}</span>
-            @endforeach
-        </div>
-    </nav>
-
     <div class="space-y-6">
         <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
             <div class="mb-5 flex items-center justify-between gap-4">
@@ -43,9 +32,9 @@
 
             @forelse ($availableCourses->take(3) as $course)
                 @if ($loop->first)
-                    <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                 @endif
-                <x-trainee.course-card :course="$course" :progress="$progressByCourse[$course->id] ?? null" :featured="$loop->first" />
+                <x-trainee::course-card :course="$course" :progress="$progressByCourse[$course->id] ?? null" :featured="$loop->first" />
                 @if ($loop->last)
                     </div>
                 @endif

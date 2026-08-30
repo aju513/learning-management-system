@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(request()->routeIs('learning.*') ? 'layouts.trainee.app' : 'layouts.app')
 @section('content')
 @php($remainingSeconds = max(0, now()->diffInSeconds($attempt->expires_at, false)))
 <div x-data="{

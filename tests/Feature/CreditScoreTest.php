@@ -174,6 +174,7 @@ test('enrolled course cards show assigned credit scores and claim state', functi
 
     $this->actingAs($trainee)->get(route('learning.courses.index'))
         ->assertOk()
+        ->assertSee('7.5 credits')
         ->assertSee('+7.50')
         ->assertSee('Earn after course completion');
 

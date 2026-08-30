@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(request()->routeIs('learning.*') ? 'layouts.trainee.app' : 'layouts.app')
 
 @section('content')
     @php
@@ -59,7 +59,7 @@
 
     <div class="grid gap-5 md:grid-cols-2">
         @forelse ($assessments as $assessment)
-            <x-trainee.assessment-card :assessment="$assessment" :meta="$assessmentMeta[$assessment->id]" />
+            <x-trainee::assessment-card :assessment="$assessment" :meta="$assessmentMeta[$assessment->id]" />
         @empty
             <div class="col-span-full rounded-2xl border border-dashed border-gray-300 bg-white p-14 text-center dark:border-gray-700 dark:bg-white/[0.03]">
                 <h2 class="text-lg font-semibold text-gray-800 dark:text-white">{{ $showFilters && ($search || $status !== 'all') ? __('No tests match your filters') : __($emptyTitle) }}</h2>
