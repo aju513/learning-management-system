@@ -156,6 +156,9 @@ test('trainee navigation keeps overview and groups eligible courses and tests by
         ->assertSee($course->title)
         ->assertSee($assessment->title)
         ->assertSee('Leadership Foundations')
+        ->assertSee('Featured Courses')
+        ->assertSee('Explore by Category')
+        ->assertSee('aria-current="page"', false)
         ->assertDontSee($hiddenCourse->title)
         ->assertSee('Overview');
 
@@ -168,6 +171,28 @@ test('trainee navigation keeps overview and groups eligible courses and tests by
         ->and($navigation[2]['key'])->toBe('tests')
         ->and(collect($navigation[2]['children'])->pluck('label')->all())->toBe(['Applied Tests', 'Enrolled Tests'])
         ->and($navigation[3]['key'])->toBe('credit-scores');
+});
+
+test('trainee overview course cards show shared enrollment progress', function () {
+    $instructor = trainingAvailabilityUser('instructor');
+    $trainee = trainingAvailabilityUser('trainee');
+    $course = trainingCatalogCourse($instructor, ['title' => 'Progress Card Course']);
+    $chapter = $course->modules()->firstOrFail()->chapters()->firstOrFail();
+    $secondMaterial = LearningMaterial::factory()->for($chapter, 'chapter')->create(['position' => 2]);
+    $firstMaterial = $chapter->materials()->whereKeyNot($secondMaterial->id)->firstOrFail();
+    $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create(['status' => 'active']);
+    $enrollment->materialProgress()->create([
+        'learning_material_id' => $firstMaterial->id,
+        'last_viewed_at' => now(),
+        'completed_at' => now(),
+    ]);
+
+    $this->actingAs($trainee)->get(route('learning.dashboard'))
+        ->assertOk()
+        ->assertSee('Progress Card Course')
+        ->assertSee('2 Lessons')
+        ->assertSee('50% learned')
+        ->assertSee('Continue learning');
 });
 
 test('trainee test navigation separates assigned and started tests', function () {

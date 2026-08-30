@@ -180,6 +180,53 @@ class AssessmentService
         $this->assessments->unassign($assignment);
     }
 
+    public function traineeAssessmentIndex(User $trainee, array $eligibleTrainingKeys, array $filters): array
+    {
+        $assessments = $this->assessments->enrolledFor($trainee, $eligibleTrainingKeys, $filters);
+
+        return [
+            'assessments' => $assessments,
+            'assessmentMeta' => $assessments->mapWithKeys(fn (Assessment $assessment) => [
+                $assessment->id => $this->assessmentCardMeta($assessment),
+            ]),
+        ];
+    }
+
+    public function assessmentCardMeta(Assessment $assessment): array
+    {
+        $attempts = $assessment->attempts;
+        $activeAttempt = $attempts->first(fn (AssessmentAttempt $attempt): bool => $attempt->status === AttemptStatus::InProgress);
+        $pendingReview = $attempts->first(fn (AssessmentAttempt $attempt): bool => $attempt->status === AttemptStatus::PendingReview);
+        $gradedAttempt = $attempts->filter(fn (AssessmentAttempt $attempt): bool => $attempt->status === AttemptStatus::Graded)
+            ->sortByDesc(fn (AssessmentAttempt $attempt) => $attempt->submitted_at?->timestamp ?? 0)->first();
+        $assignment = $assessment->assignments->first();
+
+        if ($activeAttempt || $pendingReview) {
+            $status = 'pending';
+        } elseif ($gradedAttempt) {
+            $status = $gradedAttempt->passed ? 'completed' : 'failed';
+        } elseif ($assignment?->due_at) {
+            $status = 'pending';
+        } else {
+            $status = 'not_started';
+        }
+
+        $resultAttempt = $activeAttempt ?? $pendingReview ?? $gradedAttempt;
+        $canStart = ! $activeAttempt && ! $pendingReview && $assessment->attempts_count < $assessment->max_attempts;
+
+        return [
+            'status' => $status,
+            'statusLabel' => ucwords(str_replace('_', ' ', $status)),
+            'latestAttempt' => $resultAttempt,
+            'activeAttempt' => $activeAttempt,
+            'score' => $gradedAttempt?->score_percentage,
+            'completedAt' => $gradedAttempt?->submitted_at,
+            'canStart' => $canStart,
+            'action' => $activeAttempt || $pendingReview || $status === 'completed' || ($status === 'failed' && ! $canStart) ? 'result' : 'start',
+            'actionLabel' => $activeAttempt ? 'Continue Test' : ($pendingReview ? 'View Submission' : ($status === 'completed' ? 'View Result' : ($status === 'failed' ? 'Retry Test' : 'Start Test'))),
+        ];
+    }
+
     public function start(Assessment $assessment, User $trainee): AssessmentAttempt
     {
         $assessment = $this->assessments->findForAvailability($assessment);

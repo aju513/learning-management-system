@@ -24,6 +24,17 @@ class LearningService
         private readonly TrainingAvailabilityService $availability,
     ) {}
 
+    /** @return array{enrollments: \Illuminate\Support\Collection, progressByEnrollment: \Illuminate\Support\Collection} */
+    public function indexData(User $trainee, array $eligibleTrainingKeys = [], array $filters = []): array
+    {
+        $enrollments = $this->enrollments->forTrainee($trainee, $eligibleTrainingKeys, $filters);
+
+        return [
+            'enrollments' => $enrollments,
+            'progressByEnrollment' => $enrollments->mapWithKeys(fn (Enrollment $enrollment): array => [$enrollment->id => $this->progress($enrollment, $trainee)]),
+        ];
+    }
+
     public function open(Enrollment $enrollment, LearningMaterial $material, User $trainee): array
     {
         $enrollment = $this->enrollments->findForLearning($enrollment);

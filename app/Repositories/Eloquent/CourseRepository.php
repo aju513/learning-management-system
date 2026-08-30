@@ -11,6 +11,7 @@ use App\Models\LearningMaterial;
 use App\Models\User;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class CourseRepository implements CourseRepositoryInterface
@@ -93,11 +94,37 @@ class CourseRepository implements CourseRepositoryInterface
                 $query->where('availability_scope', 'all')->orWhereNull('availability_scope')
                     ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
             })
-            ->with(['category', 'instructor', 'enrollments' => fn ($query) => $query->where('user_id', $trainee->id)])
+            ->with([
+                'category',
+                'instructor',
+                'enrollments' => fn ($query) => $query->where('user_id', $trainee->id)->with('materialProgress'),
+                'modules.chapters.materials.courseAssessment.attempts' => fn ($query) => $query->where('user_id', $trainee->id),
+            ])
             ->withCount('modules')
             ->latest('published_at')
             ->limit($limit)
             ->get();
+    }
+
+    public function availableCategoriesForOverview(array $eligibleTrainingKeys = [], int $limit = 4): Collection
+    {
+        return CourseCategory::query()
+            ->where('is_active', true)
+            ->whereHas('courses', fn ($query) => $this->applyOverviewAvailability($query, $eligibleTrainingKeys))
+            ->withCount(['courses' => fn ($query) => $this->applyOverviewAvailability($query, $eligibleTrainingKeys)])
+            ->orderByDesc('courses_count')
+            ->orderBy('name')
+            ->limit($limit)
+            ->get();
+    }
+
+    private function applyOverviewAvailability(Builder $query, array $eligibleTrainingKeys): void
+    {
+        $query->where('status', 'published')
+            ->where(function ($availability) use ($eligibleTrainingKeys): void {
+                $availability->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                    ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+            });
     }
 
     public function creditCoursesForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection

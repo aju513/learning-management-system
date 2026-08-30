@@ -11,7 +11,6 @@ use App\Http\Requests\Learning\ShowLearningMaterialRequest;
 use App\Http\Requests\Learning\ShowLearningSummaryRequest;
 use App\Models\Enrollment;
 use App\Models\LearningMaterial;
-use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Services\LearningService;
 use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Http\JsonResponse;
@@ -23,18 +22,20 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class LearningController extends Controller
 {
     public function __construct(
-        private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly LearningService $service,
         private readonly TrainingAvailabilityService $availability,
     ) {}
 
     public function index(IndexLearningRequest $request): View
     {
-        $enrollments = $this->enrollments->forTrainee($request->user(), $this->availability->eligibleTrainingKeys($request->user()));
+        $learningData = $this->service->indexData(
+            $request->user(),
+            $this->availability->eligibleTrainingKeys($request->user()),
+            $request->validated(),
+        );
 
-        return view('pages.admin.learning.index', [
-            'enrollments' => $enrollments,
-            'progressByEnrollment' => $enrollments->mapWithKeys(fn (Enrollment $enrollment): array => [$enrollment->id => $this->service->progress($enrollment, $request->user())]),
+        return view('pages.admin.learning.index', $learningData + [
+            'filters' => $request->validated(),
             'title' => 'Enrolled Courses',
         ]);
     }

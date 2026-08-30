@@ -16,6 +16,7 @@ class TraineeOverviewService
         private readonly TrainingAvailabilityService $availability,
         private readonly TrainingCatalogProviderInterface $trainingCatalog,
         private readonly CreditScoreService $credits,
+        private readonly LearningService $learning,
     ) {}
 
     public function for(User $trainee): array
@@ -25,9 +26,24 @@ class TraineeOverviewService
             ->filter(fn ($assessment): bool => $assessment->isAvailable())
             ->values();
 
+        $availableCourses = $this->courses->availableForOverview($trainee, $eligibleTrainingKeys);
+        $progressByCourse = $availableCourses->mapWithKeys(function ($course) use ($trainee): array {
+            $enrollment = $course->enrollments->first(fn ($item): bool => $item->status->grantsLearningAccess());
+
+            if (! $enrollment) {
+                return [$course->id => null];
+            }
+
+            $enrollment->setRelation('course', $course);
+
+            return [$course->id => $this->learning->progress($enrollment, $trainee)];
+        });
+
         return [
             'context' => 'Courses and tests available to you',
-            'availableCourses' => $this->courses->availableForOverview($trainee, $eligibleTrainingKeys),
+            'availableCourses' => $availableCourses,
+            'progressByCourse' => $progressByCourse,
+            'availableCategories' => $this->courses->availableCategoriesForOverview($eligibleTrainingKeys),
             'availableTests' => $tests,
             'trainingNames' => $this->trainingCatalog->all()->pluck('name', 'key')->all(),
             'creditAlerts' => $this->credits->dashboardData($trainee),

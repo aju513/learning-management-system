@@ -73,6 +73,38 @@ test('My Learning excludes active enrollments for draft courses and identifies e
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$publishedEnrollment, $draftMaterial]))->assertForbidden();
 });
 
+test('trainees can search, filter, and sort My Courses server-side', function () {
+    $instructor = applicationUser('instructor');
+    $trainee = applicationUser('trainee');
+    [$inProgress] = catalogCourse($instructor);
+    $inProgress->update(['title' => 'Alpha Governance']);
+    [$completed] = catalogCourse($instructor);
+    $completed->update(['title' => 'Completed Policy']);
+    [$notStarted] = catalogCourse($instructor);
+    $notStarted->update(['title' => 'Zeta Leadership']);
+
+    Enrollment::factory()->for($inProgress)->for($trainee, 'trainee')->create(['status' => 'active', 'progress_percentage' => 35]);
+    Enrollment::factory()->for($completed)->for($trainee, 'trainee')->create(['status' => 'completed', 'progress_percentage' => 100]);
+    Enrollment::factory()->for($notStarted)->for($trainee, 'trainee')->create(['status' => 'active', 'progress_percentage' => 0]);
+
+    $this->actingAs($trainee)->get(route('learning.courses.index', ['status' => 'in_progress']))
+        ->assertOk()->assertSee('Alpha Governance')->assertDontSee('Completed Policy')->assertDontSee('Zeta Leadership');
+
+    $this->actingAs($trainee)->get(route('learning.courses.index', ['search' => 'Policy']))
+        ->assertOk()->assertSee('Completed Policy')->assertDontSee('Alpha Governance');
+
+    $response = $this->actingAs($trainee)->get(route('learning.courses.index', ['sort' => 'title']));
+    $response->assertOk()->assertSee('Course Name')->assertSee('Alpha Governance');
+    expect(strpos($response->getContent(), 'Alpha Governance'))->toBeLessThan(strpos($response->getContent(), 'Zeta Leadership'));
+});
+
+test('My Courses rejects unsupported filter values', function () {
+    $trainee = applicationUser('trainee');
+
+    $this->actingAs($trainee)->get(route('learning.courses.index', ['status' => 'unknown']))
+        ->assertSessionHasErrors('status');
+});
+
 test('catalog labels course assessment materials consistently and assignment selects show course titles', function () {
     $admin = applicationUser('admin');
     $instructor = applicationUser('instructor');

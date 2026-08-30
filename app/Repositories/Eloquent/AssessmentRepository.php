@@ -144,9 +144,38 @@ class AssessmentRepository implements AssessmentRepositoryInterface
             ->get();
     }
 
-    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = []): Collection
+    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = [], array $filters = []): Collection
     {
-        return $this->traineeAssessmentsQuery($trainee, $eligibleTrainingKeys)->get();
+        $query = $this->traineeAssessmentsQuery($trainee, $eligibleTrainingKeys)
+            ->when($filters['search'] ?? null, fn ($query, string $search) => $query->where('title', 'like', "%{$search}%"));
+
+        $query->when($filters['status'] ?? 'all', function ($query, string $status) use ($trainee): void {
+            match ($status) {
+                'completed' => $query->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->where('status', 'graded')->where('passed', true))
+                    ->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->whereIn('status', ['in_progress', 'pending_review'])),
+                'failed' => $query->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->where('status', 'graded')->where('passed', false))
+                    ->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->whereIn('status', ['in_progress', 'pending_review'])),
+                'pending' => $query->where(function ($pending) use ($trainee): void {
+                    $pending->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->whereIn('status', ['in_progress', 'pending_review']))
+                        ->orWhere(function ($notStarted) use ($trainee): void {
+                            $notStarted->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id))
+                                ->whereHas('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id)->whereNotNull('due_at'));
+                        });
+                }),
+                'not_started' => $query->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id))
+                    ->whereDoesntHave('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id)->whereNotNull('due_at')),
+                default => null,
+            };
+        });
+
+        return $query
+            ->when(($filters['sort'] ?? 'recent') === 'title', fn ($query) => $query->orderBy('title'), fn ($query) => $query->orderByDesc(
+                AssessmentAssignment::select('assigned_at')
+                    ->whereColumn('assessment_assignments.assessment_id', 'assessments.id')
+                    ->where('user_id', $trainee->id)
+                    ->limit(1)
+            ))
+            ->orderBy('title')->get();
     }
 
     public function creditAssessmentsForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection
@@ -174,9 +203,11 @@ class AssessmentRepository implements AssessmentRepositoryInterface
                     ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
             })
             ->whereHas('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id))
-            ->with(['assignments' => fn ($query) => $query->where('user_id', $trainee->id)])
-            ->withCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)])
-            ->orderBy('ends_at')->orderBy('title');
+            ->with([
+                'assignments' => fn ($query) => $query->where('user_id', $trainee->id),
+                'attempts' => fn ($query) => $query->where('user_id', $trainee->id)->latest('id'),
+            ])
+            ->withCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)]);
     }
 
     public function userCanTake(Assessment $assessment, User $trainee): bool

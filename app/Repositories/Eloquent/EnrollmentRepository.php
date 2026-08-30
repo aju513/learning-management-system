@@ -124,7 +124,7 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
         $enrollment->delete();
     }
 
-    public function forTrainee(User $trainee, array $eligibleTrainingKeys = []): Collection
+    public function forTrainee(User $trainee, array $eligibleTrainingKeys = [], array $filters = []): Collection
     {
         return Enrollment::query()->where('user_id', $trainee->id)->whereIn('status', ['active', 'completed'])
             ->whereHas('course', function ($query) use ($eligibleTrainingKeys): void {
@@ -134,13 +134,25 @@ class EnrollmentRepository implements EnrollmentRepositoryInterface
                             ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
                     });
             })
+            ->when($filters['search'] ?? null, fn ($query, string $search) => $query->whereHas('course', fn ($courseQuery) => $courseQuery->where('title', 'like', "%{$search}%")))
+            ->when(($filters['status'] ?? 'all') !== 'all', function ($query) use ($filters): void {
+                match ($filters['status']) {
+                    'completed' => $query->where('status', 'completed'),
+                    'in_progress' => $query->where('status', 'active')->where('progress_percentage', '>', 0),
+                    'not_started' => $query->where('status', 'active')->where('progress_percentage', '<=', 0),
+                    default => null,
+                };
+            })
             ->with([
                 'course.category',
                 'course.instructor',
                 'course.modules.chapters.materials.courseAssessment.questions',
                 'course.modules.chapters.materials.courseAssessment.attempts',
                 'materialProgress',
-            ])->latest('enrolled_at')->get();
+            ])
+            ->when(($filters['sort'] ?? 'recent') === 'title', fn ($query) => $query->orderBy(Course::select('title')->whereColumn('courses.id', 'enrollments.course_id')))
+            ->when(($filters['sort'] ?? 'recent') !== 'title', fn ($query) => $query->latest('enrolled_at'))
+            ->get();
     }
 
     public function applicationsForTrainee(User $trainee): Collection

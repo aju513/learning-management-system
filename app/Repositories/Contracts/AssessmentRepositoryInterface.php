@@ -57,7 +57,7 @@ interface AssessmentRepositoryInterface
 
     public function appliedFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
 
-    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
+    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = [], array $filters = []): Collection;
 
     public function creditAssessmentsForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection;
 

@@ -1,36 +1,73 @@
 @extends('layouts.app')
+
 @section('content')
-<x-common.page-breadcrumb :pageTitle="$title" />
-<p class="mb-6 text-sm text-gray-500">{{ $description }}</p>
-<div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-    @forelse($assessments as $assessment)
-        @php($assignment = $assessment->assignments->first())
-        <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="bg-gradient-to-r from-brand-50 to-cyan-50 p-6 dark:from-brand-500/10 dark:to-cyan-500/10">
-                <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-brand-500">Standalone test</p>
-                        <h2 class="mt-1 text-lg font-semibold text-gray-800 dark:text-white">{{ $assessment->title }}</h2>
+    @php
+        $filters = $filters ?? ['search' => '', 'status' => 'all', 'sort' => 'recent'];
+        $status = $filters['status'] ?? 'all';
+        $sort = $filters['sort'] ?? 'recent';
+        $search = $filters['search'] ?? '';
+        $showFilters = $showFilters ?? false;
+        $filterUrl = fn (string $value): string => route('learning.assessments.index', array_filter([
+            'search' => $search,
+            'status' => $value === 'all' ? null : $value,
+            'sort' => $sort === 'recent' ? null : $sort,
+        ], fn ($value): bool => $value !== null && $value !== ''));
+    @endphp
+
+    <div class="mb-7">
+        <nav aria-label="{{ __('Breadcrumb') }}">
+            <ol class="flex items-center gap-2 text-sm">
+                <li><a href="{{ route('learning.dashboard') }}" class="text-brand-500 hover:text-brand-600">{{ __('Home') }}</a></li>
+                <li class="text-gray-400" aria-hidden="true">/</li>
+                <li class="text-gray-500 dark:text-gray-400">{{ __($title) }}</li>
+            </ol>
+        </nav>
+        <h1 class="mt-4 text-3xl font-semibold text-gray-900 dark:text-white">{{ __($title) }}</h1>
+        @if ($legacyTitle ?? null)<span class="sr-only">{{ __($legacyTitle) }}</span>@endif
+        <p class="mt-1 text-base text-gray-600 dark:text-gray-400">{{ __($description) }}</p>
+    </div>
+
+    @if ($showFilters)
+        <section class="mb-7">
+            <form method="GET" action="{{ route('learning.assessments.index') }}" class="space-y-4">
+                <input type="hidden" name="status" value="{{ $status }}">
+                <div class="flex flex-col gap-3 xl:flex-row xl:items-center">
+                    <label class="relative block min-w-0 flex-1">
+                        <span class="sr-only">{{ __('Search tests') }}</span>
+                        <svg class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7.5"/><path stroke-linecap="round" d="m16.5 16.5 4 4"/></svg>
+                        <input type="search" name="search" value="{{ $search }}" placeholder="{{ __('Search tests') }}" class="h-11 w-full rounded-lg border border-gray-300 bg-white pl-12 pr-4 text-sm text-gray-800 shadow-theme-xs outline-none transition placeholder:text-gray-400 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-white">
+                    </label>
+                    <div class="flex flex-wrap gap-3">
+                        @foreach (['all' => 'All Tests', 'pending' => 'Pending', 'completed' => 'Completed', 'failed' => 'Failed'] as $value => $label)
+                            <a href="{{ $filterUrl($value) }}" class="inline-flex h-11 items-center justify-center rounded-lg border px-5 text-sm font-medium transition {{ $status === $value ? 'border-brand-500 bg-brand-500 text-white shadow-theme-xs' : 'border-gray-300 bg-white text-gray-800 hover:border-brand-300 hover:text-brand-600 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-brand-500' }}" @if ($status === $value) aria-current="page" @endif>{{ __($label) }}</a>
+                        @endforeach
                     </div>
-                    <x-ui.badge color="{{ $assessment->attempts_count > 0 ? 'primary' : 'warning' }}">{{ $assessment->attempts_count > 0 ? 'In progress' : 'Not started' }}</x-ui.badge>
                 </div>
-                <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">{{ Str::limit($assessment->description, 120) }}</p>
-            </div>
-            <div class="p-6">
-                <dl class="grid grid-cols-2 gap-4 text-sm">
-                    <div><dt class="text-gray-500">Questions</dt><dd class="mt-1 font-medium text-gray-800 dark:text-white">{{ $assessment->questions_count }}</dd></div>
-                    <div><dt class="text-gray-500">Duration</dt><dd class="mt-1 font-medium text-gray-800 dark:text-white">{{ $assessment->duration_minutes }} min</dd></div>
-                    <div><dt class="text-gray-500">Pass score</dt><dd class="mt-1 font-medium text-gray-800 dark:text-white">{{ $assessment->passing_percentage }}%</dd></div>
-                    <div><dt class="text-gray-500">Attempts</dt><dd class="mt-1 font-medium text-gray-800 dark:text-white">{{ $assessment->attempts_count }}/{{ $assessment->max_attempts }}</dd></div>
-                </dl>
-                @if($assignment?->due_at)
-                    <p class="mt-4 rounded-lg bg-warning-50 px-3 py-2 text-xs text-warning-700 dark:bg-warning-500/10 dark:text-warning-300">Due {{ $assignment->due_at->format('M j, Y g:i A') }}</p>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-base text-gray-800 dark:text-gray-200">{{ __('Showing :count tests', ['count' => $assessments->count()]) }}</p>
+                    <label class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                        <span class="sr-only">{{ __('Sort tests') }}</span>
+                        <select name="sort" onchange="this.form.submit()" class="h-11 min-w-48 rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-800 outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-white">
+                            <option value="recent" @selected($sort === 'recent')>{{ __('Recently Added') }}</option>
+                            <option value="title" @selected($sort === 'title')>{{ __('Test Name') }}</option>
+                        </select>
+                    </label>
+                </div>
+            </form>
+        </section>
+    @endif
+
+    <div class="grid gap-5 md:grid-cols-2">
+        @forelse ($assessments as $assessment)
+            <x-trainee.assessment-card :assessment="$assessment" :meta="$assessmentMeta[$assessment->id]" />
+        @empty
+            <div class="col-span-full rounded-2xl border border-dashed border-gray-300 bg-white p-14 text-center dark:border-gray-700 dark:bg-white/[0.03]">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white">{{ $showFilters && ($search || $status !== 'all') ? __('No tests match your filters') : __($emptyTitle) }}</h2>
+                <p class="mx-auto mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400">{{ $showFilters && ($search || $status !== 'all') ? __('Try a different search or status filter.') : __($emptyDescription) }}</p>
+                @if ($showFilters && ($search || $status !== 'all'))
+                    <a href="{{ route('learning.assessments.index') }}" class="mt-6 inline-flex rounded-lg border border-brand-500 px-4 py-2.5 text-sm font-semibold text-brand-600 dark:text-brand-300">{{ __('Clear filters') }}</a>
                 @endif
-                <form method="POST" action="{{ route('learning.assessments.start', $assessment) }}" class="mt-5">@csrf <button class="w-full rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50" @disabled($assessment->attempts_count >= $assessment->max_attempts)>{{ $assessment->attempts_count > 0 ? 'Continue test' : 'Start test' }}</button></form>
             </div>
-        </article>
-    @empty
-        <div class="col-span-full rounded-2xl border border-dashed border-gray-300 p-12 text-center dark:border-gray-700"><h2 class="font-semibold text-gray-800 dark:text-white">{{ $emptyTitle }}</h2><p class="mt-1 text-sm text-gray-500">{{ $emptyDescription }}</p></div>
-    @endforelse
-</div>
+        @endforelse
+    </div>
 @endsection

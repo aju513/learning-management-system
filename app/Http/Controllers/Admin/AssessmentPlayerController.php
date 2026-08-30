@@ -25,23 +25,33 @@ class AssessmentPlayerController extends Controller
 
     public function index(IndexAssessmentPlayerRequest $request): View
     {
+        $data = $this->service->traineeAssessmentIndex($request->user(), $this->availability->eligibleTrainingKeys($request->user()), $request->validated());
+
         return view('pages.admin.assessment-player.index', [
-            'assessments' => $this->assessments->enrolledFor($request->user(), $this->availability->eligibleTrainingKeys($request->user())),
-            'title' => 'Enrolled Tests',
+            ...$data,
+            'title' => 'Tests & Assessments',
+            'legacyTitle' => 'Enrolled Tests',
             'description' => 'All tests assigned to you, including tests waiting to be started.',
             'emptyTitle' => 'No enrolled tests yet',
             'emptyDescription' => 'Tests assigned directly to you will appear here.',
+            'showFilters' => true,
+            'filters' => $request->validated(),
         ]);
     }
 
     public function applied(IndexAssessmentPlayerRequest $request): View
     {
+        $assessments = $this->assessments->appliedFor($request->user(), $this->availability->eligibleTrainingKeys($request->user()));
+
         return view('pages.admin.assessment-player.index', [
-            'assessments' => $this->assessments->appliedFor($request->user(), $this->availability->eligibleTrainingKeys($request->user())),
+            'assessments' => $assessments,
             'title' => 'Applied Tests',
+            'legacyTitle' => null,
             'description' => 'Tests assigned to you that you have not started yet.',
             'emptyTitle' => 'No applied tests yet',
             'emptyDescription' => 'Tests assigned directly to you will appear here.',
+            'assessmentMeta' => $assessments->mapWithKeys(fn ($assessment) => [$assessment->id => $this->service->assessmentCardMeta($assessment)]),
+            'showFilters' => false,
         ]);
     }
 
