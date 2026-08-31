@@ -50,8 +50,8 @@
                     <span>{{ $issue['message'] }}</span>
                     @if(isset($issue['assessment']) && $issue['assessment'])
                         <a href="{{ route(\App\Support\PortalRoute::name('course-assessments.show'), $issue['assessment']) }}#chapter-{{ $issue['chapter_id'] }}" class="font-medium text-brand-600 underline dark:text-brand-300">{{ __('Open assessment') }}</a>
-                    @elseif(isset($issue['chapter_id']))
-                        <a href="#chapter-{{ $issue['chapter_id'] }}" class="font-medium text-brand-600 underline dark:text-brand-300">{{ __('Open chapter') }}</a>
+                     @elseif(isset($issue['chapter_id']))
+                         <a href="#chapter-{{ $issue['chapter_id'] }}" @click.prevent="$dispatch('focus-curriculum-chapter', { moduleId: {{ $issue['module_id'] }}, chapterId: {{ $issue['chapter_id'] }} }); window.history.replaceState(null, '', '#chapter-{{ $issue['chapter_id'] }}'); $nextTick(() => document.getElementById('chapter-{{ $issue['chapter_id'] }}')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))" class="font-medium text-brand-600 underline dark:text-brand-300">{{ __('Open chapter') }}</a>
                     @elseif(isset($issue['module_id']))
                         <a href="#module-{{ $issue['module_id'] }}" class="font-medium text-brand-600 underline dark:text-brand-300">{{ __('Open module') }}</a>
                     @endif

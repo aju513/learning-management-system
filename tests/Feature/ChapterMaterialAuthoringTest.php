@@ -289,6 +289,13 @@ test('publishing requires every module and chapter to contain learning material'
     $this->actingAs($instructor)->patch(route('instructor.courses.status', $course), ['status' => 'published'])
         ->assertSessionHasErrors('status');
 
+    $this->actingAs($instructor)->get(route('instructor.courses.show', $course))
+        ->assertSee('href="#chapter-'.$chapter->id.'"', false)
+        ->assertSee("@click.prevent=\"\$dispatch('focus-curriculum-chapter'", false)
+        ->assertSee('moduleId: '.$course->modules()->firstOrFail()->id, false)
+        ->assertSee('chapterId: '.$chapter->id, false)
+        ->assertSee('window.history.replaceState', false);
+
     LearningMaterial::factory()->for($chapter, 'chapter')->create();
     $this->actingAs($instructor)->patch(route('instructor.courses.status', $course), ['status' => 'published'])->assertRedirect();
     expect($course->fresh()->status->value)->toBe('published');
