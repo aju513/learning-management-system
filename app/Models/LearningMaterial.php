@@ -42,4 +42,29 @@ class LearningMaterial extends Model
     {
         return $this->hasMany(LearningMaterialImage::class);
     }
+
+    public function youtubeEmbedUrl(): ?string
+    {
+        if (! $this->video_url) {
+            return null;
+        }
+
+        $host = strtolower((string) parse_url($this->video_url, PHP_URL_HOST));
+        $host = preg_replace('/^www\./', '', $host);
+        $path = (string) parse_url($this->video_url, PHP_URL_PATH);
+        $videoId = null;
+
+        if ($host === 'youtu.be') {
+            $videoId = trim($path, '/');
+        } elseif (in_array($host, ['youtube.com', 'm.youtube.com'], true)) {
+            parse_str((string) parse_url($this->video_url, PHP_URL_QUERY), $query);
+            $videoId = $query['v'] ?? (preg_match('#^/(?:embed|shorts|live)/([^/?]+)#', $path, $matches) ? $matches[1] : null);
+        }
+
+        if (! is_string($videoId) || ! preg_match('/^[A-Za-z0-9_-]{11}$/', $videoId)) {
+            return null;
+        }
+
+        return 'https://www.youtube.com/embed/'.rawurlencode($videoId);
+    }
 }

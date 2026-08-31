@@ -171,8 +171,22 @@
                                 @break
                             @case(\App\Enums\MaterialType::Video)
                                 @if($materialContent)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $materialContent !!}</div>@endif
-                                @if($material->video_url)<a href="{{ $material->video_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">Open video</a>@endif
-                                @if($material->file_path)<a href="{{ route('learning.courses.materials.download', [$enrollment, $material]) }}" class="ml-2 inline-flex rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">Download video</a>@endif
+                                @php($youtubeEmbedUrl = $material->youtubeEmbedUrl())
+                                @if($youtubeEmbedUrl)
+                                    <div class="aspect-video overflow-hidden rounded-xl border border-gray-200 bg-black dark:border-gray-700">
+                                        <iframe src="{{ $youtubeEmbedUrl }}" title="{{ $material->title }}" class="h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    </div>
+                                @elseif($material->file_path)
+                                    <video controls preload="metadata" class="aspect-video w-full rounded-xl border border-gray-200 bg-black dark:border-gray-700" src="{{ route('learning.courses.materials.stream', [$enrollment, $material]) }}">
+                                        {{ __('Your browser does not support the video player.') }}
+                                    </video>
+                                @elseif($material->video_url)
+                                    <video controls preload="metadata" class="aspect-video w-full rounded-xl border border-gray-200 bg-black dark:border-gray-700" src="{{ $material->video_url }}">
+                                        {{ __('Your browser does not support the video player.') }}
+                                    </video>
+                                @else
+                                    <p class="text-sm text-error-500">{{ __('The video is unavailable.') }}</p>
+                                @endif
                                 @break
                             @case(\App\Enums\MaterialType::File)
                                 @if($materialContent)<div class="prose mb-6 max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">{!! $materialContent !!}</div>@endif

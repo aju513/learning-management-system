@@ -13,7 +13,9 @@ use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LearningService
 {
@@ -169,6 +171,30 @@ class LearningService
             'progress' => $progress,
             'redirectToPlayer' => ! $progress['isComplete'],
         ];
+    }
+
+    public function streamVideo(Enrollment $enrollment, LearningMaterial $material, User $trainee): BinaryFileResponse
+    {
+        $enrollment = $this->enrollments->findForLearning($enrollment);
+        $this->assertPublishedCourse($enrollment);
+        $this->availability->assertAvailable($enrollment->course, $trainee);
+
+        if ((int) $material->chapter->module->course_id !== (int) $enrollment->course_id) {
+            throw new AuthorizationException('This material is not part of the enrolled course.');
+        }
+
+        abort_unless(
+            $material->type === MaterialType::Video
+                && $material->file_path
+                && Storage::disk('local')->exists($material->file_path),
+            404,
+        );
+
+        return response()->file(Storage::disk('local')->path($material->file_path), [
+            'Content-Disposition' => 'inline; filename="'.addslashes($material->original_filename ?: 'course-video').'"',
+            'Content-Type' => $material->mime_type ?: 'application/octet-stream',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     /**

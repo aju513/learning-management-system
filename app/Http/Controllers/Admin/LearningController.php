@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LearningController extends Controller
@@ -99,5 +100,10 @@ class LearningController extends Controller
         abort_unless($learningMaterial->file_path && Storage::disk('local')->exists($learningMaterial->file_path), 404);
 
         return Storage::disk('local')->download($learningMaterial->file_path, $learningMaterial->original_filename);
+    }
+
+    public function stream(ShowLearningMaterialRequest $request, Enrollment $enrollment, LearningMaterial $learningMaterial): BinaryFileResponse
+    {
+        return $this->service->streamVideo($enrollment, $learningMaterial, $request->user());
     }
 }

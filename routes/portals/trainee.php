@@ -21,6 +21,7 @@ Route::prefix('learning')->name('learning.')->middleware(['auth', 'active', 'can
     Route::get('/enrollments/{enrollment}/summary', [LearningController::class, 'summary'])->name('courses.summary');
     Route::get('/enrollments/{enrollment}/materials/{learning_material}', [LearningController::class, 'show'])->name('courses.materials.show');
     Route::post('/enrollments/{enrollment}/materials/{learning_material}/complete', [LearningController::class, 'complete'])->name('courses.materials.complete');
+    Route::get('/enrollments/{enrollment}/materials/{learning_material}/stream', [LearningController::class, 'stream'])->name('courses.materials.stream');
     Route::get('/enrollments/{enrollment}/materials/{learning_material}/download', [LearningController::class, 'download'])->name('courses.materials.download');
     Route::post('/enrollments/{enrollment}/materials/{learning_material}/course-assessment/start', [CourseAssessmentPlayerController::class, 'start'])->name('courses.materials.course-assessment.start');
     Route::get('/enrollments/{enrollment}/course-assessment-attempts/{course_assessment_attempt}', [CourseAssessmentPlayerController::class, 'show'])->name('course-assessment-attempts.show');
