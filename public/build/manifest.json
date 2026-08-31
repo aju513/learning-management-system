@@ -8,7 +8,7 @@
     "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-Bz2u0aS1.css",
+    "file": "assets/app-DxBesYua.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -17,7 +17,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-pMYE-jRo.js",
+    "file": "assets/app-Cq-pl5ir.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -40,7 +40,7 @@
     ]
   },
   "resources/js/components/calendar-init.js": {
-    "file": "assets/calendar-init-CmIQ1Z4K.js",
+    "file": "assets/calendar-init-CeddDlLG.js",
     "name": "calendar-init",
     "src": "resources/js/components/calendar-init.js",
     "isDynamicEntry": true,

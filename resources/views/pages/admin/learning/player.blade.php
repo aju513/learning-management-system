@@ -12,53 +12,51 @@
 @endphp
 <div class="min-h-screen" x-data="{ outlineOpen: false, completing: false, completed: {{ $completedMaterialIds->contains($material->id) ? 'true' : 'false' }}, progressPercentage: {{ $progressPercentage }}, completionError: '', courseCompleted: false, summaryUrl: @js(route('learning.courses.summary', $enrollment)), async completeLesson(event) { if (this.completing || this.completed) return; this.completing = true; this.completionError = ''; try { const response = await fetch(event.target.action, { method: 'POST', credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': event.target.querySelector('[name=_token]').value } }); if (!response.ok) throw new Error('Completion failed'); const data = await response.json(); this.completed = data.completed; this.progressPercentage = data.progress_percentage; if (data.course_completed) this.courseCompleted = true; } catch (error) { this.completionError = 'We could not save this lesson yet. Please try again.'; } finally { this.completing = false; } } }">
     <header class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
-        <div class="flex h-16 items-center gap-3 px-4 sm:px-6">
+        <div class="flex min-h-[90px] items-center gap-4 px-5 sm:px-7">
             <a href="{{ route('learning.courses.index') }}" class="flex shrink-0 items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200" aria-label="Back to enrolled courses">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-lg font-bold text-white">L</span>
-                <span class="hidden sm:inline">Learning space</span>
+                <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-xl font-bold text-white shadow-sm">L</span>
+                <span class="hidden text-base sm:inline">Learning space</span>
             </a>
-            <div class="h-7 w-px bg-gray-200 dark:bg-gray-800"></div>
-            <p class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-white">{{ $enrollment->course->title }}</p>
+            <div class="hidden h-8 w-px bg-gray-200 sm:block dark:bg-gray-800"></div>
+            <p class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 sm:text-base dark:text-white">{{ $enrollment->course->title }}</p>
             @if(auth()->user()?->can('credit-scores.view-own'))
                 <div class="hidden sm:block"><x-header.credit-summary /></div>
             @endif
-            <div class="hidden items-center gap-3 md:flex">
-                <div class="w-56 rounded-lg bg-gray-50 px-3 py-2 dark:bg-white/[0.04]"><div class="flex items-end justify-between gap-2"><span class="text-[11px] font-semibold text-gray-700 dark:text-gray-200">Course progress</span><span class="text-sm font-bold text-brand-500">{{ $progressPercentage }}%</span></div><p class="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} required items complete</p><div class="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ $progressPercentage }}%"></div></div></div>
+            <div class="hidden items-center gap-5 lg:flex">
+                <div class="w-[302px] border-l border-gray-200 pl-5 dark:border-gray-800"><div class="flex items-end justify-between gap-2"><span class="text-xs font-semibold text-gray-800 dark:text-gray-200">Course progress</span><span class="text-lg font-bold text-brand-500">{{ $progressPercentage }}%</span></div><div class="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ $progressPercentage }}%"></div></div><p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} required items complete</p></div>
                 <div class="hidden">
                     <div class="mb-1 flex justify-between text-[11px] text-gray-500"><span>Progress</span><span>{{ $progress['completed'] }} / {{ $progress['total'] }} · {{ number_format((float) $enrollment->progress_percentage, 0) }}%</span></div>
                     <div class="h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-brand-500" style="width: {{ min(100, max(0, (float) $progressPercentage)) }}%"></div></div>
                 </div>
-                <a href="{{ route('learning.courses.index') }}" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 hover:border-brand-300 hover:text-brand-500 dark:border-gray-700 dark:text-gray-300">Back to courses</a>
-                <a href="{{ route('learning.assessments.index') }}" class="hidden rounded-lg px-2 py-2 text-xs font-medium text-gray-500 hover:text-brand-500 xl:inline">Tests</a>
-                <a href="{{ route('learning.credit-scores.index') }}" class="hidden rounded-lg px-2 py-2 text-xs font-medium text-gray-500 hover:text-brand-500 xl:inline">Credit scores</a>
-                <a href="{{ route('account.profile.edit') }}" class="hidden rounded-lg px-2 py-2 text-xs font-medium text-gray-500 hover:text-brand-500 xl:inline">Profile</a>
-                <a href="{{ route('learning.courses.index') }}" class="rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white dark:bg-white dark:text-gray-900">Exit course</a>
+                <a href="{{ route('learning.courses.index') }}" class="inline-flex items-center gap-2 whitespace-nowrap px-1 py-2 text-sm font-medium text-gray-700 hover:text-brand-500 dark:text-gray-300"><i class="bi bi-box-arrow-left text-lg" aria-hidden="true"></i>Back to courses</a>
+                <a href="{{ route('account.profile.edit') }}" class="inline-flex items-center gap-2 whitespace-nowrap px-1 py-2 text-sm font-medium text-gray-700 hover:text-brand-500 dark:text-gray-300"><i class="bi bi-person text-lg" aria-hidden="true"></i>Profile</a>
+                <a href="{{ route('learning.courses.index') }}" class="whitespace-nowrap rounded-lg bg-gray-900 px-5 py-3 text-sm font-semibold text-white dark:bg-white dark:text-gray-900">Exit course</a>
             </div>
-            <button type="button" @click="outlineOpen = !outlineOpen" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 md:hidden dark:border-gray-700 dark:text-gray-300">Contents</button>
+            <button type="button" @click="outlineOpen = !outlineOpen" class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 lg:hidden dark:border-gray-700 dark:text-gray-300">Contents</button>
         </div>
     </header>
 
     <div class="flex w-full">
-        <aside id="course-outline" class="fixed inset-y-16 left-0 z-30 w-[min(86vw,340px)] -translate-x-full overflow-y-auto border-r border-gray-200 bg-white p-5 transition-transform md:sticky md:top-16 md:block md:h-[calc(100vh-4rem)] md:w-80 md:translate-x-0 md:shrink-0 md:self-start dark:border-gray-800 dark:bg-gray-900" :class="outlineOpen ? 'translate-x-0' : ''">
+        <aside id="course-outline" class="fixed inset-y-[90px] left-0 z-30 w-[min(86vw,382px)] -translate-x-full overflow-y-auto border-r border-gray-200 bg-white p-6 transition-transform lg:sticky lg:top-[90px] lg:block lg:h-[calc(100vh-90px)] lg:w-[382px] lg:translate-x-0 lg:shrink-0 lg:self-start dark:border-gray-800 dark:bg-gray-900" :class="outlineOpen ? 'translate-x-0' : ''">
             <div class="mb-6 flex items-start justify-between gap-3">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-500">Course contents</p>
-                    <h1 class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{{ $enrollment->course->title }}</h1>
+                    <p class="text-sm font-bold uppercase tracking-[0.12em] text-brand-500">Course contents</p>
                 </div>
-                <button type="button" @click="outlineOpen = false" class="text-xl text-gray-400 md:hidden" aria-label="Close contents">&times;</button>
+                <button type="button" @click="outlineOpen = false" class="text-2xl leading-none text-gray-500 lg:hidden" aria-label="Close contents">&times;</button>
+                <span class="hidden text-2xl leading-none text-gray-700 lg:inline dark:text-gray-300" aria-hidden="true">‹</span>
             </div>
-            <div class="mb-6 rounded-xl bg-gray-50 p-4 dark:bg-white/[0.04]">
+            <div class="mb-6 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
                 <div class="flex items-end justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">{{ $progress['completed'] }} of {{ $progress['total'] }} required items complete <span class="text-gray-400">· {{ $progress['completedLessons'] }}/{{ $progress['totalLessons'] }} lessons</span></span><span class="text-lg font-bold text-brand-500">{{ $progressPercentage }}%</span></div>
                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-cyan-500" style="width: {{ min(100, max(0, (float) $progressPercentage)) }}%"></div></div>
             </div>
-            <nav class="space-y-6">
+            <nav class="space-y-5">
                 @foreach($enrollment->course->modules as $module)
                     @php
                         $moduleItems = $module->chapters->flatMap->materials;
                         $moduleRequired = $moduleItems->where('is_required', true);
                         $moduleCompleted = $moduleRequired->whereIn('id', $completedMaterialIds)->count();
                     @endphp
-                    <section x-data="{ expanded: true }">
+                    <section x-data="{ expanded: true }" class="border-b border-gray-200 pb-5 last:border-b-0 dark:border-gray-800">
                         <div class="mb-3 flex items-start justify-between gap-3">
                             <div><p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Module {{ $loop->iteration }}</p><h2 class="mt-1 text-sm font-semibold text-gray-800 dark:text-white">{{ $module->title }}</h2><p class="mt-1 text-xs text-gray-500">{{ $moduleCompleted }} of {{ $moduleRequired->count() }} required items completed</p></div>
                             <button type="button" @click="expanded = !expanded" class="rounded p-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06]" :aria-expanded="expanded.toString()" aria-label="Toggle module contents"><span x-text="expanded ? '−' : '+'"></span></button>
@@ -76,7 +74,7 @@
                                                 $isAssessment = $item->type === \App\Enums\MaterialType::CourseAssessment;
                                                 $stateLabel = $done ? 'Completed' : ($item->id === $material->id ? 'Current lesson' : ($itemLocked ? 'Locked — complete the previous required material first' : ($isAssessment ? 'Assessment — unlocked after all lessons' : 'Available')));
                                             @endphp
-                                            <a href="{{ route('learning.courses.materials.show', [$enrollment, $item]) }}" @click="outlineOpen = false" aria-label="{{ $item->title }} — {{ $stateLabel }}" class="flex items-start gap-2 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 {{ $item->id === $material->id ? 'bg-brand-50 font-medium text-brand-600 dark:bg-brand-500/10 dark:text-brand-400' : ($itemLocked ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]') }}">
+                                            <a href="{{ route('learning.courses.materials.show', [$enrollment, $item]) }}" @click="outlineOpen = false" aria-label="{{ $item->title }} — {{ $stateLabel }}" class="flex items-start gap-2 rounded-lg border-l-2 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 {{ $item->id === $material->id ? 'border-brand-500 bg-brand-50 font-medium text-gray-900 dark:bg-brand-500/10 dark:text-white' : 'border-transparent' }} {{ $item->id !== $material->id ? ($itemLocked ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]') : '' }}">
                                                 <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] {{ $done ? 'border-success-500 bg-success-500 text-white' : 'border-gray-300 text-gray-400 dark:border-gray-700' }}">{{ $done ? '✓' : $loop->iteration }}</span>
                                                 <span class="min-w-0"><span class="flex items-center gap-1.5"><span class="block truncate" title="{{ $item->title }}">{{ $item->title }}</span>@if($isAssessment)<span class="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">Assessment</span>@endif</span><span class="mt-0.5 block text-[11px] {{ $item->id === $material->id ? 'text-brand-500' : 'text-gray-400' }}">{{ $stateLabel }}</span></span>
                                             </a>
@@ -90,7 +88,7 @@
             </nav>
         </aside>
 
-        <main class="min-w-0 flex-1 px-4 py-8 sm:px-8 lg:px-12">
+        <main x-data="{ showInstructions: false, opening: false }" class="min-w-0 flex-1 px-4 py-8 sm:px-8 lg:px-[46px] lg:py-9">
             <div class="w-full">
                 @if(session('credit_award_id'))
                     <div x-data="{ open: true }" x-show="open" x-cloak class="mb-6 rounded-2xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -99,6 +97,54 @@
                     </div>
                 @endif
 
+                @if($material->type === \App\Enums\MaterialType::CourseAssessment && ! $locked)
+                    @php
+                        $courseAssessment = $material->courseAssessment;
+                        $assessmentQuestions = $courseAssessment?->questions?->count() ?? 0;
+                        $assessmentAttempts = $courseAssessment?->attempts?->where('user_id', auth()->id()) ?? collect();
+                        $assessmentPassed = $assessmentAttempts->contains(fn ($attempt) => $attempt->passed);
+                        $assessmentDescription = $material->description ?: 'A '.$assessmentQuestions.'-question assessment covering participation, transparency, accountability, responsiveness, equity, and improvement planning.';
+                    @endphp
+                    <div class="mb-8">
+                        <nav class="mb-9 flex flex-wrap items-center gap-3 text-sm text-gray-600 dark:text-gray-400" aria-label="Breadcrumb">
+                            <a href="{{ route('learning.courses.index') }}" class="inline-flex items-center text-gray-700 hover:text-brand-500 dark:text-gray-300" aria-label="Back to enrolled courses"><i class="bi bi-house-door text-lg" aria-hidden="true"></i></a>
+                            <i class="bi bi-chevron-right text-xs text-gray-400" aria-hidden="true"></i>
+                            <span>{{ $currentModule?->title ?? 'Course module' }}</span>
+                            @if($currentChapter)<i class="bi bi-chevron-right text-xs text-gray-400" aria-hidden="true"></i><span class="text-brand-500">{{ $currentChapter->title }}</span>@endif
+                        </nav>
+                        <p class="text-sm font-bold uppercase tracking-[0.12em] text-brand-500">Knowledge check</p>
+                        <h2 class="mt-4 max-w-6xl text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white lg:text-[44px]">{{ $material->title }}</h2>
+                        <div class="mt-5 flex flex-wrap gap-3 text-sm text-gray-700 dark:text-gray-300">
+                            <span class="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700"><i class="bi bi-file-earmark-text text-base" aria-hidden="true"></i>Course assessment</span>
+                            <span class="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700"><i class="bi bi-clock text-base" aria-hidden="true"></i>{{ (int) ($material->duration_minutes ?? 0) }} min</span>
+                            <span class="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700"><i class="bi bi-stopwatch text-base" aria-hidden="true"></i>About {{ $remainingMinutes }} min remaining</span>
+                        </div>
+                        <p class="mt-5 max-w-4xl text-lg leading-7 text-gray-600 dark:text-gray-300">{{ $assessmentDescription }}</p>
+                    </div>
+
+                    <section class="rounded-2xl border border-brand-300 bg-brand-25 p-8 shadow-theme-sm dark:border-brand-500/50 dark:bg-brand-500/10 sm:p-9" aria-labelledby="assessment-overview-title">
+                        <div class="flex gap-6">
+                            <div class="hidden h-20 w-20 shrink-0 items-center justify-center rounded-full bg-brand-100 text-4xl text-brand-500 sm:flex dark:bg-brand-500/20"><i class="bi bi-clipboard-check" aria-hidden="true"></i></div>
+                            <div class="min-w-0 flex-1">
+                                <h3 id="assessment-overview-title" class="text-xl font-bold text-gray-900 dark:text-white">Assessment overview</h3>
+                                <p class="mt-4 max-w-4xl text-lg leading-7 text-gray-700 dark:text-gray-200">Read each question carefully and apply the principles from all three modules. Select one answer for single-choice questions and every correct answer for multiple-choice questions.</p>
+                                <p class="mt-4 max-w-4xl text-lg leading-7 text-gray-700 dark:text-gray-200">You need at least {{ number_format((float) ($courseAssessment?->passing_percentage ?? 60), 0) }}% to pass, and retakes are unlimited. After submitting, review the feedback and write down one improvement you will apply in your workplace.</p>
+                            </div>
+                        </div>
+                        <div class="mt-8 grid grid-cols-2 border-y border-brand-200 py-5 dark:border-brand-500/30 sm:grid-cols-4">
+                            <div class="border-r border-brand-200 px-4 text-center dark:border-brand-500/30"><i class="bi bi-question-circle text-xl text-gray-700 dark:text-gray-200" aria-hidden="true"></i><p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ $assessmentQuestions }}</p><p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ Str::plural('question', $assessmentQuestions) }}</p></div>
+                            <div class="px-4 text-center sm:border-r sm:border-brand-200 dark:sm:border-brand-500/30"><i class="bi bi-bullseye text-xl text-gray-700 dark:text-gray-200" aria-hidden="true"></i><p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ number_format((float) ($courseAssessment?->passing_percentage ?? 60), 0) }}%</p><p class="mt-1 text-sm text-gray-700 dark:text-gray-300">passing score</p></div>
+                            <div class="border-r border-brand-200 px-4 text-center dark:border-brand-500/30"><i class="bi bi-infinity text-2xl text-brand-500" aria-hidden="true"></i><p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">unlimited</p><p class="mt-1 text-sm text-gray-700 dark:text-gray-300">attempts</p></div>
+                            <div class="px-4 text-center"><i class="bi bi-record-circle text-xl text-brand-500" aria-hidden="true"></i><p class="mt-2 text-2xl font-bold text-brand-500">{{ $assessmentPassed ? 'Passed' : 'Available' }}</p><p class="mt-1 text-sm text-gray-700 dark:text-gray-300">status</p></div>
+                        </div>
+                        <div class="mt-6 flex flex-wrap items-center gap-7">
+                            @if(! $completedMaterialIds->contains($material->id) && $courseAssessment && ! $assessmentPassed)
+                                <form method="POST" action="{{ route('learning.courses.materials.course-assessment.start', [$enrollment, $material]) }}" @submit="opening = true">@csrf<button type="submit" aria-label="Start assessment" :aria-busy="opening.toString()" :disabled="opening" class="inline-flex items-center gap-3 rounded-xl bg-brand-500 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-brand-600 disabled:cursor-wait disabled:opacity-60"><span x-show="!opening" class="inline-flex items-center gap-3"><i class="bi bi-play-fill text-xl" aria-hidden="true"></i><span>Start assessment</span></span><span x-cloak x-show="opening" class="inline-flex items-center gap-3"><i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Opening assessment…</span></span></button></form>
+                            @endif
+                            <button type="button" @click="showInstructions = true" class="inline-flex items-center gap-3 text-base font-semibold text-brand-500 hover:text-brand-700"><i class="bi bi-file-earmark-text text-xl" aria-hidden="true"></i>View instructions</button>
+                        </div>
+                    </section>
+                @else
                 <div class="mb-8">
                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">{{ $currentModule?->title ?? 'Course module' }} @if($currentChapter) · {{ $currentChapter->title }} @endif</p>
                     <p class="text-sm font-medium text-brand-500">{{ $material->type->value === 'course_assessment' ? 'Knowledge check' : 'Lesson' }}</p>
@@ -168,6 +214,14 @@
                     </div>
                 </div>
             </div>
+        @endif
+        <div x-cloak x-show="showInstructions" @keydown.escape.window="showInstructions = false" class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="assessment-instructions-title">
+            <div class="absolute inset-0 bg-gray-950/50" @click="showInstructions = false"></div>
+            <div class="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-7 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900" @click.stop>
+                <div class="flex items-start gap-4"><span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-500 dark:bg-brand-500/20"><i class="bi bi-file-earmark-text text-xl" aria-hidden="true"></i></span><div><h2 id="assessment-instructions-title" class="text-xl font-bold text-gray-900 dark:text-white">Assessment instructions</h2><p class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">Read every question carefully. Choose one answer for single-choice questions and all correct answers for multiple-choice questions.</p><p class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">You need at least {{ number_format((float) ($material->courseAssessment?->passing_percentage ?? 60), 0) }}% to pass. You can retake this assessment as many times as needed.</p></div></div>
+                <div class="mt-6 flex justify-end"><button type="button" @click="showInstructions = false" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">Close instructions</button></div>
+            </div>
+        </div>
         </main>
         <div x-cloak x-show="courseCompleted" @keydown.escape.window="courseCompleted = false" class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="course-completed-title">
             <div class="absolute inset-0 bg-gray-950/50"></div>

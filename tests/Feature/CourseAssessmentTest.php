@@ -103,6 +103,10 @@ test('course assessment player keeps its Alpine controls visible', function () {
     $enrollment = Enrollment::factory()->for($course)->for($trainee, 'trainee')->create(['status' => 'active']);
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $material]))
         ->assertOk()
+        ->assertSee('Assessment overview')
+        ->assertSee('View instructions')
+        ->assertSee('passing score')
+        ->assertSee('unlimited')
         ->assertSee('Start assessment')
         ->assertSee('bi-clipboard-check', false)
         ->assertSee('aria-label="Start assessment"', false);

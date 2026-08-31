@@ -14,7 +14,7 @@
         ], fn ($value): bool => $value !== null && $value !== ''));
     @endphp
 
-    <div class="mb-7">
+    <div class="mb-8">
         <nav aria-label="{{ __('Breadcrumb') }}">
             <ol class="flex items-center gap-2 text-sm">
                 <li><a href="{{ route('learning.dashboard') }}" class="text-brand-500 hover:text-brand-600">{{ __('Home') }}</a></li>
@@ -28,7 +28,7 @@
     </div>
 
     @if ($showFilters)
-        <section class="mb-7">
+        <section class="mb-7 pt-1">
             <form method="GET" action="{{ route('learning.assessments.index') }}" class="space-y-4">
                 <input type="hidden" name="status" value="{{ $status }}">
                 <div class="flex flex-col gap-3 xl:flex-row xl:items-center">

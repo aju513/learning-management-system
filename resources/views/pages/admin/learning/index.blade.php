@@ -13,7 +13,7 @@
         ], fn ($value): bool => $value !== null && $value !== ''));
     @endphp
 
-    <div class="mb-7">
+    <div class="mb-8">
         <nav aria-label="{{ __('Breadcrumb') }}">
             <ol class="flex items-center gap-2 text-sm">
                 <li><a href="{{ route('learning.dashboard') }}" class="text-brand-500 hover:text-brand-600">{{ __('Home') }}</a></li>
@@ -25,7 +25,7 @@
         <p class="mt-1 text-base text-gray-600 dark:text-gray-400">{{ __('Track and continue your learning journey') }}</p>
     </div>
 
-    <section class="mb-6">
+    <section class="mb-6 pt-1">
         <form method="GET" action="{{ route('learning.courses.index') }}" class="space-y-4">
             <input type="hidden" name="status" value="{{ $status }}">
             <div class="flex flex-col gap-3 xl:flex-row xl:items-center">
