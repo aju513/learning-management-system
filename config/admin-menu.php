@@ -15,6 +15,7 @@ return [
         ]],
         ['key' => 'test-overview', 'label' => 'Test Overview', 'icon' => 'permissions', 'order' => 40, 'children' => [
             ['key' => 'tests', 'label' => 'Quizzes', 'route' => 'super-admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 10],
+            ['key' => 'test-categories', 'label' => 'Test Categories', 'route' => 'super-admin.assessment-categories.index', 'permission' => 'assessment-categories.manage', 'order' => 15],
             ['key' => 'results', 'label' => 'Results', 'route' => 'super-admin.results.index', 'permission' => 'results.manage', 'order' => 20],
         ]],
         ['key' => 'system-settings', 'label' => 'System Settings', 'icon' => 'system', 'order' => 50, 'children' => [
@@ -40,6 +41,7 @@ return [
         ['key' => 'test-overview', 'label' => 'Test Overview', 'icon' => 'permissions', 'order' => 40, 'children' => [
             ['key' => 'create-tests', 'label' => 'Create Tests', 'route' => 'admin.assessments.create', 'permission' => 'assessments.create', 'order' => 10],
             ['key' => 'tests', 'label' => 'Tests', 'route' => 'admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 20],
+            ['key' => 'test-categories', 'label' => 'Test Categories', 'route' => 'admin.assessment-categories.index', 'permission' => 'assessment-categories.manage', 'order' => 25],
             ['key' => 'results', 'label' => 'Results', 'route' => 'admin.results.index', 'permission' => 'results.manage', 'order' => 30],
             ['key' => 'test-reports', 'label' => 'Test Reports', 'route' => 'admin.test-reports.index', 'permission' => 'reports.view', 'order' => 40],
         ]],
@@ -66,6 +68,7 @@ return [
             ['key' => 'enrolled-courses', 'label' => 'Enrolled Courses', 'route' => 'learning.courses.index', 'permission' => 'learning.view', 'order' => 30],
         ]],
         ['key' => 'tests', 'label' => 'Tests', 'icon' => 'permissions', 'order' => 30, 'children' => [
+            ['key' => 'test-catalog', 'label' => 'Test Catalog', 'route' => 'learning.assessments.catalog', 'permission' => 'assessments.take', 'order' => 5],
             ['key' => 'applied-tests', 'label' => 'Applied Tests', 'route' => 'learning.assessments.applied', 'permission' => 'assessments.take', 'order' => 10],
             ['key' => 'enrolled-tests', 'label' => 'Enrolled Tests', 'route' => 'learning.assessments.index', 'permission' => 'assessments.take', 'order' => 20],
         ]],

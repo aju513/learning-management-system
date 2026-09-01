@@ -8,6 +8,7 @@ use App\Enums\QuestionType;
 use App\Models\Assessment;
 use App\Models\AssessmentAssignment;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentCategory;
 use App\Models\AssessmentQuestion;
 use App\Models\User;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
@@ -17,6 +18,7 @@ use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AssessmentService
@@ -38,6 +40,34 @@ class AssessmentService
         activity('lms')->causedBy($actor)->performedOn($assessment)->event('assessment.created')->log('Assessment created');
 
         return $assessment;
+    }
+
+    public function createCategory(array $data, User $actor): AssessmentCategory
+    {
+        $data['slug'] = $this->uniqueCategorySlug($data['name']);
+        $category = $this->assessments->createCategory($data);
+        activity('lms')->causedBy($actor)->performedOn($category)->event('assessment-category.created')->log('Assessment category created');
+
+        return $category;
+    }
+
+    public function updateCategory(AssessmentCategory $category, array $data, User $actor): AssessmentCategory
+    {
+        $data['slug'] = $this->uniqueCategorySlug($data['name'], $category);
+        $category = $this->assessments->updateCategory($category, $data);
+        activity('lms')->causedBy($actor)->performedOn($category)->event('assessment-category.updated')->log('Assessment category updated');
+
+        return $category;
+    }
+
+    public function deleteCategory(AssessmentCategory $category, User $actor): void
+    {
+        if ($this->assessments->categoryHasAssessments($category)) {
+            throw ValidationException::withMessages(['category' => 'Move or delete the tests before deleting this category.']);
+        }
+        activity('lms')->causedBy($actor)->performedOn($category)->event('assessment-category.deleted')
+            ->withProperties(['name' => $category->name])->log('Assessment category deleted');
+        $this->assessments->deleteCategory($category);
     }
 
     public function update(Assessment $assessment, array $data, User $actor): Assessment
@@ -418,5 +448,17 @@ class AssessmentService
         if ($this->assessments->hasAttempts($assessment)) {
             throw ValidationException::withMessages(['question' => 'Questions cannot change after attempts have started.']);
         }
+    }
+
+    private function uniqueCategorySlug(string $name, ?AssessmentCategory $ignore = null): string
+    {
+        $base = Str::slug($name) ?: 'category';
+        $slug = $base;
+        $suffix = 2;
+        while ($this->assessments->categorySlugExists($slug, $ignore)) {
+            $slug = $base.'-'.$suffix++;
+        }
+
+        return $slug;
     }
 }

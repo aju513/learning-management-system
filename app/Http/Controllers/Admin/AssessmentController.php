@@ -38,6 +38,7 @@ class AssessmentController extends Controller
     {
         return view('pages.admin.assessments.create', [
             'assessment' => new Assessment(['show_results' => true]),
+            'categories' => $this->assessments->activeCategories(),
             'trainings' => $this->trainingCatalog->all(),
             'title' => 'Create Quiz',
         ]);
@@ -59,6 +60,7 @@ class AssessmentController extends Controller
     {
         return view('pages.admin.assessments.edit', [
             'assessment' => $this->assessments->findForManagement($assessment),
+            'categories' => $this->assessments->activeCategories(),
             'trainings' => $this->trainingCatalog->all(),
             'title' => 'Edit Quiz',
         ]);

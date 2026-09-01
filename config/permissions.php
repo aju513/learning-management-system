@@ -138,6 +138,12 @@ return [
         'assessments.reorder' => ['view_title' => 'Reorder quiz questions', 'description' => 'Allows changing question order in editable quizzes.'],
         'assessments.take' => ['view_title' => 'Take assessments', 'description' => 'Allows starting and submitting assigned assessments.'],
     ],
+    'assessment-categories' => [
+        'assessment-categories.manage' => ['view_title' => 'Manage test categories', 'description' => 'Allows listing and filtering test categories.'],
+        'assessment-categories.create' => ['view_title' => 'Create test categories', 'description' => 'Allows creating test categories.'],
+        'assessment-categories.edit' => ['view_title' => 'Edit test categories', 'description' => 'Allows editing test categories.'],
+        'assessment-categories.delete' => ['view_title' => 'Delete test categories', 'description' => 'Allows deleting empty test categories.'],
+    ],
     'results' => [
         'results.manage' => ['view_title' => 'View results', 'description' => 'Allows access to assessment attempt results.'],
         'results.view-owned' => ['view_title' => 'View owned assessment results', 'description' => 'Allows viewing results for assessments created by the user.'],

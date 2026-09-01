@@ -14,7 +14,7 @@ class Assessment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'created_by', 'title', 'description', 'instructions', 'duration_minutes',
+        'category_id', 'created_by', 'title', 'description', 'instructions', 'duration_minutes',
         'passing_percentage', 'credit_points', 'availability_scope', 'required_training_key', 'max_attempts', 'status', 'starts_at', 'ends_at', 'show_results',
     ];
 
@@ -34,6 +34,11 @@ class Assessment extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(AssessmentCategory::class, 'category_id');
     }
 
     public function questions(): HasMany

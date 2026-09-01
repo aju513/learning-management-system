@@ -2,12 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Models\Assessment;
+use App\Models\AssessmentCategory;
+use App\Models\AssessmentQuestion;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseChapter;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
 use App\Models\LearningMaterial;
+use App\Models\QuestionOption;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +57,26 @@ class LmsDemoSeeder extends Seeder
                 ['course_id' => $course->id, 'user_id' => $trainee->id],
                 ['enrolled_by' => $admin->id, 'status' => 'active', 'progress_percentage' => 0, 'enrolled_at' => now()],
             );
+
+            $testCategory = AssessmentCategory::query()->firstOrCreate(
+                ['slug' => 'governance-tests'],
+                ['name' => 'Governance Tests', 'description' => 'Knowledge checks for public service and governance.', 'is_active' => true],
+            );
+            $assessment = Assessment::query()->firstOrCreate(
+                ['title' => 'Public Service Knowledge Check'],
+                [
+                    'category_id' => $testCategory->id, 'created_by' => $instructor->id,
+                    'description' => 'Review the fundamentals of responsible public service.',
+                    'instructions' => 'Choose the best answer for each question.', 'duration_minutes' => 15,
+                    'passing_percentage' => 60, 'max_attempts' => 1, 'status' => 'published', 'show_results' => true,
+                ],
+            );
+            $question = AssessmentQuestion::query()->firstOrCreate(
+                ['assessment_id' => $assessment->id, 'position' => 1],
+                ['prompt' => 'Which principle helps make public decisions accountable?', 'type' => 'single_choice', 'marks' => 1],
+            );
+            QuestionOption::query()->firstOrCreate(['assessment_question_id' => $question->id, 'position' => 1], ['option_text' => 'Transparency', 'is_correct' => true]);
+            QuestionOption::query()->firstOrCreate(['assessment_question_id' => $question->id, 'position' => 2], ['option_text' => 'Secrecy', 'is_correct' => false]);
         });
     }
 

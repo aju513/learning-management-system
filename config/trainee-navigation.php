@@ -19,9 +19,9 @@ return [
         [
             'key' => 'tests',
             'label' => 'Tests',
-            'route' => 'learning.assessments.applied',
+            'route' => 'learning.assessments.catalog',
             'permission' => 'assessments.take',
-            'active' => ['learning.assessments.applied'],
+            'active' => ['learning.assessments.catalog*'],
         ],
         [
             'key' => 'my-tests',

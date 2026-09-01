@@ -5,6 +5,7 @@ namespace App\Repositories\Contracts;
 use App\Models\Assessment;
 use App\Models\AssessmentAssignment;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentCategory;
 use App\Models\AssessmentQuestion;
 use App\Models\AttemptAnswer;
 use App\Models\User;
@@ -13,6 +14,20 @@ use Illuminate\Support\Collection;
 
 interface AssessmentRepositoryInterface
 {
+    public function paginateCategories(array $filters = [], int $perPage = 15): LengthAwarePaginator;
+
+    public function activeCategories(): Collection;
+
+    public function categorySlugExists(string $slug, ?AssessmentCategory $ignore = null): bool;
+
+    public function createCategory(array $attributes): AssessmentCategory;
+
+    public function updateCategory(AssessmentCategory $category, array $attributes): AssessmentCategory;
+
+    public function categoryHasAssessments(AssessmentCategory $category): bool;
+
+    public function deleteCategory(AssessmentCategory $category): void;
+
     public function paginate(array $filters, User $actor, int $perPage = 15): LengthAwarePaginator;
 
     public function findForManagement(Assessment $assessment): Assessment;
@@ -54,6 +69,12 @@ interface AssessmentRepositoryInterface
     public function unassign(AssessmentAssignment $assignment): void;
 
     public function availableFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
+
+    public function paginatePublishedCatalog(array $filters, User $trainee, array $eligibleTrainingKeys = [], int $perPage = 12): LengthAwarePaginator;
+
+    public function availableCategoriesForCatalog(User $trainee, array $eligibleTrainingKeys = [], int $limit = 8): Collection;
+
+    public function findPublishedCatalogAssessment(Assessment $assessment, User $trainee, array $eligibleTrainingKeys = []): Assessment;
 
     public function appliedFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
 

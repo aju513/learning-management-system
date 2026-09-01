@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AssessmentAssignmentController;
+use App\Http\Controllers\Admin\AssessmentCategoryController;
 use App\Http\Controllers\Admin\AssessmentController;
 use App\Http\Controllers\Admin\AssessmentQuestionController;
 use App\Http\Controllers\Admin\CourseCategoryController;
@@ -54,6 +55,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'active', 'can:porta
         Route::delete('/fiscal-years/{fiscal_year}', [FiscalYearController::class, 'destroy'])->middleware('can:fiscal-years.delete')->name('fiscal-years.destroy');
     });
     Route::get('/assessments', [AssessmentController::class, 'index'])->name('assessments.index');
+    Route::get('/assessment-categories', [AssessmentCategoryController::class, 'index'])->name('assessment-categories.index');
+    Route::get('/assessment-categories/create', [AssessmentCategoryController::class, 'create'])->name('assessment-categories.create');
+    Route::post('/assessment-categories', [AssessmentCategoryController::class, 'store'])->name('assessment-categories.store');
+    Route::get('/assessment-categories/{assessment_category}/edit', [AssessmentCategoryController::class, 'edit'])->name('assessment-categories.edit');
+    Route::put('/assessment-categories/{assessment_category}', [AssessmentCategoryController::class, 'update'])->name('assessment-categories.update');
+    Route::delete('/assessment-categories/{assessment_category}', [AssessmentCategoryController::class, 'destroy'])->name('assessment-categories.destroy');
     Route::get('/assessments/create', [AssessmentController::class, 'create'])->name('assessments.create');
     Route::get('/assessments/questions/template', [AssessmentQuestionController::class, 'template'])->name('assessment-questions.template');
     Route::post('/assessments', [AssessmentController::class, 'store'])->name('assessments.store');

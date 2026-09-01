@@ -169,7 +169,7 @@ test('trainee navigation keeps overview and groups eligible courses and tests by
         ->and($navigation[1]['key'])->toBe('courses')
         ->and(collect($navigation[1]['children'])->pluck('label')->all())->toBe(['Course Catalog', 'Applied Courses', 'Enrolled Courses'])
         ->and($navigation[2]['key'])->toBe('tests')
-        ->and(collect($navigation[2]['children'])->pluck('label')->all())->toBe(['Applied Tests', 'Enrolled Tests'])
+        ->and(collect($navigation[2]['children'])->pluck('label')->all())->toBe(['Test Catalog', 'Applied Tests', 'Enrolled Tests'])
         ->and($navigation[3]['key'])->toBe('credit-scores');
 });
 

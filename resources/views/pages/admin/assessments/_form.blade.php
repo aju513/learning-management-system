@@ -1,5 +1,6 @@
 <div class="grid gap-5 sm:grid-cols-2">
     <x-form.input name="title" label="Assessment title" :value="$assessment->title" required />
+    <x-form.select name="category_id" label="Test category" :options="$categories" :value="$assessment->category_id" placeholder="Uncategorized" />
     <x-form.input name="duration_minutes" label="Duration (minutes)" type="number" min="1" max="1440" :value="$assessment->duration_minutes ?? 30" required />
     <x-form.input name="passing_percentage" label="Passing score (%)" type="number" min="0" max="100" step="0.01" :value="$assessment->passing_percentage ?? 60" required />
     <x-form.input name="credit_points" label="Passed-test credit points" type="number" min="0" step="0.01" :value="$assessment->credit_points ?? 0" required help="Credits available after a learner passes this test." />

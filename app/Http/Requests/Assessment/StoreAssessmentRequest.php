@@ -22,7 +22,7 @@ class StoreAssessmentRequest extends FormRequest
     protected function assessmentRules(): array
     {
         return [
-            'title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:3000'],
+            'title' => ['required', 'string', 'max:255'], 'category_id' => ['nullable', 'integer', 'exists:assessment_categories,id'], 'description' => ['nullable', 'string', 'max:3000'],
             'instructions' => ['nullable', 'string', 'max:10000'], 'duration_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
             'passing_percentage' => ['required', 'numeric', 'min:0', 'max:100'], 'max_attempts' => ['required', 'integer', 'min:1', 'max:20'],
             'credit_points' => ['nullable', 'numeric', 'min:0', 'max:100000'],

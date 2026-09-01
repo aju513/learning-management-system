@@ -11,6 +11,7 @@ class AssessmentFactory extends Factory
     {
         return [
             'created_by' => User::factory(),
+            'category_id' => null,
             'title' => fake()->sentence(4),
             'description' => fake()->sentence(),
             'instructions' => fake()->sentence(),

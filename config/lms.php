@@ -31,6 +31,7 @@ return [
             'users.manage-instructors', 'users.manage-trainees',
             'courses.manage', 'courses.show', 'courses.view-all',
             'course-categories.manage', 'course-categories.create', 'course-categories.edit', 'course-categories.delete',
+            'assessment-categories.manage', 'assessment-categories.create', 'assessment-categories.edit', 'assessment-categories.delete',
             'fiscal-years.manage', 'fiscal-years.show', 'fiscal-years.create', 'fiscal-years.edit', 'fiscal-years.delete',
             'enrollments.manage', 'enrollments.create', 'enrollments.delete',
             'course-applications.review-all',

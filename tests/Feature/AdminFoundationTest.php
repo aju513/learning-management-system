@@ -128,6 +128,7 @@ test('portal navigation is fixed per role instead of accumulating shared menu it
         ])
         ->and(collect($superAdminNavigation->firstWhere('label', 'Test Overview')['children'])->map(fn (array $item): array => ['key' => $item['key'], 'label' => $item['label']])->all())->toBe([
             ['key' => 'tests', 'label' => 'Quizzes'],
+            ['key' => 'test-categories', 'label' => 'Test Categories'],
             ['key' => 'results', 'label' => 'Results'],
         ])
         ->and(collect($superAdminNavigation->firstWhere('label', 'System Settings')['children'])->map(fn (array $item): array => ['key' => $item['key'], 'label' => $item['label']])->all())->toBe([
@@ -138,7 +139,7 @@ test('portal navigation is fixed per role instead of accumulating shared menu it
         ->and($superAdminNavigation->flatMap(fn (array $item): array => $item['children'] ?? [])->pluck('label')->all())->not->toContain('Access Matrix')
         ->and($adminNavigation->pluck('label')->all())->toBe(['Dashboard', 'People', 'Course Overview', 'Test Overview', 'System Settings', 'Reports'])
         ->and($adminNavigation->firstWhere('label', 'Course Overview')['children'])->toHaveCount(4)
-        ->and($adminNavigation->firstWhere('label', 'Test Overview')['children'])->toHaveCount(4)
+        ->and($adminNavigation->firstWhere('label', 'Test Overview')['children'])->toHaveCount(5)
         ->and(collect($adminNavigation->firstWhere('label', 'System Settings')['children'])->pluck('label')->all())->toBe(['Categories', 'Fiscal Years', 'Credit Score Viewer'])
         ->and($adminNavigation->pluck('label')->all())->not->toContain('My Learning', 'My Courses')
         ->and(collect($navigation->forUser($users['instructor']))->pluck('label')->all())->toContain('My Courses', 'My Trainees')

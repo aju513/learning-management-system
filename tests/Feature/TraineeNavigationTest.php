@@ -23,7 +23,7 @@ test('trainees receive the focused tab navigation without the sidebar', function
         ->assertSee('Coming soon')
         ->assertSee(route('learning.dashboard'), false)
         ->assertSee(route('learning.courses.index'), false)
-        ->assertSee(route('learning.assessments.applied'), false)
+        ->assertSee(route('learning.assessments.catalog'), false)
         ->assertSee(route('learning.assessments.index'), false)
         ->assertSee('aria-disabled="true"', false)
         ->assertSee('aria-current="page"', false);
