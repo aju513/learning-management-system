@@ -74,7 +74,7 @@ Standalone quizzes support draft, published, and closed states; duration; passin
 
 Starting a standalone quiz creates or resumes one in-progress attempt and records its integer-cast expiry duration. Course-assessment attempts are separate, unlimited, and choice-only. While a trainee works, answers are autosaved to the attempt and locally recovered in the browser. Submission compares selected option IDs with the complete correct option set, awards marks only for exact matches, calculates percentage, stores each answer, and records pass/fail. Submission is idempotent so a retry after a lost browser response returns the existing result rather than creating duplicate answers; the submission transaction locks the attempt row while grading. The player disables the submit action, warns about unanswered questions, confirms the final action, displays saving/submitting/recovery states, and redirects through an explicit JSON success URL. Course-assessment results include score, percentage, passing score, attempt date, and selected/correct options. Graded attempts are immutable through the application UI.
 
-The application provides friendly 403 and 500 screens with an explanation and recovery actions. Operational Super Admins may use the protected `admin.maintenance.optimize-clear` POST route when command-line access is unavailable.
+The application provides friendly 403 and 500 screens with an explanation and recovery actions. Operational Super Admins may use the protected `admin.maintenance.optimize-clear` and `admin.maintenance.migrate` POST routes when command-line access is unavailable.
 
 Assessment submission now uses an in-page confirmation modal so trainees can review unanswered questions before the final request.
 

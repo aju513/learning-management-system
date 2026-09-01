@@ -21,6 +21,12 @@ Route::post('/admin/maintenance/optimize-clear', function () {
 
     return back()->with('status', 'Application caches cleared.');
 })->middleware(['auth', 'active', 'can:portals.super-admin.access'])->name('admin.maintenance.optimize-clear');
+
+Route::post('/admin/maintenance/migrate', function () {
+    Artisan::call('migrate', ['--force' => true]);
+
+    return back()->with('status', 'Database migrations completed.');
+})->middleware(['auth', 'active', 'can:portals.super-admin.access'])->name('admin.maintenance.migrate');
 Route::post('/locale', LocaleController::class)->name('locale.update');
 
 Route::prefix('account')->name('account.')->middleware(['auth', 'active'])->group(function (): void {

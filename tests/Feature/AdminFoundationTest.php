@@ -189,3 +189,14 @@ test('only Super Admins can clear application caches through the maintenance rou
     $this->actingAs($trainee)->post(route('admin.maintenance.optimize-clear'))->assertForbidden();
     $this->actingAs($superAdmin)->post(route('admin.maintenance.optimize-clear'))->assertRedirect();
 });
+
+test('only Super Admins can run migrations through the maintenance route', function () {
+    $this->artisan('admin:permissions-sync')->assertSuccessful();
+    $superAdmin = User::factory()->create();
+    $superAdmin->syncRoles(['super-admin']);
+    $trainee = User::factory()->create();
+    $trainee->syncRoles(['trainee']);
+
+    $this->actingAs($trainee)->post(route('admin.maintenance.migrate'))->assertForbidden();
+    $this->actingAs($superAdmin)->post(route('admin.maintenance.migrate'))->assertRedirect();
+});

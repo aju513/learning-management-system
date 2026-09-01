@@ -24,6 +24,8 @@ php artisan optimize
 
 Super Admins can also clear the application caches through the protected `POST` route named `admin.maintenance.optimize-clear` when operational access to Artisan is unavailable. The route requires the normal web session, active-user status, permission authorization, and CSRF protection.
 
+Super Admins can run pending database migrations through the protected `POST` route named `admin.maintenance.migrate` when command-line access to Artisan is unavailable. The route requires the normal web session, active-user status, permission authorization, and CSRF protection.
+
 Configure a real mail transport before relying on forgot-password. Change the bootstrap password immediately and do not expose an installation with the known credential; password changes are not forced by middleware. The scheduler must run every minute so the daily activity and abandoned learning-material image cleanup tasks execute.
 
 Permission synchronization is exact and may delete obsolete database permissions. Review configuration changes before production deployment and deploy permission/menu changes together.
