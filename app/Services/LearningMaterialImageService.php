@@ -67,6 +67,7 @@ class LearningMaterialImageService
             return $html;
         }
 
+        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $referenced = $this->imagesReferencedBy($html);
         $images = $this->authorizedImages($referenced, $chapter, $actor, $material);
         $routes = $images->keyBy('uuid');

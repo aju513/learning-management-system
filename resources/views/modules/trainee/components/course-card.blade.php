@@ -56,7 +56,6 @@
         <div class="mt-4 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.75A2.75 2.75 0 0 1 6.75 3h10.5A2.75 2.75 0 0 1 20 5.75v12.5A2.75 2.75 0 0 1 17.25 21H6.75A2.75 2.75 0 0 1 4 18.25V5.75Z"/><path stroke-linecap="round" d="M8 7h8M8 11h8M8 15h5"/></svg>
             <span>{{ $lessonCount }} {{ Str::plural(__('Lesson'), $lessonCount) }}</span>
-            <span aria-hidden="true">Â·</span>
             <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>
             <span>{{ $durationLabel }}</span>
         </div>

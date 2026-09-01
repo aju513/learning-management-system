@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.trainee.app')
 
 @section('content')
 <x-common.page-breadcrumb pageTitle="Course summary">
@@ -7,7 +7,9 @@
     </x-slot:actions>
 </x-common.page-breadcrumb>
 
-<div class="mx-auto max-w-6xl space-y-4">
+<div class="mx-auto max-w-6xl">
+    <div class="grid items-start gap-6 lg:grid-cols-12">
+        <div class="min-w-0 space-y-4 lg:col-span-8">
     <section class="overflow-hidden rounded-2xl bg-gradient-to-r from-brand-600 to-cyan-600 p-6 text-white shadow-theme-sm sm:p-8">
         <p class="text-sm font-medium text-white/75">Course completed</p>
         <h1 class="mt-2 text-3xl font-bold">{{ $enrollment->course->title }}</h1>
@@ -52,7 +54,7 @@
         </section>
     @endif
 
-    <div class="grid gap-6 lg:grid-cols-[1fr_340px]">
+    <div class="space-y-6">
         <x-common.component-card title="Review your course" desc="Choose where you want to continue reviewing this completed course.">
             <div class="space-y-3">
                 @if($progress['lastViewed'])
@@ -73,6 +75,43 @@
                 <p class="text-sm text-gray-500">No assessment result is available for this course.</p>
             @endif
         </x-common.component-card>
+    </div>
+        </div>
+
+        <aside class="min-w-0 lg:col-span-4">
+            <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+                <div class="mb-5 flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Suggested courses</h2>
+                        <p class="mt-1 text-sm text-gray-500">Continue your learning journey.</p>
+                    </div>
+                    <a href="{{ route('learning.catalog.index') }}" class="shrink-0 text-sm font-semibold text-brand-500 hover:text-brand-600">View all</a>
+                </div>
+
+                <div class="space-y-3">
+                    @forelse ($suggestedCourses->take(4) as $course)
+                        <a href="{{ route('learning.catalog.show', $course) }}" class="group flex h-24 gap-3 rounded-xl border border-gray-200 p-3 transition hover:border-brand-300 hover:shadow-theme-xs dark:border-gray-800 dark:hover:border-brand-500/50">
+                            <div class="h-full w-20 shrink-0 overflow-hidden rounded-lg bg-brand-50 dark:bg-brand-500/10">
+                                @if ($course->thumbnail_path)
+                                    <img src="{{ Storage::disk('public')->url($course->thumbnail_path) }}" alt="" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+                                @else
+                                    <div class="flex h-full items-center justify-center bg-gradient-to-br from-brand-100 via-blue-light-50 to-cyan-100 text-2xl font-bold text-brand-500 dark:from-brand-500/20 dark:via-blue-light-500/10 dark:to-cyan-500/10">{{ Str::upper(Str::substr($course->title, 0, 1)) }}</div>
+                                @endif
+                            </div>
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-xs font-semibold text-brand-500">{{ $course->category?->name ?? 'Course' }}</span>
+                                <span class="mt-1 block line-clamp-2 text-sm font-semibold leading-5 text-gray-900 group-hover:text-brand-500 dark:text-white">{{ $course->title }}</span>
+                                <span class="mt-1 block truncate text-xs text-gray-500">{{ $course->instructor?->name ?? 'Instructor pending' }} · {{ $course->estimated_duration_minutes }} min</span>
+                            </span>
+                        </a>
+                    @empty
+                        <div class="rounded-xl border border-dashed border-gray-300 p-5 text-center dark:border-gray-700">
+                            <p class="text-sm text-gray-500">No other courses are available right now.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+        </aside>
     </div>
 </div>
 @endsection

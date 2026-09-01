@@ -13,6 +13,8 @@ final class LearningContentFormatter
             return '';
         }
 
+        $html = self::decodeEncodedTags($html);
+
         $html = self::replaceListBlocks(
             $html,
             '/(?:(?:<p>\s*(?:[•◦▪‣]|[-*])\s*.*?<\/p>\s*)+)/isu',
@@ -25,6 +27,17 @@ final class LearningContentFormatter
             '/(?:(?:<p>\s*\d+[.)]\s*.*?<\/p>\s*)+)/isu',
             'ol',
             '/<p>\s*\d+[.)]\s*(.*?)\s*<\/p>/isu',
+        );
+    }
+
+    private static function decodeEncodedTags(string $html): string
+    {
+        $tags = 'p|br|strong|b|em|i|ul|ol|li|h2|h3|blockquote';
+
+        return (string) preg_replace_callback(
+            '/&lt;(\\/?)('.$tags.')\\s*&gt;/i',
+            fn (array $matches): string => '<'.$matches[1].strtolower($matches[2]).'>',
+            $html,
         );
     }
 

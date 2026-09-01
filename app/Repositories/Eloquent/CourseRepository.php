@@ -106,6 +106,23 @@ class CourseRepository implements CourseRepositoryInterface
             ->get();
     }
 
+    public function suggestedForSummary(Course $currentCourse, User $trainee, array $eligibleTrainingKeys = [], int $limit = 4): Collection
+    {
+        return Course::query()
+            ->where('status', 'published')
+            ->whereKeyNot($currentCourse->getKey())
+            ->where(function ($query) use ($eligibleTrainingKeys): void {
+                $query->where('availability_scope', 'all')->orWhereNull('availability_scope')
+                    ->orWhere(fn ($restricted) => $restricted->where('availability_scope', 'training')->whereIn('required_training_key', $eligibleTrainingKeys));
+            })
+            ->with(['category', 'instructor', 'enrollments' => fn ($query) => $query->where('user_id', $trainee->id)])
+            ->withCount('modules')
+            ->latest('published_at')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
     public function availableCategoriesForOverview(array $eligibleTrainingKeys = [], int $limit = 4): Collection
     {
         return CourseCategory::query()

@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\LearningMaterial;
 use App\Models\User;
 use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
+use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Services\Training\TrainingAvailabilityService;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -22,6 +23,7 @@ class LearningService
     public function __construct(
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly CourseAssessmentRepositoryInterface $courseAssessments,
+        private readonly CourseRepositoryInterface $courses,
         private readonly CreditScoreService $credits,
         private readonly TrainingAvailabilityService $availability,
     ) {}
@@ -165,10 +167,17 @@ class LearningService
         $this->availability->assertAvailable($enrollment->course, $trainee);
 
         $progress = $this->progress($enrollment, $trainee);
+        $suggestedCourses = $this->courses->suggestedForSummary(
+            $enrollment->course,
+            $trainee,
+            $this->availability->eligibleTrainingKeys($trainee),
+            4,
+        );
 
         return [
             'enrollment' => $enrollment,
             'progress' => $progress,
+            'suggestedCourses' => $suggestedCourses,
             'redirectToPlayer' => ! $progress['isComplete'],
         ];
     }

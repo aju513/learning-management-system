@@ -136,7 +136,9 @@ test('sequential learning records material and course completion', function () {
         ->assertSee('Learning space')
         ->assertSee('Course contents')
         ->assertSee('id="chapter-'.$materials[0]->chapter->id.'"', false)
-        ->assertDontSee('Toggle Sidebar');
+        ->assertDontSee('Toggle Sidebar')
+        ->assertDontSee('Mark as complete')
+        ->assertSee(route('learning.courses.materials.show', [$enrollment, $materials[1]]), false);
     $this->actingAs($trainee)->get(route('learning.courses.summary', $enrollment))
         ->assertRedirect(route('learning.courses.player', $enrollment));
     $this->actingAs($trainee)->get(route('learning.courses.materials.show', [$enrollment, $materials[1]]))
@@ -161,6 +163,12 @@ test('completed course launch opens the review summary instead of the first less
     $instructor = portalUser('instructor');
     $trainee = portalUser('trainee');
     [$course, , $materials] = publishedCourse($instructor, 2);
+    $suggested = collect(range(1, 5))->map(function (int $number) use ($instructor): Course {
+        [$suggestedCourse] = publishedCourse($instructor);
+        $suggestedCourse->update(['title' => 'Suggested Course '.$number]);
+
+        return $suggestedCourse;
+    });
 
     $this->actingAs($admin)->post(route('admin.enrollments.store'), ['course_id' => $course->id, 'trainees' => [$trainee->id]])->assertRedirect();
     $enrollment = Enrollment::whereBelongsTo($trainee, 'trainee')->whereBelongsTo($course)->firstOrFail();
@@ -172,7 +180,20 @@ test('completed course launch opens the review summary instead of the first less
     $this->actingAs($trainee)->get(route('learning.courses.player', $enrollment))
         ->assertRedirect(route('learning.courses.summary', $enrollment));
     $this->actingAs($trainee)->get(route('learning.courses.summary', $enrollment))
-        ->assertOk()->assertSee('Course completed')->assertSee('Start from beginning');
+        ->assertOk()
+        ->assertDontSee('Toggle Sidebar')
+        ->assertSee('lg:col-span-8', false)
+        ->assertSee('lg:col-span-4', false)
+        ->assertSee('Course completed')
+        ->assertSee('Start from beginning')
+        ->assertSee('Suggested courses')
+        ->assertSee('h-24', false)
+        ->assertSee('Suggested Course 2')
+        ->assertSee('Suggested Course 3')
+        ->assertSee('Suggested Course 4')
+        ->assertSee('Suggested Course 5')
+        ->assertDontSee($suggested->first()->title)
+        ->assertDontSee('x-trainee::course-card', false);
 });
 
 test('objective assessments enforce attempts and grade correct answers', function () {

@@ -10,7 +10,7 @@
     $currentModule = $enrollment->course->modules->first(fn ($module) => $module->chapters->contains(fn ($chapter) => $chapter->materials->contains('id', $material->id)));
     $remainingMinutes = $orderedMaterials->filter(fn ($item) => ! $completedMaterialIds->contains($item->id))->sum(fn ($item) => (int) ($item->duration_minutes ?? 0));
 @endphp
-<div class="min-h-screen" x-data="{ outlineOpen: false, completing: false, completed: {{ $completedMaterialIds->contains($material->id) ? 'true' : 'false' }}, progressPercentage: {{ $progressPercentage }}, completionError: '', courseCompleted: false, summaryUrl: @js(route('learning.courses.summary', $enrollment)), async completeLesson(event) { if (this.completing || this.completed) return; this.completing = true; this.completionError = ''; try { const response = await fetch(event.target.action, { method: 'POST', credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': event.target.querySelector('[name=_token]').value } }); if (!response.ok) throw new Error('Completion failed'); const data = await response.json(); this.completed = data.completed; this.progressPercentage = data.progress_percentage; if (data.course_completed) this.courseCompleted = true; } catch (error) { this.completionError = 'We could not save this lesson yet. Please try again.'; } finally { this.completing = false; } } }">
+<div class="min-h-screen" x-data="{ outlineOpen: false, completing: false, completed: {{ $completedMaterialIds->contains($material->id) ? 'true' : 'false' }}, progressPercentage: {{ $progressPercentage }}, completionError: '', courseCompleted: false, summaryUrl: @js(route('learning.courses.summary', $enrollment)), async completeLesson(event) { if (this.completing) return; if (this.completed) { if (event.target.dataset.nextUrl) window.location.assign(event.target.dataset.nextUrl); return; } this.completing = true; this.completionError = ''; try { const response = await fetch(event.target.action, { method: 'POST', credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': event.target.querySelector('[name=_token]').value } }); if (!response.ok) throw new Error('Completion failed'); const data = await response.json(); this.completed = data.completed; this.progressPercentage = data.progress_percentage; if (data.course_completed) this.courseCompleted = true; else if (event.target.dataset.nextUrl) window.location.assign(event.target.dataset.nextUrl); } catch (error) { this.completionError = 'We could not save this lesson yet. Please try again.'; } finally { this.completing = false; } } }">
     <header class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95">
         <div class="flex min-h-[90px] items-center gap-4 px-5 sm:px-7">
             <a href="{{ route('learning.courses.index') }}" class="flex shrink-0 items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200" aria-label="Back to enrolled courses">
@@ -74,7 +74,7 @@
                                                 $isAssessment = $item->type === \App\Enums\MaterialType::CourseAssessment;
                                                 $stateLabel = $done ? 'Completed' : ($item->id === $material->id ? 'Current lesson' : ($itemLocked ? 'Locked — complete the previous required material first' : ($isAssessment ? 'Assessment — unlocked after all lessons' : 'Available')));
                                             @endphp
-                                            <a href="{{ route('learning.courses.materials.show', [$enrollment, $item]) }}" @click="outlineOpen = false" aria-label="{{ $item->title }} — {{ $stateLabel }}" class="flex items-start gap-2 rounded-lg border-l-2 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 {{ $item->id === $material->id ? 'border-brand-500 bg-brand-50 font-medium text-gray-900 dark:bg-brand-500/10 dark:text-white' : 'border-transparent' }} {{ $item->id !== $material->id ? ($itemLocked ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]') : '' }}">
+                                            <a href="{{ route('learning.courses.materials.show', [$enrollment, $item]) }}" @click="outlineOpen = false" aria-label="{{ $item->title }} — {{ $stateLabel }}" class="flex items-start gap-2 rounded-lg border-l-2 border-transparent px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 {{ $item->id === $material->id ? 'bg-brand-50 font-medium text-gray-900 dark:bg-brand-500/10 dark:text-white' : '' }} {{ $item->id !== $material->id ? ($itemLocked ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.04]') : '' }}">
                                                 <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] {{ $done ? 'border-success-500 bg-success-500 text-white' : 'border-gray-300 text-gray-400 dark:border-gray-700' }}">{{ $done ? '✓' : $loop->iteration }}</span>
                                                 <span class="min-w-0"><span class="flex items-center gap-1.5"><span class="block truncate" title="{{ $item->title }}">{{ $item->title }}</span>@if($isAssessment)<span class="shrink-0 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">Assessment</span>@endif</span><span class="mt-0.5 block text-[11px] {{ $item->id === $material->id ? 'text-brand-500' : 'text-gray-400' }}">{{ $stateLabel }}</span></span>
                                             </a>
@@ -215,16 +215,26 @@
                 <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
                     <div>@if($previous)<a href="{{ route('learning.courses.materials.show', [$enrollment, $previous]) }}" class="inline-flex rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white">← Previous</a>@endif</div>
                     <div class="flex items-center gap-3">
-                        @if(! $locked && ! $enrollment->materialProgress->firstWhere('learning_material_id', $material->id)?->completed_at)
-                            @if($material->type !== \App\Enums\MaterialType::CourseAssessment)
-                                <form x-show="!completed" method="POST" action="{{ route('learning.courses.materials.complete', [$enrollment, $material]) }}" @submit.prevent="completeLesson($event)">@csrf<button type="submit" :disabled="completing" class="rounded-lg bg-success-500 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-60"><span x-show="!completing">Mark as complete</span><span x-cloak x-show="completing">Saving…</span></button><p x-show="completionError" x-text="completionError" class="mt-2 text-xs text-error-600" role="alert"></p></form>
-                            @else
-                                <span class="text-sm text-gray-500">Pass the assessment to complete this lesson.</span>
-                            @endif
-                        @else
+                        @if($enrollment->materialProgress->firstWhere('learning_material_id', $material->id)?->completed_at)
                             <x-ui.badge color="success">Completed</x-ui.badge>
                         @endif
-                        @if($next)<a href="{{ route('learning.courses.materials.show', [$enrollment, $next]) }}" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">Next lesson <span class="ml-2">→</span></a>@endif
+                        @if($next)
+                            @if($completedMaterialIds->contains($material->id))
+                                <a href="{{ route('learning.courses.materials.show', [$enrollment, $next]) }}" class="inline-flex rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white">Next lesson <span class="ml-2">→</span></a>
+                            @else
+                                <form method="POST" action="{{ route('learning.courses.materials.complete', [$enrollment, $material]) }}" data-next-url="{{ route('learning.courses.materials.show', [$enrollment, $next]) }}" @submit.prevent="completeLesson($event)">
+                                    @csrf
+                                    <button type="submit" :disabled="completing" class="inline-flex items-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-60"><span x-show="!completing">Next lesson</span><span x-cloak x-show="completing">Saving…</span><span class="ml-2">→</span></button>
+                                    <p x-show="completionError" x-text="completionError" class="mt-2 text-xs text-error-600" role="alert"></p>
+                                </form>
+                            @endif
+                        @elseif(! $locked && $material->type !== \App\Enums\MaterialType::CourseAssessment && ! $completedMaterialIds->contains($material->id))
+                            <form method="POST" action="{{ route('learning.courses.materials.complete', [$enrollment, $material]) }}" @submit.prevent="completeLesson($event)">
+                                @csrf
+                                <button type="submit" :disabled="completing" class="inline-flex items-center rounded-lg bg-success-500 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-60"><span x-show="!completing">Finish course</span><span x-cloak x-show="completing">Saving…</span></button>
+                                <p x-show="completionError" x-text="completionError" class="mt-2 text-xs text-error-600" role="alert"></p>
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>
