@@ -302,7 +302,10 @@ class AssessmentService
         $passedAttempt = $attempts->first(fn (AssessmentAttempt $attempt): bool => $attempt->status === AttemptStatus::Graded && $attempt->passed);
         $assignment = $assessment->assignments->first();
         $application = $assessment->applications->first();
-        $trainingAvailable = ! $trainee || $this->availability->isAvailable($assessment, $trainee);
+        // An explicit assignment is an access grant. Training restrictions still
+        // control catalog visibility and self-service applications, but must not
+        // make a directly assigned test appear unavailable to its trainee.
+        $trainingAvailable = ! $trainee || (bool) $assignment || $this->availability->isAvailable($assessment, $trainee);
         $assignmentOpen = ! $assignment?->due_at || $assignment->due_at->isFuture();
         $canAccess = (bool) ($assignment && $assessment->isAvailable() && $trainingAvailable && $assignmentOpen);
 
@@ -368,7 +371,7 @@ class AssessmentService
     {
         $assessment = $this->assessments->findForAvailability($assessment);
         $assignment = $this->assessments->assignmentFor($assessment, $trainee);
-        if (! $assessment->isAvailable() || ! $assignment || ($assignment->due_at && $assignment->due_at->isPast()) || ! $this->availability->isAvailable($assessment, $trainee)) {
+        if (! $assessment->isAvailable() || ! $assignment || ($assignment->due_at && $assignment->due_at->isPast())) {
             throw new AuthorizationException('This assessment is not currently available to you.');
         }
         if ($active = $this->assessments->activeAttempt($assessment, $trainee)) {

@@ -99,8 +99,8 @@ test('standalone assessments are filtered and blocked by training eligibility', 
     ]);
 
     $this->actingAs($trainee)->get(route('learning.assessments.index'))
-        ->assertOk()->assertSee($assessment->title)->assertSee('Unavailable');
-    $this->actingAs($trainee)->post(route('learning.assessments.start', $assessment))->assertForbidden();
+        ->assertOk()->assertSee($assessment->title)->assertSee('Ready');
+    $this->actingAs($trainee)->post(route('learning.assessments.start', $assessment))->assertRedirect();
 
     config(['training.enrollments.'.((string) $trainee->id) => ['project-management-basics']]);
 

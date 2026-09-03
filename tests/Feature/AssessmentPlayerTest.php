@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Assessment;
+use App\Models\AssessmentAttempt;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 
@@ -80,6 +81,23 @@ test('trainee can filter assessments by search and attempt status', function () 
 
     $this->actingAs($trainee)->get(route('learning.assessments.index', ['search' => 'Governance']))
         ->assertOk()->assertSee('Pending Governance Test')->assertDontSee('Completed Ethics Test');
+});
+
+test('standalone assessment player renders labelled submit controls', function () {
+    $trainee = assessmentTrainee();
+    $instructor = User::factory()->create();
+    $assessment = Assessment::factory()->published()->for($instructor, 'creator')->create(['title' => 'Labelled Test']);
+    assignAssessment($assessment, $trainee);
+
+    $this->actingAs($trainee)->post(route('learning.assessments.start', $assessment))->assertRedirect();
+    $attempt = AssessmentAttempt::firstOrFail();
+
+    $this->actingAs($trainee)->get(route('learning.assessments.attempts.show', $attempt))
+        ->assertOk()
+        ->assertSee('Submit assessment')
+        ->assertSee('bi-check2-circle', false)
+        ->assertSee('aria-label="Submit assessment"', false)
+        ->assertSee('Saved answers loaded');
 });
 
 test('assessment list filters reject unsupported values', function () {
