@@ -92,12 +92,20 @@ test('standalone assessment player renders labelled submit controls', function (
     $this->actingAs($trainee)->post(route('learning.assessments.start', $assessment))->assertRedirect();
     $attempt = AssessmentAttempt::firstOrFail();
 
-    $this->actingAs($trainee)->get(route('learning.assessments.attempts.show', $attempt))
+    $response = $this->actingAs($trainee)->get(route('learning.assessments.attempts.show', $attempt));
+
+    $dom = new DOMDocument;
+    libxml_use_internal_errors(true);
+    $dom->loadHTML($response->getContent());
+
+    $response
         ->assertOk()
         ->assertSee('Submit assessment')
         ->assertSee('bi-check2-circle', false)
         ->assertSee('aria-label="Submit assessment"', false)
         ->assertSee('Saved answers loaded');
+
+    expect($dom->textContent)->not->toContain('this.$refs.confirmSubmit');
 });
 
 test('assessment list filters reject unsupported values', function () {

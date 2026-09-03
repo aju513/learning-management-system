@@ -43,7 +43,7 @@
         this.saveState = 'Saving…'; clearTimeout(this.saveTimer);
         this.saveTimer = setTimeout(async () => {
             try {
-                const response = await fetch('{{ route('learning.assessments.attempts.answers.save', $attempt) }}', {method:'PATCH', credentials:'same-origin', headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':this.form().querySelector('[name="_token"]').value}, body:JSON.stringify({answers})});
+                const response = await fetch('{{ route('learning.assessments.attempts.answers.save', $attempt) }}', {method:'PATCH', credentials:'same-origin', headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':this.form().querySelector('[name=_token]').value}, body:JSON.stringify({answers})});
                 if (!response.ok) throw new Error('Autosave failed');
                 this.saveState = 'Saved';
             } catch (error) { this.saveState = 'Saved locally; server sync will retry'; }
