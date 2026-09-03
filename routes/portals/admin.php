@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\FiscalYearController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ResultController;
 use App\Http\Controllers\Shared\RoleAccountController;
+use App\Http\Controllers\Shared\TestApplicationReviewController;
 use App\Modules\Admin\Http\Controllers\ApplicationController;
 use App\Modules\Admin\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
@@ -77,6 +78,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'active', 'can:porta
     Route::delete('/assessment-questions/{assessment_question}', [AssessmentQuestionController::class, 'destroy'])->name('assessment-questions.destroy');
     Route::post('/assessments/{assessment}/assignments', [AssessmentAssignmentController::class, 'store'])->name('assessment-assignments.store');
     Route::delete('/assessment-assignments/{assessment_assignment}', [AssessmentAssignmentController::class, 'destroy'])->name('assessment-assignments.destroy');
+    Route::middleware('can:test-applications.review-all')->group(function (): void {
+        Route::get('/test-applications', [TestApplicationReviewController::class, 'index'])->name('test-applications.index');
+        Route::patch('/test-applications/{assessment_application}/approve', [TestApplicationReviewController::class, 'approve'])->name('test-applications.approve');
+        Route::patch('/test-applications/{assessment_application}/reject', [TestApplicationReviewController::class, 'reject'])->name('test-applications.reject');
+    });
     Route::get('/results', [ResultController::class, 'index'])->name('results.index');
     Route::get('/results/{assessment_attempt}', [ResultController::class, 'show'])->name('results.show');
     Route::patch('/results/{assessment_attempt}/review', [ResultController::class, 'review'])->name('results.review');

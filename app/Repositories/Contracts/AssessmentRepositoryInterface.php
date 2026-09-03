@@ -78,7 +78,11 @@ interface AssessmentRepositoryInterface
 
     public function appliedFor(User $trainee, array $eligibleTrainingKeys = []): Collection;
 
-    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = [], array $filters = []): Collection;
+    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = [], array $filters = [], int $perPage = 12): LengthAwarePaginator;
+
+    public function findForTrainee(Assessment $assessment, User $trainee): Assessment;
+
+    public function assignmentFor(Assessment $assessment, User $trainee): ?AssessmentAssignment;
 
     public function creditAssessmentsForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection;
 
@@ -93,6 +97,8 @@ interface AssessmentRepositoryInterface
     public function createAttempt(array $attributes): AssessmentAttempt;
 
     public function findAttemptForTaking(AssessmentAttempt $attempt): AssessmentAttempt;
+
+    public function findAttemptForSubmission(AssessmentAttempt $attempt): AssessmentAttempt;
 
     public function createAnswer(array $attributes): AttemptAnswer;
 

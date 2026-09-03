@@ -181,8 +181,14 @@ class AssessmentRepository implements AssessmentRepositoryInterface
     public function paginatePublishedCatalog(array $filters, User $trainee, array $eligibleTrainingKeys = [], int $perPage = 12): LengthAwarePaginator
     {
         return $this->publishedCatalogQuery($trainee, $eligibleTrainingKeys)
-            ->with(['category', 'creator'])
-            ->withCount('questions')
+            ->with([
+                'category',
+                'creator',
+                'applications' => fn ($query) => $query->where('user_id', $trainee->id),
+                'assignments' => fn ($query) => $query->where('user_id', $trainee->id),
+                'attempts' => fn ($query) => $query->where('user_id', $trainee->id)->latest('id'),
+            ])
+            ->withCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)])
             ->when($filters['search'] ?? null, fn ($query, string $search) => $query->where(function ($query) use ($search): void {
                 $query->where('title', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%");
             }))
@@ -202,36 +208,69 @@ class AssessmentRepository implements AssessmentRepositoryInterface
     {
         abort_unless($this->publishedCatalogQuery($trainee, $eligibleTrainingKeys)->whereKey($assessment->id)->exists(), 404);
 
-        return $assessment->load(['category', 'creator'])->loadCount('questions');
+        return $assessment->load([
+            'category',
+            'creator',
+            'applications' => fn ($query) => $query->where('user_id', $trainee->id),
+            'assignments' => fn ($query) => $query->where('user_id', $trainee->id),
+            'attempts' => fn ($query) => $query->where('user_id', $trainee->id)->latest('id'),
+        ])->loadCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)]);
     }
 
     public function appliedFor(User $trainee, array $eligibleTrainingKeys = []): Collection
     {
         return $this->traineeAssessmentsQuery($trainee, $eligibleTrainingKeys)
+            ->with([
+                'category',
+                'applications' => fn ($query) => $query->where('user_id', $trainee->id),
+                'assignments' => fn ($query) => $query->where('user_id', $trainee->id),
+                'attempts' => fn ($query) => $query->where('user_id', $trainee->id)->latest('id'),
+            ])
+            ->withCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)])
             ->whereDoesntHave('attempts', fn ($query) => $query->where('user_id', $trainee->id))
             ->get();
     }
 
-    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = [], array $filters = []): Collection
+    public function enrolledFor(User $trainee, array $eligibleTrainingKeys = [], array $filters = [], int $perPage = 12): LengthAwarePaginator
     {
-        $query = $this->traineeAssessmentsQuery($trainee, $eligibleTrainingKeys)
+        $query = Assessment::query()
+            ->where(function ($related) use ($trainee): void {
+                $related->whereHas('applications', fn ($query) => $query->where('user_id', $trainee->id))
+                    ->orWhereHas('assignments', fn ($query) => $query->where('user_id', $trainee->id))
+                    ->orWhereHas('attempts', fn ($query) => $query->where('user_id', $trainee->id));
+            })
+            ->with([
+                'category',
+                'applications' => fn ($query) => $query->where('user_id', $trainee->id),
+                'assignments' => fn ($query) => $query->where('user_id', $trainee->id),
+                'attempts' => fn ($query) => $query->where('user_id', $trainee->id)->latest('id'),
+            ])
+            ->withCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)])
             ->when($filters['search'] ?? null, fn ($query, string $search) => $query->where('title', 'like', "%{$search}%"));
 
         $query->when($filters['status'] ?? 'all', function ($query, string $status) use ($trainee): void {
             match ($status) {
-                'completed' => $query->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->where('status', 'graded')->where('passed', true))
-                    ->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->whereIn('status', ['in_progress', 'pending_review'])),
+                'completed', 'passed' => $query->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->where('status', 'graded')->where('passed', true)),
                 'failed' => $query->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->where('status', 'graded')->where('passed', false))
+                    ->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->where('passed', true))
                     ->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->whereIn('status', ['in_progress', 'pending_review'])),
                 'pending' => $query->where(function ($pending) use ($trainee): void {
                     $pending->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->whereIn('status', ['in_progress', 'pending_review']))
-                        ->orWhere(function ($notStarted) use ($trainee): void {
-                            $notStarted->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id))
-                                ->whereHas('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id)->whereNotNull('due_at'));
-                        });
+                        ->orWhereHas('applications', fn ($application) => $application->where('user_id', $trainee->id)->where('status', 'pending'));
                 }),
-                'not_started' => $query->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id))
-                    ->whereDoesntHave('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id)->whereNotNull('due_at')),
+                'application_pending' => $query->whereHas('applications', fn ($application) => $application->where('user_id', $trainee->id)->where('status', 'pending')),
+                'rejected' => $query->whereHas('applications', fn ($application) => $application->where('user_id', $trainee->id)->whereIn('status', ['rejected', 'cancelled']))
+                    ->whereDoesntHave('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id)),
+                'ready', 'not_started' => $query->whereHas('assignments', fn ($assignment) => $assignment->where('user_id', $trainee->id))
+                    ->whereDoesntHave('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)),
+                'in_progress' => $query->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->where('status', 'in_progress')),
+                'pending_review' => $query->whereHas('attempts', fn ($attempt) => $attempt->where('user_id', $trainee->id)->where('status', 'pending_review')),
+                'unavailable' => $query->where(function ($unavailable) use ($eligibleTrainingKeys): void {
+                    $unavailable->where('status', '!=', 'published')
+                        ->orWhere(fn ($dates) => $dates->whereNotNull('starts_at')->where('starts_at', '>', now()))
+                        ->orWhere(fn ($dates) => $dates->whereNotNull('ends_at')->where('ends_at', '<', now()))
+                        ->orWhere(fn ($training) => $training->where('availability_scope', 'training')->whereNotIn('required_training_key', $eligibleTrainingKeys));
+                }),
                 default => null,
             };
         });
@@ -243,7 +282,29 @@ class AssessmentRepository implements AssessmentRepositoryInterface
                     ->where('user_id', $trainee->id)
                     ->limit(1)
             ))
-            ->orderBy('title')->get();
+            ->orderBy('title')->paginate($perPage)->withQueryString();
+    }
+
+    public function findForTrainee(Assessment $assessment, User $trainee): Assessment
+    {
+        abort_unless(Assessment::query()->whereKey($assessment->id)->where(function ($related) use ($trainee): void {
+            $related->whereHas('applications', fn ($query) => $query->where('user_id', $trainee->id))
+                ->orWhereHas('assignments', fn ($query) => $query->where('user_id', $trainee->id))
+                ->orWhereHas('attempts', fn ($query) => $query->where('user_id', $trainee->id));
+        })->exists(), 404);
+
+        return $assessment->load([
+            'category',
+            'applications' => fn ($query) => $query->where('user_id', $trainee->id),
+            'assignments' => fn ($query) => $query->where('user_id', $trainee->id),
+            'attempts' => fn ($query) => $query->where('user_id', $trainee->id)->latest('id'),
+            'attempts.answers',
+        ])->loadCount(['questions', 'attempts' => fn ($query) => $query->where('user_id', $trainee->id)]);
+    }
+
+    public function assignmentFor(Assessment $assessment, User $trainee): ?AssessmentAssignment
+    {
+        return AssessmentAssignment::query()->where('assessment_id', $assessment->id)->where('user_id', $trainee->id)->first();
     }
 
     public function creditAssessmentsForTrainee(User $trainee, array $eligibleTrainingKeys = [], ?int $fiscalYearId = null, int $limit = 12): Collection
@@ -328,6 +389,12 @@ class AssessmentRepository implements AssessmentRepositoryInterface
     public function findAttemptForTaking(AssessmentAttempt $attempt): AssessmentAttempt
     {
         return $attempt->load(['assessment.questions.options', 'answers.reviewer', 'trainee']);
+    }
+
+    public function findAttemptForSubmission(AssessmentAttempt $attempt): AssessmentAttempt
+    {
+        return AssessmentAttempt::query()->whereKey($attempt->id)->lockForUpdate()->firstOrFail()
+            ->load(['assessment.questions.options', 'answers.reviewer', 'trainee']);
     }
 
     public function createAnswer(array $attributes): AttemptAnswer

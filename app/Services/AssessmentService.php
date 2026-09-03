@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AssessmentApplicationStatus;
 use App\Enums\AssessmentStatus;
 use App\Enums\AttemptStatus;
 use App\Enums\QuestionType;
@@ -11,6 +12,7 @@ use App\Models\AssessmentAttempt;
 use App\Models\AssessmentCategory;
 use App\Models\AssessmentQuestion;
 use App\Models\User;
+use App\Repositories\Contracts\AssessmentApplicationRepositoryInterface;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\EnrollmentRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -25,6 +27,7 @@ class AssessmentService
 {
     public function __construct(
         private readonly AssessmentRepositoryInterface $assessments,
+        private readonly AssessmentApplicationRepositoryInterface $applications,
         private readonly EnrollmentRepositoryInterface $enrollments,
         private readonly UserRepositoryInterface $users,
         private readonly CreditScoreService $credits,
@@ -193,10 +196,21 @@ class AssessmentService
                 throw ValidationException::withMessages(['trainees' => 'One or more selected trainees could not be found.']);
             }
             foreach ($trainees as $trainee) {
-                if (! $eligibleIds->contains($trainee->id)) {
+                $application = $this->applications->findForAssessmentAndTrainee($assessment, $trainee);
+                $ownedApplicationApproval = (int) $assessment->created_by === (int) $actor->id
+                    && $application?->status === AssessmentApplicationStatus::Pending;
+                if (! $eligibleIds->contains($trainee->id) && ! $ownedApplicationApproval) {
                     throw ValidationException::withMessages(['trainees' => "{$trainee->name} is not an eligible trainee for this assignment."]);
                 }
                 $assignment = $this->assessments->assign($assessment, $trainee, $actor, $dueAt);
+                if ($application && $application->status !== AssessmentApplicationStatus::Approved) {
+                    $this->applications->update($application, [
+                        'status' => AssessmentApplicationStatus::Approved,
+                        'reviewed_by' => $actor->id,
+                        'reviewed_at' => now(),
+                        'review_note' => null,
+                    ]);
+                }
                 activity('lms')->causedBy($actor)->performedOn($assignment)->event('assessment.assigned')
                     ->withProperties(['assessment_id' => $assessment->id, 'trainee_id' => $trainee->id])->log('Assessment assigned');
             }
@@ -205,78 +219,180 @@ class AssessmentService
 
     public function unassign(AssessmentAssignment $assignment, User $actor): void
     {
-        activity('lms')->causedBy($actor)->performedOn($assignment)->event('assessment.unassigned')
-            ->withProperties(['assessment_id' => $assignment->assessment_id, 'trainee_id' => $assignment->user_id])->log('Assessment unassigned');
-        $this->assessments->unassign($assignment);
+        DB::transaction(function () use ($assignment, $actor): void {
+            $application = $this->applications->findForAssessmentAndTrainee($assignment->assessment, $assignment->trainee);
+            activity('lms')->causedBy($actor)->performedOn($assignment)->event('assessment.unassigned')
+                ->withProperties(['assessment_id' => $assignment->assessment_id, 'trainee_id' => $assignment->user_id])->log('Assessment unassigned');
+            $this->assessments->unassign($assignment);
+            if ($application?->status === AssessmentApplicationStatus::Approved) {
+                $application = $this->applications->update($application, [
+                    'status' => AssessmentApplicationStatus::Cancelled,
+                    'reviewed_by' => $actor->id,
+                    'reviewed_at' => now(),
+                ]);
+                activity('lms')->causedBy($actor)->performedOn($application)->event('test-application.cancelled')
+                    ->withProperties(['assessment_id' => $application->assessment_id, 'trainee_id' => $application->user_id])
+                    ->log('Approved test application cancelled');
+            }
+        });
     }
 
-    public function traineeAssessmentIndex(User $trainee, array $eligibleTrainingKeys, array $filters): array
+    public function traineeAssessmentIndex(User $trainee, array $filters): array
     {
+        $eligibleTrainingKeys = $this->availability->eligibleTrainingKeys($trainee);
         $assessments = $this->assessments->enrolledFor($trainee, $eligibleTrainingKeys, $filters);
 
         return [
             'assessments' => $assessments,
-            'assessmentMeta' => $assessments->mapWithKeys(fn (Assessment $assessment) => [
-                $assessment->id => $this->assessmentCardMeta($assessment),
+            'assessmentMeta' => $assessments->getCollection()->mapWithKeys(fn (Assessment $assessment) => [
+                $assessment->id => $this->assessmentCardMeta($assessment, $trainee),
             ]),
         ];
     }
 
-    public function assessmentCardMeta(Assessment $assessment): array
+    /**
+     * Legacy applied-tests view retained for bookmarked links. The unified My Tests
+     * screen is the canonical destination, but this endpoint still exposes only
+     * assigned tests that have not started so existing links remain useful.
+     */
+    public function traineeAppliedIndex(User $trainee): array
+    {
+        $eligibleTrainingKeys = $this->availability->eligibleTrainingKeys($trainee);
+        $assessments = $this->assessments->appliedFor($trainee, $eligibleTrainingKeys);
+
+        return [
+            'assessments' => $assessments,
+            'assessmentMeta' => $assessments->mapWithKeys(fn (Assessment $assessment) => [
+                $assessment->id => $this->assessmentCardMeta($assessment, $trainee),
+            ]),
+        ];
+    }
+
+    public function traineeAssessmentShow(Assessment $assessment, User $trainee): array
+    {
+        $assessment = $this->assessments->findForTrainee($assessment, $trainee);
+
+        return [
+            'assessment' => $assessment,
+            'meta' => $this->assessmentCardMeta($assessment, $trainee),
+            'creditAward' => $this->credits->assessmentAward($assessment, $trainee),
+        ];
+    }
+
+    public function attemptForDisplay(AssessmentAttempt $attempt, User $trainee): array
+    {
+        $attempt = $this->assessments->findAttemptForTaking($attempt);
+        if ($attempt->status === AttemptStatus::InProgress && $attempt->expires_at?->isPast()) {
+            $attempt = $this->submit($attempt, [], $trainee);
+        }
+
+        return [
+            'attempt' => $attempt,
+            'creditAward' => $attempt->passed ? $this->credits->assessmentAward($attempt->assessment, $trainee) : null,
+        ];
+    }
+
+    public function assessmentCardMeta(Assessment $assessment, ?User $trainee = null): array
     {
         $attempts = $assessment->attempts;
         $activeAttempt = $attempts->first(fn (AssessmentAttempt $attempt): bool => $attempt->status === AttemptStatus::InProgress);
         $pendingReview = $attempts->first(fn (AssessmentAttempt $attempt): bool => $attempt->status === AttemptStatus::PendingReview);
         $gradedAttempt = $attempts->filter(fn (AssessmentAttempt $attempt): bool => $attempt->status === AttemptStatus::Graded)
             ->sortByDesc(fn (AssessmentAttempt $attempt) => $attempt->submitted_at?->timestamp ?? 0)->first();
+        $passedAttempt = $attempts->first(fn (AssessmentAttempt $attempt): bool => $attempt->status === AttemptStatus::Graded && $attempt->passed);
         $assignment = $assessment->assignments->first();
+        $application = $assessment->applications->first();
+        $trainingAvailable = ! $trainee || $this->availability->isAvailable($assessment, $trainee);
+        $assignmentOpen = ! $assignment?->due_at || $assignment->due_at->isFuture();
+        $canAccess = (bool) ($assignment && $assessment->isAvailable() && $trainingAvailable && $assignmentOpen);
 
-        if ($activeAttempt || $pendingReview) {
-            $status = 'pending';
+        if ($activeAttempt) {
+            $status = 'in_progress';
+        } elseif ($pendingReview) {
+            $status = 'pending_review';
+        } elseif ($passedAttempt) {
+            $status = 'passed';
         } elseif ($gradedAttempt) {
-            $status = $gradedAttempt->passed ? 'completed' : 'failed';
-        } elseif ($assignment?->due_at) {
-            $status = 'pending';
+            $status = 'failed';
+        } elseif ($assignment && $canAccess) {
+            $status = 'ready';
+        } elseif ($application?->status === AssessmentApplicationStatus::Pending) {
+            $status = 'application_pending';
+        } elseif (in_array($application?->status, [AssessmentApplicationStatus::Rejected, AssessmentApplicationStatus::Cancelled], true)) {
+            $status = 'rejected';
         } else {
-            $status = 'not_started';
+            $status = 'unavailable';
         }
 
         $resultAttempt = $activeAttempt ?? $pendingReview ?? $gradedAttempt;
-        $canStart = ! $activeAttempt && ! $pendingReview && $assessment->attempts_count < $assessment->max_attempts;
+        $canStart = $canAccess && ! $activeAttempt && ! $pendingReview && ! $passedAttempt && $assessment->attempts_count < $assessment->max_attempts;
+        $statusLabel = match ($status) {
+            'in_progress' => 'In Progress',
+            'pending_review' => 'Pending Review',
+            'passed' => 'Passed',
+            'failed' => 'Failed',
+            'ready' => 'Ready',
+            'application_pending' => 'Application Pending',
+            'rejected' => $application?->status === AssessmentApplicationStatus::Cancelled ? 'Access Removed' : 'Rejected',
+            default => 'Unavailable',
+        };
+        $action = match (true) {
+            (bool) $activeAttempt => 'continue',
+            (bool) $pendingReview, (bool) $passedAttempt, (bool) $gradedAttempt && ! $canStart => 'result',
+            $canStart => 'start',
+            default => 'details',
+        };
 
         return [
             'status' => $status,
-            'statusLabel' => ucwords(str_replace('_', ' ', $status)),
+            'statusLabel' => $statusLabel,
             'latestAttempt' => $resultAttempt,
             'activeAttempt' => $activeAttempt,
-            'score' => $gradedAttempt?->score_percentage,
+            'application' => $application,
+            'assignment' => $assignment,
+            'score' => $assessment->show_results ? $gradedAttempt?->score_percentage : null,
             'completedAt' => $gradedAttempt?->submitted_at,
             'canStart' => $canStart,
-            'action' => $activeAttempt || $pendingReview || $status === 'completed' || ($status === 'failed' && ! $canStart) ? 'result' : 'start',
-            'actionLabel' => $activeAttempt ? 'Continue Test' : ($pendingReview ? 'View Submission' : ($status === 'completed' ? 'View Result' : ($status === 'failed' ? 'Retry Test' : 'Start Test'))),
+            'canAccess' => $canAccess,
+            'action' => $action,
+            'actionLabel' => match ($action) {
+                'continue' => 'Continue Test',
+                'result' => $pendingReview || ! $assessment->show_results ? 'View Submission' : 'View Result',
+                'start' => $gradedAttempt ? 'Retry Test' : 'Start Test',
+                default => 'View Details',
+            },
         ];
     }
 
     public function start(Assessment $assessment, User $trainee): AssessmentAttempt
     {
         $assessment = $this->assessments->findForAvailability($assessment);
-        if (! $assessment->isAvailable() || ! $this->assessments->userCanTake($assessment, $trainee) || ! $this->availability->isAvailable($assessment, $trainee)) {
+        $assignment = $this->assessments->assignmentFor($assessment, $trainee);
+        if (! $assessment->isAvailable() || ! $assignment || ($assignment->due_at && $assignment->due_at->isPast()) || ! $this->availability->isAvailable($assessment, $trainee)) {
             throw new AuthorizationException('This assessment is not currently available to you.');
         }
         if ($active = $this->assessments->activeAttempt($assessment, $trainee)) {
             return $active;
         }
+        if ($this->assessments->hasPassed($assessment, $trainee)) {
+            throw ValidationException::withMessages(['attempt' => 'You have already passed this test.']);
+        }
         $attemptCount = $this->assessments->countAttempts($assessment, $trainee);
         if ($attemptCount >= $assessment->max_attempts) {
             throw ValidationException::withMessages(['attempt' => 'You have used all allowed attempts.']);
         }
+        $expiresAt = collect([
+            now()->addMinutes((int) $assessment->duration_minutes),
+            $assessment->ends_at,
+            $assignment->due_at,
+        ])->filter()->sortBy(fn ($date) => $date->getTimestamp())->first();
         $attempt = $this->assessments->createAttempt([
             'assessment_id' => $assessment->id,
             'user_id' => $trainee->id,
             'attempt_number' => $attemptCount + 1,
             'status' => AttemptStatus::InProgress,
             'started_at' => now(),
-            'expires_at' => now()->addMinutes((int) $assessment->duration_minutes),
+            'expires_at' => $expiresAt,
         ]);
         activity('lms')->causedBy($trainee)->performedOn($attempt)->event('assessment-attempt.started')
             ->withProperties(['assessment_id' => $assessment->id, 'attempt_number' => $attempt->attempt_number])->log('Assessment attempt started');
@@ -290,12 +406,14 @@ class AssessmentService
             throw new AuthorizationException('This attempt cannot be submitted.');
         }
 
-        if ($attempt->status !== AttemptStatus::InProgress) {
-            return $this->assessments->findAttemptForTaking($attempt);
-        }
-
         return DB::transaction(function () use ($attempt, $answers, $trainee): AssessmentAttempt {
-            $attempt = $this->assessments->findAttemptForTaking($attempt);
+            $attempt = $this->assessments->findAttemptForSubmission($attempt);
+            if ($attempt->status !== AttemptStatus::InProgress) {
+                return $attempt;
+            }
+            $answers = $attempt->expires_at?->isPast()
+                ? $this->storedAnswers($attempt)
+                : array_replace($this->storedAnswers($attempt), $answers);
             $earned = 0.0;
             $total = (float) $attempt->assessment->questions->sum('marks');
             foreach ($attempt->assessment->questions as $question) {
@@ -350,7 +468,7 @@ class AssessmentService
 
     public function saveAnswers(AssessmentAttempt $attempt, array $answers, User $trainee): void
     {
-        if ($attempt->status !== AttemptStatus::InProgress || (int) $attempt->user_id !== (int) $trainee->id) {
+        if ($attempt->status !== AttemptStatus::InProgress || $attempt->expires_at?->isPast() || (int) $attempt->user_id !== (int) $trainee->id) {
             throw new AuthorizationException('This attempt is no longer available for saving.');
         }
 
@@ -438,6 +556,13 @@ class AssessmentService
         sort($selected);
 
         return array_values(array_intersect($selected, $question->options->pluck('id')->map(fn ($id) => (int) $id)->all()));
+    }
+
+    private function storedAnswers(AssessmentAttempt $attempt): array
+    {
+        return $attempt->answers->mapWithKeys(fn ($answer) => [
+            $answer->assessment_question_id => $answer->text_answer ?? $answer->selected_option_ids ?? [],
+        ])->all();
     }
 
     private function ensureEditable(Assessment $assessment): void

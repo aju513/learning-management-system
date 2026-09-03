@@ -7,9 +7,10 @@
     $assignment = $assessment->assignments->first();
     $status = $meta['status'];
     $statusColor = match ($status) {
-        'completed' => 'success',
+        'passed' => 'success',
         'failed' => 'error',
-        'pending' => 'warning',
+        'application_pending', 'pending_review', 'in_progress' => 'warning',
+        'ready' => 'primary',
         default => 'light',
     };
     $latestAttempt = $meta['latestAttempt'];
@@ -37,7 +38,7 @@
     @if ($meta['score'] !== null)
         <div class="mt-3 text-right">
             <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('Score') }}</span>
-            <strong class="ml-2 text-xl {{ $status === 'completed' ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400' }}">{{ rtrim(rtrim(number_format((float) $meta['score'], 2), '0'), '.') }}%</strong>
+            <strong class="ml-2 text-xl {{ $status === 'passed' ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400' }}">{{ rtrim(rtrim(number_format((float) $meta['score'], 2), '0'), '.') }}%</strong>
         </div>
     @endif
 
@@ -55,13 +56,10 @@
         </div>
 
         <div class="mt-4">
-            @if ($actionIsResult)
-                <a href="{{ route('learning.assessments.attempts.show', $latestAttempt) }}" class="inline-flex h-11 w-full items-center justify-center rounded-lg border border-brand-500 px-4 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:text-brand-300 dark:hover:bg-brand-500/10">{{ $actionLabel }}</a>
+            @if (in_array($meta['action'], ['continue', 'result'], true) && $latestAttempt)
+                <a href="{{ route('learning.assessments.attempts.show', $latestAttempt) }}" target="_blank" rel="noopener" class="inline-flex h-11 w-full items-center justify-center rounded-lg border border-brand-500 px-4 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:text-brand-300 dark:hover:bg-brand-500/10">{{ $actionLabel }}</a>
             @else
-                <form method="POST" action="{{ route('learning.assessments.start', $assessment) }}">
-                    @csrf
-                    <button type="submit" class="inline-flex h-11 w-full items-center justify-center rounded-lg border border-brand-500 bg-white px-4 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-transparent dark:text-brand-300 dark:hover:bg-brand-500/10" @disabled(! $meta['canStart'])>{{ $actionLabel }}</button>
-                </form>
+                <a href="{{ route('learning.assessments.show', $assessment) }}" class="inline-flex h-11 w-full items-center justify-center rounded-lg border border-brand-500 bg-white px-4 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:bg-transparent dark:text-brand-300 dark:hover:bg-brand-500/10">{{ $actionLabel }}</a>
             @endif
         </div>
     </div>

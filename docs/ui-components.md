@@ -47,7 +47,9 @@ Forms use the reusable `x-form.*` controls and always render server validation e
 
 The trainee course player uses a full-width shell so the course contents sidebar stays attached to the viewport edge on wide screens. Its lesson area fills the remaining space with responsive horizontal padding.
 
-The trainee portal uses the reusable `<x-trainee::navigation>` component for its primary tabs. Course Catalog and Applied Courses are grouped under Course, while applied tests, assigned tests, attempts, and results are grouped under Tests and My Tests. Feedback is currently a disabled placeholder until its workflow is implemented. The tabs remain horizontally scrollable on small screens and expose the current destination with `aria-current="page"`.
+The trainee portal uses the reusable `<x-trainee::navigation>` component for its primary tabs. Course Catalog and Applied Courses are grouped under Course, while the published test catalog and the unified My Tests history are grouped under Tests and My Tests. Feedback is currently a disabled placeholder until its workflow is implemented. The tabs remain horizontally scrollable on small screens and expose the current destination with `aria-current="page"`.
+
+Standalone test taking uses `layouts.assessment`, a focused shell with an explicit Exit to My Tests action, a server-authoritative countdown, autosave state, unanswered-question confirmation, and an in-page submit dialog. The overview page shows instructions, availability, attempt history, and the current application/assignment state before a new tab opens for taking. Staff application review uses grouped assessment cards with search, status filters, reviewer notes, and permission-protected approve/reject actions.
 
 Page headers use `<x-common.page-breadcrumb>` for a consistently left-aligned title and breadcrumb. Pages with a header action should pass it through the component's `actions` slot so the action remains aligned on the right at desktop widths and stacks cleanly on small screens.
 

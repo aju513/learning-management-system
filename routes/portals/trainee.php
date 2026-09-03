@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ResultController;
 use App\Modules\Trainee\Http\Controllers\ApplicationController;
 use App\Modules\Trainee\Http\Controllers\CatalogController;
 use App\Modules\Trainee\Http\Controllers\DashboardController;
+use App\Modules\Trainee\Http\Controllers\TestApplicationController;
 use App\Modules\Trainee\Http\Controllers\TestCatalogController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,7 +32,10 @@ Route::prefix('learning')->name('learning.')->middleware(['auth', 'active', 'can
     Route::get('/assessments/applied', [AssessmentPlayerController::class, 'applied'])->name('assessments.applied');
     Route::get('/test-catalog', [TestCatalogController::class, 'index'])->name('assessments.catalog');
     Route::get('/test-catalog/{assessment}', [TestCatalogController::class, 'show'])->name('assessments.catalog.show');
+    Route::post('/test-catalog/{assessment}/applications', [TestApplicationController::class, 'store'])
+        ->middleware('can:test-applications.create')->name('test-applications.store');
     Route::get('/assessments', [AssessmentPlayerController::class, 'index'])->name('assessments.index');
+    Route::get('/assessments/{assessment}', [AssessmentPlayerController::class, 'overview'])->name('assessments.show');
     Route::post('/assessments/{assessment}/start', [AssessmentPlayerController::class, 'start'])->name('assessments.start');
     Route::get('/assessments/attempts/{assessment_attempt}', [AssessmentPlayerController::class, 'show'])->name('assessments.attempts.show');
     Route::patch('/assessments/attempts/{assessment_attempt}/answers', [AssessmentPlayerController::class, 'save'])->name('assessments.attempts.answers.save');

@@ -138,6 +138,13 @@ return [
         'assessments.reorder' => ['view_title' => 'Reorder quiz questions', 'description' => 'Allows changing question order in editable quizzes.'],
         'assessments.take' => ['view_title' => 'Take assessments', 'description' => 'Allows starting and submitting assigned assessments.'],
     ],
+    'test-applications' => [
+        'test-catalog.view' => ['view_title' => 'Browse published tests', 'description' => 'Allows trainees to browse published tests available to their training.'],
+        'test-applications.view-own' => ['view_title' => 'View own test applications', 'description' => 'Allows trainees to view their applications, assignments, attempts, and test history.'],
+        'test-applications.create' => ['view_title' => 'Apply for tests', 'description' => 'Allows trainees to apply for eligible published tests.'],
+        'test-applications.review-all' => ['view_title' => 'Review all test applications', 'description' => 'Allows reviewing applications for every standalone test.'],
+        'test-applications.review-owned' => ['view_title' => 'Review owned-test applications', 'description' => 'Allows instructors to review applications for tests they own.'],
+    ],
     'assessment-categories' => [
         'assessment-categories.manage' => ['view_title' => 'Manage test categories', 'description' => 'Allows listing and filtering test categories.'],
         'assessment-categories.create' => ['view_title' => 'Create test categories', 'description' => 'Allows creating test categories.'],

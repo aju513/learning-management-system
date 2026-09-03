@@ -4,11 +4,11 @@ namespace App\Modules\Trainee\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ShowTestCatalogRequest extends FormRequest
+class ApplyForTestRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('test-catalog.view') ?? false;
+        return (bool) ($this->user()?->can('test-applications.create') && $this->route('assessment')->isAvailable());
     }
 
     public function rules(): array

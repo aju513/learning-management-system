@@ -16,7 +16,8 @@ return [
         ['key' => 'test-overview', 'label' => 'Test Overview', 'icon' => 'permissions', 'order' => 40, 'children' => [
             ['key' => 'tests', 'label' => 'Quizzes', 'route' => 'super-admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 10],
             ['key' => 'test-categories', 'label' => 'Test Categories', 'route' => 'super-admin.assessment-categories.index', 'permission' => 'assessment-categories.manage', 'order' => 15],
-            ['key' => 'results', 'label' => 'Results', 'route' => 'super-admin.results.index', 'permission' => 'results.manage', 'order' => 20],
+            ['key' => 'test-applications', 'label' => 'Test Applications', 'route' => 'super-admin.test-applications.index', 'permission' => 'test-applications.review-all', 'order' => 20],
+            ['key' => 'results', 'label' => 'Results', 'route' => 'super-admin.results.index', 'permission' => 'results.manage', 'order' => 30],
         ]],
         ['key' => 'system-settings', 'label' => 'System Settings', 'icon' => 'system', 'order' => 50, 'children' => [
             ['key' => 'fiscal-years', 'label' => 'Fiscal Years', 'route' => 'super-admin.fiscal-years.index', 'permission' => 'fiscal-years.manage', 'order' => 10],
@@ -42,8 +43,9 @@ return [
             ['key' => 'create-tests', 'label' => 'Create Tests', 'route' => 'admin.assessments.create', 'permission' => 'assessments.create', 'order' => 10],
             ['key' => 'tests', 'label' => 'Tests', 'route' => 'admin.assessments.index', 'permission' => 'assessments.manage', 'order' => 20],
             ['key' => 'test-categories', 'label' => 'Test Categories', 'route' => 'admin.assessment-categories.index', 'permission' => 'assessment-categories.manage', 'order' => 25],
-            ['key' => 'results', 'label' => 'Results', 'route' => 'admin.results.index', 'permission' => 'results.manage', 'order' => 30],
-            ['key' => 'test-reports', 'label' => 'Test Reports', 'route' => 'admin.test-reports.index', 'permission' => 'reports.view', 'order' => 40],
+            ['key' => 'test-applications', 'label' => 'Test Applications', 'route' => 'admin.test-applications.index', 'permission' => 'test-applications.review-all', 'order' => 30],
+            ['key' => 'results', 'label' => 'Results', 'route' => 'admin.results.index', 'permission' => 'results.manage', 'order' => 40],
+            ['key' => 'test-reports', 'label' => 'Test Reports', 'route' => 'admin.test-reports.index', 'permission' => 'reports.view', 'order' => 50],
         ]],
         ['key' => 'system-settings', 'label' => 'System Settings', 'icon' => 'system', 'order' => 50, 'children' => [
             ['key' => 'categories', 'label' => 'Categories', 'route' => 'admin.course-categories.index', 'permission' => 'course-categories.manage', 'order' => 10],
@@ -58,7 +60,8 @@ return [
         ['key' => 'applications', 'label' => 'Applications', 'icon' => 'users', 'route' => 'instructor.applications.index', 'permission' => 'course-applications.review-owned', 'order' => 30],
         ['key' => 'trainees', 'label' => 'My Trainees', 'icon' => 'users', 'route' => 'instructor.trainees.index', 'permission' => 'course-progress.view-owned', 'order' => 40],
         ['key' => 'assessments', 'label' => 'My Quizzes', 'icon' => 'pencil', 'route' => 'instructor.assessments.index', 'permission' => 'assessments.manage', 'order' => 50],
-        ['key' => 'results', 'label' => 'Results', 'icon' => 'activity-log', 'route' => 'instructor.results.index', 'permission' => 'results.manage', 'order' => 60],
+        ['key' => 'test-applications', 'label' => 'Test Applications', 'icon' => 'users', 'route' => 'instructor.test-applications.index', 'permission' => 'test-applications.review-owned', 'order' => 60],
+        ['key' => 'results', 'label' => 'Results', 'icon' => 'activity-log', 'route' => 'instructor.results.index', 'permission' => 'results.manage', 'order' => 70],
     ],
     'trainee' => [
         ['key' => 'overview', 'label' => 'Overview', 'icon' => 'dashboard', 'route' => 'learning.dashboard', 'permission' => 'portals.trainee.access', 'order' => 10],
@@ -68,9 +71,8 @@ return [
             ['key' => 'enrolled-courses', 'label' => 'Enrolled Courses', 'route' => 'learning.courses.index', 'permission' => 'learning.view', 'order' => 30],
         ]],
         ['key' => 'tests', 'label' => 'Tests', 'icon' => 'permissions', 'order' => 30, 'children' => [
-            ['key' => 'test-catalog', 'label' => 'Test Catalog', 'route' => 'learning.assessments.catalog', 'permission' => 'assessments.take', 'order' => 5],
-            ['key' => 'applied-tests', 'label' => 'Applied Tests', 'route' => 'learning.assessments.applied', 'permission' => 'assessments.take', 'order' => 10],
-            ['key' => 'enrolled-tests', 'label' => 'Enrolled Tests', 'route' => 'learning.assessments.index', 'permission' => 'assessments.take', 'order' => 20],
+            ['key' => 'test-catalog', 'label' => 'Test Catalog', 'route' => 'learning.assessments.catalog', 'permission' => 'test-catalog.view', 'order' => 10],
+            ['key' => 'my-tests', 'label' => 'My Tests', 'route' => 'learning.assessments.index', 'permission' => 'test-applications.view-own', 'order' => 20],
         ]],
         ['key' => 'credit-scores', 'label' => 'Credit Scores', 'icon' => 'activity-log', 'route' => 'learning.credit-scores.index', 'permission' => 'credit-scores.view-own', 'order' => 40],
     ],

@@ -20,15 +20,15 @@ return [
             'key' => 'tests',
             'label' => 'Tests',
             'route' => 'learning.assessments.catalog',
-            'permission' => 'assessments.take',
+            'permission' => 'test-catalog.view',
             'active' => ['learning.assessments.catalog*'],
         ],
         [
             'key' => 'my-tests',
             'label' => 'My Tests',
             'route' => 'learning.assessments.index',
-            'permission' => 'assessments.take',
-            'active' => ['learning.assessments.index', 'learning.assessments.attempts.*', 'learning.results.*'],
+            'permission' => 'test-applications.view-own',
+            'active' => ['learning.assessments.index', 'learning.assessments.show', 'learning.assessments.attempts.*', 'learning.results.*'],
         ],
         [
             'key' => 'feedback',

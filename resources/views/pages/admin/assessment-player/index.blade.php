@@ -38,13 +38,13 @@
                         <input type="search" name="search" value="{{ $search }}" placeholder="{{ __('Search tests') }}" class="h-11 w-full rounded-lg border border-gray-300 bg-white pl-12 pr-4 text-sm text-gray-800 shadow-theme-xs outline-none transition placeholder:text-gray-400 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-white">
                     </label>
                     <div class="flex flex-wrap gap-3">
-                        @foreach (['all' => 'All Tests', 'pending' => 'Pending', 'completed' => 'Completed', 'failed' => 'Failed'] as $value => $label)
+                        @foreach (['all' => 'All Tests', 'application_pending' => 'Applied', 'ready' => 'Ready', 'in_progress' => 'In Progress', 'pending_review' => 'In Review', 'passed' => 'Passed', 'failed' => 'Failed', 'rejected' => 'Rejected', 'unavailable' => 'Unavailable'] as $value => $label)
                             <a href="{{ $filterUrl($value) }}" class="inline-flex h-11 items-center justify-center rounded-lg border px-5 text-sm font-medium transition {{ $status === $value ? 'border-brand-500 bg-brand-500 text-white shadow-theme-xs' : 'border-gray-300 bg-white text-gray-800 hover:border-brand-300 hover:text-brand-600 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-brand-500' }}" @if ($status === $value) aria-current="page" @endif>{{ __($label) }}</a>
                         @endforeach
                     </div>
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p class="text-base text-gray-800 dark:text-gray-200">{{ __('Showing :count tests', ['count' => $assessments->count()]) }}</p>
+                    <p class="text-base text-gray-800 dark:text-gray-200">{{ __('Showing :count tests', ['count' => method_exists($assessments, 'total') ? $assessments->total() : $assessments->count()]) }}</p>
                     <label class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                         <span class="sr-only">{{ __('Sort tests') }}</span>
                         <select name="sort" onchange="this.form.submit()" class="h-11 min-w-48 rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-800 outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:text-white">
@@ -70,4 +70,7 @@
             </div>
         @endforelse
     </div>
+    @if (method_exists($assessments, 'links'))
+        <div class="mt-7">{{ $assessments->links() }}</div>
+    @endif
 @endsection

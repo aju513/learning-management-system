@@ -8,7 +8,7 @@ class IndexTestCatalogRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('assessments.take') ?? false;
+        return $this->user()?->can('test-catalog.view') ?? false;
     }
 
     public function rules(): array

@@ -60,6 +60,11 @@ class CreditScoreService
         return $this->awards->findCourseAward($course, $trainee);
     }
 
+    public function assessmentAward(Assessment $assessment, User $trainee): ?CreditAward
+    {
+        return $this->awards->findAssessmentAward($assessment, $trainee);
+    }
+
     public function recordAssessmentPass(Assessment|CourseAssessment $assessment, User $trainee, ?DateTimeInterface $occurredAt = null): ?CreditAward
     {
         $points = (float) $assessment->credit_points;

@@ -9,14 +9,17 @@ class IndexAssessmentPlayerRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('assessments.take') ?? false;
+        return (bool) ($this->user()?->can('test-applications.view-own') && $this->user()?->can('assessments.take'));
     }
 
     public function rules(): array
     {
         return [
             'search' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', Rule::in(['all', 'pending', 'completed', 'failed', 'not_started'])],
+            'status' => ['nullable', Rule::in([
+                'all', 'pending', 'completed', 'failed', 'not_started', 'application_pending',
+                'ready', 'in_progress', 'pending_review', 'passed', 'rejected', 'unavailable',
+            ])],
             'sort' => ['nullable', Rule::in(['recent', 'title'])],
         ];
     }

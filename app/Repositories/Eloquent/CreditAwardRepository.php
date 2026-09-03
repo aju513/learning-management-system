@@ -3,6 +3,7 @@
 namespace App\Repositories\Eloquent;
 
 use App\Enums\CreditAwardStatus;
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CreditAward;
 use App\Models\FiscalYear;
@@ -28,6 +29,15 @@ class CreditAwardRepository implements CreditAwardRepositoryInterface
         return CreditAward::query()->with('fiscalYear')
             ->where('user_id', $user->id)
             ->where('source_key', 'course:'.$course->id)
+            ->latest('eligible_at')
+            ->first();
+    }
+
+    public function findAssessmentAward(Assessment $assessment, User $user): ?CreditAward
+    {
+        return CreditAward::query()->with('fiscalYear')
+            ->where('user_id', $user->id)
+            ->where('source_key', 'assessment:'.$assessment->id)
             ->latest('eligible_at')
             ->first();
     }

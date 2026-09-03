@@ -51,6 +51,11 @@ class Assessment extends Model
         return $this->hasMany(AssessmentAssignment::class);
     }
 
+    public function applications(): HasMany
+    {
+        return $this->hasMany(AssessmentApplication::class);
+    }
+
     public function attempts(): HasMany
     {
         return $this->hasMany(AssessmentAttempt::class);

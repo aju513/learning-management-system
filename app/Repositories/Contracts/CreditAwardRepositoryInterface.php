@@ -3,6 +3,7 @@
 namespace App\Repositories\Contracts;
 
 use App\Enums\CreditAwardStatus;
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CreditAward;
 use App\Models\FiscalYear;
@@ -16,6 +17,8 @@ interface CreditAwardRepositoryInterface
     public function findByKey(FiscalYear $fiscalYear, User $user, string $sourceKey): ?CreditAward;
 
     public function findCourseAward(Course $course, User $user): ?CreditAward;
+
+    public function findAssessmentAward(Assessment $assessment, User $user): ?CreditAward;
 
     public function forUser(User $user, ?FiscalYear $fiscalYear = null, int $perPage = 15): LengthAwarePaginator;
 

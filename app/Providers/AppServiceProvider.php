@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Repositories\Contracts\ActivityRepositoryInterface;
+use App\Repositories\Contracts\AssessmentApplicationRepositoryInterface;
 use App\Repositories\Contracts\AssessmentRepositoryInterface;
 use App\Repositories\Contracts\AttendanceSnapshotRepositoryInterface;
 use App\Repositories\Contracts\CourseAssessmentRepositoryInterface;
@@ -17,6 +18,7 @@ use App\Repositories\Contracts\ReportRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Eloquent\ActivityRepository;
+use App\Repositories\Eloquent\AssessmentApplicationRepository;
 use App\Repositories\Eloquent\AssessmentRepository;
 use App\Repositories\Eloquent\AttendanceSnapshotRepository;
 use App\Repositories\Eloquent\CourseAssessmentRepository;
@@ -64,6 +66,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FiscalYearRepositoryInterface::class, FiscalYearRepository::class);
         $this->app->bind(LearningMaterialImageRepositoryInterface::class, LearningMaterialImageRepository::class);
         $this->app->bind(AssessmentRepositoryInterface::class, AssessmentRepository::class);
+        $this->app->bind(AssessmentApplicationRepositoryInterface::class, AssessmentApplicationRepository::class);
         $this->app->bind(ReportRepositoryInterface::class, ReportRepository::class);
         $this->app->bind(AttendanceProviderInterface::class, function (): AttendanceProviderInterface {
             return match (config('services.tmis.attendance.driver', 'sandbox')) {
